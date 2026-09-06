@@ -2570,7 +2570,7 @@ const CommandCenter = (() => {
     const output = document.getElementById('cyberTerminalOutput');
     if (output) {
       output.innerHTML = `
-        <div class="term-line info">COMMAND CENTER INTERACTIVE CYBER TERMINAL INITIALIZED.</div>
+        <div class="term-line info">U1 OS // CYBER TERMINAL INITIALIZED. AUTONOMOUS SYSTEM ONLINE.</div>
         <div class="term-line info">Type 'help' or 'status' for commands. Supports tokens, swap, alpha, copy, bot, top, ports, ssl, lockdown, ledger.</div>
       `;
     }
@@ -2593,7 +2593,7 @@ const CommandCenter = (() => {
     // Render user command line
     const cmdLine = document.createElement('div');
     cmdLine.className = 'term-line cmd';
-    cmdLine.innerHTML = `<span class="term-prompt-prefix mono">⚡ [CMD-CENTER ~]$</span> ${escapeHtml(rawCmd)}`;
+    cmdLine.innerHTML = `<span class="term-prompt-prefix mono">⚡ [U1-OS ~]$</span> ${escapeHtml(rawCmd)}`;
     output.appendChild(cmdLine);
 
     if (rawCmd.toLowerCase() === 'clear') {

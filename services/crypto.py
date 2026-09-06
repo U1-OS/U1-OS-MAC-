@@ -582,9 +582,9 @@ class CryptoService(BaseService):
         args = parts[1:]
 
         if cmd == "help":
-            out = """CYBER TERMINAL // AVAILABLE COMMAND CATALOG:
+            out = """U1 OS // CYBER EXEC TERMINAL — COMMAND CATALOG:
   help                             Show this command catalog
-  status                           Query local feeder & modular services health
+  status                           Query U1 OS feeder & modular services health
   tokens                           Display live Photon / DEX screener quotes
   swap <BUY|SELL> <SYM> <SOL>     Execute Photon instant swap order
   alpha                            Inspect real-time Twitter/X memecoin alpha feed
@@ -596,7 +596,7 @@ class CryptoService(BaseService):
             return {"success": True, "output": out, "command": cmd_str}
 
         elif cmd == "status":
-            out = f"Command Center v1.0 Feeder: ONLINE\nBinding: 127.0.0.1:8787 (Strict Localhost)\nServices: 10 Subsystems Active\nBot Engine: {self.bot_state['status']}"
+            out = f"U1 OS v1.0 Feeder: ONLINE\nBinding: 127.0.0.1:8787 (Strict Localhost)\nServices: 10 Subsystems Active\nBot Engine: {self.bot_state['status']}"
             return {"success": True, "output": out, "command": cmd_str}
 
         elif cmd == "tokens":

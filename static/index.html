@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COMMAND CENTER // macOS Business OS</title>
+  <title>U1 OS // Autonomous Business Operating System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800;900&family=Archivo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -25,9 +25,9 @@
     <header class="top-bezel" id="topBezel">
       <div class="bezel-left">
         <div class="sys-brand">
-          <span class="brand-monogram">CC</span>
+          <span class="brand-monogram" style="background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; letter-spacing: -0.04em;">U1</span>
           <span class="brand-divider">/</span>
-          <span class="brand-os">macOS OS</span>
+          <span class="brand-os" style="color: var(--neon-cyan);">OS</span>
         </div>
         <div class="sys-heartbeat" title="Local Feeder: 127.0.0.1:8787">
           <span class="pulse-dot"></span>
@@ -44,7 +44,7 @@
         <div class="ticker-badge">LIVE INTEL</div>
         <div class="ticker-viewport" id="tickerViewport">
           <div class="ticker-content" id="tickerContent">
-            <span class="ticker-item"><span class="t-source">[SYSTEM]</span> Command Center feeder listening on 127.0.0.1:8787</span>
+            <span class="ticker-item"><span class="t-source">[SYSTEM]</span> U1 OS feeder listening on 127.0.0.1:8787</span>
             <span class="ticker-item"><span class="t-source">[INTEL]</span> Syncing real-time global telemetry feeds...</span>
           </div>
         </div>
@@ -251,7 +251,7 @@
             <span class="load-label">SYS LOAD</span>
             <span class="load-val mono" id="loadVal">0.00</span>
           </div>
-          <div class="version-tag mono">v1.0.0 // LOCAL</div>
+          <div class="version-tag mono">U1 OS v1.0 // LOCAL</div>
         </div>
       </aside>
 
@@ -1418,7 +1418,7 @@
     <div class="terminal-header">
       <div class="terminal-title-group">
         <span class="status-dot active" style="background:var(--neon-cyan); box-shadow:0 0 8px var(--neon-cyan);"></span>
-        <span class="terminal-title mono">CYBER-EXEC // COMMAND TERMINAL v3.2</span>
+        <span class="terminal-title mono">U1 OS // CYBER EXEC TERMINAL v3.2</span>
         <span class="terminal-tag mono">HOST: LOCALHOST:8787</span>
         <span class="terminal-hint mono">PRESS ` TO TOGGLE &bull; ESC TO CLOSE</span>
       </div>
@@ -1428,11 +1428,11 @@
       </div>
     </div>
     <div class="terminal-body" id="cyberTerminalOutput">
-      <div class="term-line info">COMMAND CENTER INTERACTIVE CYBER TERMINAL INITIALIZED.</div>
+      <div class="term-line info">U1 OS // CYBER TERMINAL INITIALIZED. AUTONOMOUS SYSTEM ONLINE.</div>
       <div class="term-line info">Type 'help' or 'status' for commands. Supports tokens, swap, alpha, copy, bot, top, ports, ssl, lockdown, ledger.</div>
     </div>
     <div class="terminal-prompt-bar">
-      <span class="term-prompt-prefix mono">⚡ [CMD-CENTER ~]$</span>
+      <span class="term-prompt-prefix mono">⚡ [U1-OS ~]$</span>
       <input type="text" id="cyberTerminalInput" class="term-input mono" placeholder="Enter command (e.g. help, bot status, alpha scan, tokens)..." autocomplete="off" spellcheck="false">
       <button class="btn btn-sm btn-gold mono" id="cyberTerminalSubmitBtn" onclick="CommandCenter.submitCyberTerminalCommand()">EXEC</button>
     </div>
