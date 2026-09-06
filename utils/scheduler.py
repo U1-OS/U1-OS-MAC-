@@ -115,6 +115,15 @@ class AutomationScheduler:
             handler=self._job_vault_backup
         )
 
+        # 4. Daily SSL/TLS Certificate Expiry Audit
+        self.register_job(
+            "daily_ssl_audit",
+            "SSL/TLS Certificate Expiry Audit",
+            "Validates Port 443 TLS certificates on primary domain assets and warns of approaching expiration",
+            interval_sec=86400,
+            handler=self._job_ssl_audit
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -129,6 +138,18 @@ class AutomationScheduler:
             return {"domain": domain, "ip": ip, "latency_ms": latency, "summary": summary}
         except Exception as e:
             return {"error": str(e), "summary": f"DNS check failed: {e}"}
+
+    def _job_ssl_audit(self, feeder):
+        domain = "apple.com"
+        if feeder and "osint" in feeder.services:
+            res = feeder.services["osint"]._inspect_ssl_cert(domain)
+            days = res.get("days_left", 0)
+            summary = f"SSL Certificate for {domain}: {days} days remaining ({res.get('risk_level')})"
+            if days < 30:
+                macos.notify("SSL CERTIFICATE ALERT", summary, sound="Basso")
+            feeder.services["osint"].add_event("ssl_audit", summary)
+            return {"domain": domain, "days_left": days, "summary": summary}
+        return {"summary": "OSINT service unavailable for SSL audit"}
 
     def _job_dossier_compilation(self, feeder):
         res = briefing.generate_briefing()

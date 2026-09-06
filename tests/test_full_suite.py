@@ -281,6 +281,33 @@ def main():
         os.remove(spk_res["audio_file"])
     log_test("macOS Say Engine Speech Output", audio_created, "macOS /usr/bin/say synthesis verified")
 
+    # 21. SSL / TLS Certificate Sentinel
+    print(f"\n{INFO} 21. Subsystem: SSL/TLS Certificate Sentinel:")
+    s, ssl_res = action("osint", "inspect_ssl", {"domain": "apple.com"})
+    cert = ssl_res.get("result", {})
+    log_test("Port 443 TLS Handshake & Cert Inspection", ssl_res.get("success") and bool(cert.get("issuer")), f"Issuer: {cert.get('issuer')} // {cert.get('days_left')} days left")
+    log_test("SSL Expiration & Cipher Suite Metadata", cert.get("days_left", 0) > 0 and bool(cert.get("cipher")), f"Cipher: {cert.get('cipher')} // Risk: {cert.get('risk_level')}")
+
+    # 22. Localhost Port & Process Security Audit Matrix
+    print(f"\n{INFO} 22. Subsystem: Localhost Port Security Audit Matrix:")
+    s, ports_res = action("osint", "audit_ports")
+    ports_info = ports_res.get("result", {})
+    log_test("Active Listening Ports Enumeration", ports_res.get("success") and ports_info.get("total_open_ports", 0) > 0, f"{ports_info.get('total_open_ports')} sockets ({ports_info.get('localhost_count')} local, {ports_info.get('exposed_count')} exposed)")
+    ports_list = ports_info.get("ports", [])
+    cc_found = any(p.get("port") == 8787 and p.get("localhost_only") for p in ports_list)
+    log_test("Command Center 8787 Localhost-Only Verification", cc_found, "Strict 127.0.0.1 binding confirmed via lsof")
+
+    # 23. Network Gateway Diagnostics & Automated SSL Cron
+    print(f"\n{INFO} 23. Subsystem: Network Gateway Diagnostics & Automated SSL Cron:")
+    s, net_res = action("osint", "get_network_info")
+    net_data = net_res.get("result", {})
+    log_test("Network Gateway Diagnostics", net_res.get("success") and bool(net_data.get("local_ip")), f"IP: {net_data.get('local_ip')} // Gateway: {net_data.get('default_gateway')}")
+    sc_code, sc_data = get("/api/scheduler")
+    cron_ids = [j.get("id") for j in sc_data.get("jobs", [])]
+    log_test("Daily SSL Certificate Audit Cron Job", "daily_ssl_audit" in cron_ids, "Registered in background automation scheduler")
+    s, job_res = action("settings", "trigger_scheduled_task", {"job_id": "daily_ssl_audit"})
+    log_test("Automated SSL Audit Scheduled Execution", job_res.get("success") and job_res.get("job", {}).get("status") == "COMPLETED", f"Duration: {job_res.get('result', {}).get('duration_ms', 0)}ms")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

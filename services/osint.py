@@ -21,12 +21,18 @@ class OSINTService(BaseService):
         self.last_dns_result = None
         self.last_whois_result = None
         self.last_hibp_result = None
+        self.last_ssl_result = None
+        self.last_ports_result = None
+        self.network_info = None
 
     def poll(self):
         hibp_key = self.config.get("integrations", {}).get("hibp", {}).get("api_key", "").strip()
         missing = []
         if not hibp_key:
             missing.append("HIBP_API_KEY (HaveIBeenPwned API)")
+
+        if not self.network_info:
+            self.network_info = self._get_network_info()
 
         with self.lock:
             self.configured = True  # Public OSINT is always functional
@@ -40,6 +46,9 @@ class OSINTService(BaseService):
                 "last_dns": self.last_dns_result,
                 "last_whois": self.last_whois_result,
                 "last_hibp": self.last_hibp_result,
+                "last_ssl": self.last_ssl_result,
+                "last_ports": self.last_ports_result,
+                "network_info": self.network_info,
                 "connect_instructions": "Add HIBP_API_KEY in Settings to enable real-time HaveIBeenPwned API queries."
             }
             self.last_updated = time.time()
@@ -370,4 +379,181 @@ class OSINTService(BaseService):
                 return {"success": True, "keywords": list(self.monitored_keywords)}
             return {"success": False, "error": "Keyword invalid or already monitored"}
 
+        elif action == "inspect_ssl":
+            domain = payload.get("domain", "apple.com").strip()
+            try:
+                res = self._inspect_ssl_cert(domain)
+                with self.lock:
+                    self.last_ssl_result = res
+                self.add_event("ssl_inspected", f"SSL certificate inspected for {domain} ({res['days_left']} days left)")
+                self.poll()
+                return {"success": True, "result": res}
+            except Exception as e:
+                return {"success": False, "error": f"SSL inspection failed: {str(e)}"}
+
+        elif action == "audit_ports":
+            try:
+                res = self._audit_listening_ports()
+                with self.lock:
+                    self.last_ports_result = res
+                self.add_event("ports_audited", f"Listening ports audited ({res['total_open_ports']} active, {res['exposed_count']} exposed)")
+                self.poll()
+                return {"success": True, "result": res}
+            except Exception as e:
+                return {"success": False, "error": f"Port audit failed: {str(e)}"}
+
+        elif action == "get_network_info":
+            try:
+                res = self._get_network_info()
+                with self.lock:
+                    self.network_info = res
+                self.poll()
+                return {"success": True, "result": res}
+            except Exception as e:
+                return {"success": False, "error": f"Network info query failed: {str(e)}"}
+
         return super().dispatch_action(action, payload)
+
+    def _inspect_ssl_cert(self, domain):
+        import ssl, datetime
+        clean_domain = domain.strip().lower()
+        if "://" in clean_domain:
+            clean_domain = clean_domain.split("://")[1].split("/")[0]
+        else:
+            clean_domain = clean_domain.split("/")[0]
+        if ":" in clean_domain:
+            clean_domain = clean_domain.split(":")[0]
+
+        if not clean_domain:
+            raise ValueError("Domain is required")
+
+        start_time = time.time()
+        ctx = ssl.create_default_context()
+        with ctx.wrap_socket(socket.socket(), server_hostname=clean_domain) as s:
+            s.settimeout(5.0)
+            s.connect((clean_domain, 443))
+            cert = s.getpeercert()
+            cipher_info = s.cipher()
+            tls_version = s.version()
+
+        expires_str = cert.get("notAfter", "")
+        try:
+            expires_dt = datetime.datetime.strptime(expires_str, "%b %d %H:%M:%S %Y %Z")
+            days_left = (expires_dt - datetime.datetime.utcnow()).days
+        except Exception:
+            days_left = 0
+
+        issued_str = cert.get("notBefore", "")
+        issuer_dict = dict(x[0] for x in cert.get("issuer", []))
+        subject_dict = dict(x[0] for x in cert.get("subject", []))
+        sans = [val for key, val in cert.get("subjectAltName", []) if key == "DNS"]
+
+        risk = "NOMINAL"
+        if days_left < 14:
+            risk = "CRITICAL"
+        elif days_left < 30:
+            risk = "EXPIRING_SOON"
+
+        latency_ms = int((time.time() - start_time) * 1000)
+
+        return {
+            "domain": clean_domain,
+            "issuer": issuer_dict.get("organizationName") or issuer_dict.get("commonName") or "Unknown Issuer",
+            "issuer_full": issuer_dict,
+            "subject_cn": subject_dict.get("commonName") or clean_domain,
+            "valid_from": issued_str,
+            "valid_to": expires_str,
+            "days_left": days_left,
+            "risk_level": risk,
+            "sans": sans[:8],
+            "sans_count": len(sans),
+            "cipher": cipher_info[0] if cipher_info else "Unknown",
+            "tls_version": tls_version or "TLSv1.3",
+            "latency_ms": latency_ms,
+            "timestamp": time.time()
+        }
+
+    def _audit_listening_ports(self):
+        ports = []
+        try:
+            res = subprocess.run(
+                ["/usr/sbin/lsof", "-iTCP", "-sTCP:LISTEN", "-n", "-P"],
+                capture_output=True, text=True, timeout=4
+            )
+            out = res.stdout
+            lines = out.splitlines()
+            if len(lines) > 1:
+                for line in lines[1:]:
+                    parts = line.split()
+                    if len(parts) >= 9:
+                        cmd = parts[0]
+                        pid = parts[1]
+                        user = parts[2]
+                        proto = parts[4]
+                        name = parts[8]
+
+                        addr = "unknown"
+                        port_num = 0
+                        if ":" in name:
+                            addr, port_str = name.rsplit(":", 1)
+                            try:
+                                port_num = int(port_str)
+                            except ValueError:
+                                port_num = 0
+
+                        is_local = addr in ["127.0.0.1", "[::1]", "localhost"]
+                        exposure = "LOCALHOST ONLY" if is_local else "LAN/WAN EXPOSED"
+
+                        if not any(p["pid"] == pid and p["port"] == port_num for p in ports):
+                            ports.append({
+                                "command": cmd,
+                                "pid": pid,
+                                "user": user,
+                                "proto": proto,
+                                "address": addr,
+                                "port": port_num,
+                                "bind_str": name,
+                                "localhost_only": is_local,
+                                "exposure": exposure
+                            })
+        except Exception:
+            pass
+
+        ports.sort(key=lambda x: x["port"])
+        return {
+            "total_open_ports": len(ports),
+            "exposed_count": len([p for p in ports if not p["localhost_only"]]),
+            "localhost_count": len([p for p in ports if p["localhost_only"]]),
+            "ports": ports,
+            "timestamp": time.time()
+        }
+
+    def _get_network_info(self):
+        local_ip = "127.0.0.1"
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            pass
+
+        gateway = "unknown"
+        try:
+            res = subprocess.run(["netstat", "-rn"], capture_output=True, text=True, timeout=2)
+            for line in res.stdout.splitlines():
+                if line.startswith("default"):
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        gateway = parts[1]
+                        break
+        except Exception:
+            pass
+
+        return {
+            "local_ip": local_ip,
+            "default_gateway": gateway,
+            "hostname": socket.gethostname(),
+            "timestamp": time.time()
+        }
+

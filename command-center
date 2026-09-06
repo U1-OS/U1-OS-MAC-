@@ -242,6 +242,52 @@ for j in data.get('jobs', []):
   fi
 }
 
+cmd_ssl() {
+  DOMAIN="${2:-apple.com}"
+  echo -e "\033[33m[SSL SENTINEL]\033[0m Inspecting Port 443 TLS certificate for $DOMAIN..."
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'service': 'osint', 'action': 'inspect_ssl', 'payload': {'domain': '$DOMAIN'}}).encode('utf-8')
+req = urllib.request.Request('http://$HOST:$PORT/api/action', data=payload, headers={'Content-Type': 'application/json'})
+with urllib.request.urlopen(req) as r:
+    res = json.loads(r.read().decode('utf-8'))
+    if res.get('success'):
+        c = res['result']
+        print(f\"Domain:       {c['domain']}\")
+        print(f\"Issuer:       {c['issuer']}\")
+        print(f\"Subject CN:   {c['subject_cn']}\")
+        print(f\"Valid Until:  {c['valid_to']} ({c['days_left']} days remaining)\")
+        print(f\"Risk Level:   {c['risk_level']}\")
+        print(f\"TLS Cipher:   {c['cipher']} ({c['tls_version']})\")
+        print(f\"SANs:         {', '.join(c['sans'][:4])}\")
+    else:
+        print('Error:', res.get('error'))
+"
+}
+
+cmd_ports() {
+  echo "============================================================"
+  echo " COMMAND CENTER // Localhost Listening Ports & Services"
+  echo "============================================================"
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'service': 'osint', 'action': 'audit_ports', 'payload': {}}).encode('utf-8')
+req = urllib.request.Request('http://$HOST:$PORT/api/action', data=payload, headers={'Content-Type': 'application/json'})
+with urllib.request.urlopen(req) as r:
+    res = json.loads(r.read().decode('utf-8'))
+    if res.get('success'):
+        p = res['result']
+        print(f\"Total Listening: {p['total_open_ports']} | Localhost Only: {p['localhost_count']} | Exposed: {p['exposed_count']}\")
+        print('------------------------------------------------------------')
+        for item in p['ports']:
+            exp_badge = '\033[32m[LOCAL]\033[0m' if item['localhost_only'] else '\033[33m[EXPOSED]\033[0m'
+            print(f\"{item['port']:<6} {exp_badge} {item['command']:<12} PID: {item['pid']:<7} {item['bind_str']}\")
+    else:
+        print('Error:', res.get('error'))
+"
+  echo "============================================================"
+}
+
 case "$1" in
   start)
     cmd_start
@@ -294,9 +340,17 @@ case "$1" in
   scheduler)
     cmd_scheduler "$@"
     ;;
+  ssl)
+    cmd_ssl "$@"
+    ;;
+  ports)
+    cmd_ports
+    ;;
   *)
-    echo "Usage: ./command-center {start|stop|restart|status|open|test|install-agent|uninstall-agent|notify|vault|briefing|menubar|llm|speak|hardware|webhook-test|scheduler}"
+    echo "Usage: ./command-center {start|stop|restart|status|open|test|install-agent|uninstall-agent|notify|vault|briefing|menubar|llm|speak|hardware|webhook-test|scheduler|ssl|ports}"
     echo "       ./command-center briefing                        # Generate executive dossier"
+    echo "       ./command-center ssl <domain>                    # Inspect SSL/TLS certificate"
+    echo "       ./command-center ports                           # Audit localhost listening ports"
     echo "       ./command-center speak                           # Speak audio executive brief aloud"
     echo "       ./command-center hardware                        # Display macOS hardware & power HUD"
     echo "       ./command-center webhook-test [source]           # Test inbound webhook ingestion & SSE"

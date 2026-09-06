@@ -997,6 +997,44 @@
               <span class="footer-meta mono">PUBLIC FORUM &amp; TECH NEWS ORACLES (HACKER NEWS ALGOLIA)</span>
             </footer>
           </article>
+
+          <!-- Widget 5: SSL/TLS Certificate Sentinel [Span 6] -->
+          <article class="slab-panel span-6" id="osintSslPanel" data-service="osint">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">OSINT // 05</span>
+                <h2 class="slab-title">SSL / TLS CERTIFICATE SENTINEL</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="status-text mono" id="osintSslStatus" style="color:var(--gold);">TLS ACTIVE</span>
+              </div>
+            </header>
+            <div class="slab-body" id="osintSslContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PORT 443 HANDSHAKE &bull; REAL-TIME EXPIRATION SENTINEL</span>
+            </footer>
+          </article>
+
+          <!-- Widget 6: Localhost Listening Ports & Security Audit [Span 6] -->
+          <article class="slab-panel span-6" id="osintPortsPanel" data-service="osint">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">OSINT // 06</span>
+                <h2 class="slab-title">LOCALHOST PORT &amp; PROCESS AUDIT</h2>
+              </div>
+              <div class="slab-actions">
+                <button class="mini-btn mono" onclick="CommandCenter.auditListeningPorts()">SCAN PORTS</button>
+              </div>
+            </header>
+            <div class="slab-body" id="osintPortsContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">NATIVE LSOF TCP LISTEN &bull; WAN EXPOSURE SENTINEL</span>
+            </footer>
+          </article>
         </section>
 
         <!-- ======================================================== -->

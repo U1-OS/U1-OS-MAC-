@@ -3406,6 +3406,11 @@ const CommandCenter = (() => {
     brandKeyword: 'Command Center',
     brandMentions: [],
     brandLoading: false,
+    sslDomain: 'apple.com',
+    sslResult: null,
+    sslLoading: false,
+    portsResult: null,
+    portsLoading: false,
     initialized: false
   };
 
@@ -3658,6 +3663,109 @@ const CommandCenter = (() => {
       `;
     }
 
+    // 6. Render Widget 5: SSL / TLS Certificate Sentinel
+    const sslContainer = document.getElementById('osintSslContainer');
+    if (sslContainer) {
+      const ssl = osintLocalState.sslResult || d.last_ssl;
+      sslContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="osint-search-bar">
+            <input type="text" id="osintSslInput" class="mono form-input" value="${escapeHtml(osintLocalState.sslDomain)}" placeholder="Enter domain (e.g. apple.com, stripe.com)..." oninput="osintLocalState.sslDomain = this.value">
+            <button class="btn btn-gold mono" style="font-size:11px;" onclick="CommandCenter.inspectSslCertificate()">
+              ${osintLocalState.sslLoading ? '[CONNECTING...]' : 'VALIDATE SSL &rarr;'}
+            </button>
+          </div>
+          <div class="osint-pill-row">
+            <span class="mono" style="font-size:10px; color:var(--text-muted); align-self:center;">QUICK CHECK:</span>
+            <span class="studio-pill mono" style="font-size:10px; padding:2px 6px;" onclick="CommandCenter.inspectSslCertificate('apple.com')">apple.com</span>
+            <span class="studio-pill mono" style="font-size:10px; padding:2px 6px;" onclick="CommandCenter.inspectSslCertificate('stripe.com')">stripe.com</span>
+            <span class="studio-pill mono" style="font-size:10px; padding:2px 6px;" onclick="CommandCenter.inspectSslCertificate('github.com')">github.com</span>
+          </div>
+
+          <div style="background:var(--bg-core); border:1px solid var(--border-subtle); padding:10px; border-radius:2px;">
+            ${ssl ? `
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid var(--border-subtle); padding-bottom:6px;">
+                <div>
+                  <span class="mono" style="font-size:12px; font-weight:700; color:var(--gold);">${escapeHtml(ssl.domain)}</span>
+                  <span class="mono" style="font-size:10px; color:var(--text-muted); margin-left:8px;">${escapeHtml(ssl.issuer)}</span>
+                </div>
+                <span class="mono" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:2px; ${ssl.risk_level === 'CRITICAL' ? 'background:rgba(239,68,68,0.2); color:#EF4444; border:1px solid #EF4444;' : (ssl.risk_level === 'EXPIRING_SOON' ? 'background:rgba(245,158,11,0.2); color:#F59E0B; border:1px solid #F59E0B;' : 'background:rgba(16,185,129,0.2); color:#10B981; border:1px solid #10B981;')}">
+                  ${ssl.days_left} DAYS LEFT &bull; ${escapeHtml(ssl.risk_level)}
+                </span>
+              </div>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:10.5px;" class="mono">
+                <div><span style="color:var(--text-muted);">Subject CN:</span> <span style="color:var(--text-primary);">${escapeHtml(ssl.subject_cn)}</span></div>
+                <div><span style="color:var(--text-muted);">TLS Protocol:</span> <span style="color:var(--text-primary);">${escapeHtml(ssl.tls_version)}</span></div>
+                <div><span style="color:var(--text-muted);">Valid Until:</span> <span style="color:var(--text-primary);">${escapeHtml(ssl.valid_to)}</span></div>
+                <div><span style="color:var(--text-muted);">Cipher:</span> <span style="color:var(--text-primary);">${escapeHtml(ssl.cipher)}</span></div>
+              </div>
+              ${ssl.sans && ssl.sans.length > 0 ? `
+                <div class="mono" style="font-size:9.5px; color:var(--text-muted); margin-top:8px;">
+                  SANs: ${escapeHtml(ssl.sans.slice(0, 4).join(', '))}${ssl.sans.length > 4 ? ` (+${ssl.sans.length - 4} more)` : ''}
+                </div>
+              ` : ''}
+            ` : `
+              <div class="mono" style="font-size:10.5px; color:var(--text-muted); padding:16px; text-align:center;">
+                Enter domain to validate SSL/TLS certificate chain and expiration countdown.
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    // 7. Render Widget 6: Localhost Listening Ports & Process Audit
+    const portsContainer = document.getElementById('osintPortsContainer');
+    if (portsContainer) {
+      const portsData = osintLocalState.portsResult || d.last_ports;
+      portsContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${portsData ? `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-slab-elevated); border:1px solid var(--border-subtle); padding:6px 10px; border-radius:2px;">
+              <span class="mono" style="font-size:10px; color:var(--text-muted);">ACTIVE SOCKETS: <strong style="color:var(--text-primary);">${portsData.total_open_ports}</strong></span>
+              <div style="display:flex; gap:10px;">
+                <span class="mono" style="font-size:10px; color:var(--gold);">LOCAL: ${portsData.localhost_count}</span>
+                <span class="mono" style="font-size:10px; color:${portsData.exposed_count > 0 ? '#F59E0B' : 'var(--text-muted)'};">EXPOSED: ${portsData.exposed_count}</span>
+              </div>
+            </div>
+
+            <div style="background:var(--bg-core); border:1px solid var(--border-subtle); max-height:220px; overflow-y:auto;">
+              <table class="osint-records-table" style="width:100%; font-size:10.5px;">
+                <thead>
+                  <tr>
+                    <th>PORT</th>
+                    <th>BINDING</th>
+                    <th>PROCESS</th>
+                    <th>PID</th>
+                    <th>SECURITY</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${(portsData.ports || []).map(p => `
+                    <tr>
+                      <td style="color:var(--gold); font-weight:700;">${p.port}</td>
+                      <td style="color:var(--text-muted);">${escapeHtml(p.bind_str)}</td>
+                      <td style="color:var(--text-primary); font-weight:600;">${escapeHtml(p.command)}</td>
+                      <td style="color:var(--text-muted);">${p.pid}</td>
+                      <td>
+                        <span class="mono" style="font-size:9px; padding:1px 5px; border-radius:2px; ${p.localhost_only ? 'background:rgba(16,185,129,0.15); color:#10B981;' : 'background:rgba(245,158,11,0.15); color:#F59E0B;'}">
+                          ${escapeHtml(p.exposure)}
+                        </span>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : `
+            <div class="mono" style="font-size:10.5px; color:var(--text-muted); padding:24px; text-align:center; background:var(--bg-core); border:1px solid var(--border-subtle);">
+              Click "SCAN PORTS" to audit local listening sockets and WAN exposures via native macOS lsof.
+            </div>
+          `}
+        </div>
+      `;
+    }
+
     osintLocalState.initialized = true;
   }
 
@@ -3839,6 +3947,75 @@ const CommandCenter = (() => {
 
   function refreshBrandMentions() {
     scanBrandKeyword();
+  }
+
+  function inspectSslCertificate(dom) {
+    const target = dom || document.getElementById('osintSslInput')?.value.trim() || osintLocalState.sslDomain;
+    if (!target) {
+      showNotification('Please enter a domain for SSL validation');
+      return;
+    }
+
+    osintLocalState.sslDomain = target;
+    osintLocalState.sslLoading = true;
+    showNotification(`Validating Port 443 TLS certificate for ${target}...`);
+
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'osint',
+        action: 'inspect_ssl',
+        payload: { domain: target }
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      osintLocalState.sslLoading = false;
+      if (res.success) {
+        osintLocalState.sslResult = res.result;
+        showNotification(`SSL Validated: ${res.result.issuer} (${res.result.days_left} days left)`);
+      } else {
+        showNotification(`SSL Error: ${res.error}`, 'error');
+      }
+      fetchState();
+    })
+    .catch(err => {
+      osintLocalState.sslLoading = false;
+      showNotification(`Network error: ${err.message}`, 'error');
+      fetchState();
+    });
+  }
+
+  function auditListeningPorts() {
+    osintLocalState.portsLoading = true;
+    showNotification('Auditing localhost listening sockets via native macOS lsof...');
+
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'osint',
+        action: 'audit_ports',
+        payload: {}
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      osintLocalState.portsLoading = false;
+      if (res.success) {
+        osintLocalState.portsResult = res.result;
+        showNotification(`Port Audit Complete: ${res.result.total_open_ports} open sockets, ${res.result.exposed_count} exposed`);
+      } else {
+        showNotification(`Audit Error: ${res.error}`, 'error');
+      }
+      fetchState();
+    })
+    .catch(err => {
+      osintLocalState.portsLoading = false;
+      showNotification(`Network error: ${err.message}`, 'error');
+      fetchState();
+    });
   }
 
   /* ========================================================
@@ -4062,6 +4239,8 @@ const CommandCenter = (() => {
     { group: 'ACTIONS', id: 'cron', title: 'Trigger Hourly DNS Audit Task', desc: 'Execute scheduled automation cron job on-demand', shortcut: 'CRON', action: () => triggerSchedulerJob('hourly_dns_audit') },
     { group: 'ACTIONS', id: 'ollama', title: 'Dispatch Local Offline Model (Ollama)', desc: 'Run air-gapped zero-cost local inference', shortcut: 'LOCAL', action: () => { dispatchOllamaPrompt(); } },
     { group: 'ACTIONS', id: 'menubar', title: 'macOS Menu Bar Extra', desc: 'Query SwiftBar / BitBar feeder stream', shortcut: 'BAR', action: () => showMenuBarInfo() },
+    { group: 'ACTIONS', id: 'ssl', title: 'Inspect SSL / TLS Certificate', desc: 'Port 443 handshake & certificate expiry sentinel', shortcut: 'SSL', action: () => { switchSection('osint'); inspectSslCertificate(); } },
+    { group: 'ACTIONS', id: 'ports', title: 'Audit Localhost Listening Ports', desc: 'Scan local processes and open sockets via lsof', shortcut: 'PORTS', action: () => { switchSection('osint'); auditListeningPorts(); } },
 
     // Theme & Preferences
     { group: 'THEME', id: 'theme_gold', title: 'Theme: Classic Dark Gold (#E9B44C)', desc: 'Default industrial signature aesthetic', shortcut: 'GOLD', action: () => setThemeAccent('#E9B44C') },
@@ -5259,6 +5438,8 @@ STATUS: RESOLVED // NOMINAL
     scanBrandKeyword,
     filterBrandKeyword,
     refreshBrandMentions,
+    inspectSslCertificate,
+    auditListeningPorts,
     onSettingKeyInput,
     toggleFieldVisibility,
     setSettingsCategory,
