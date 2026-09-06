@@ -51,5 +51,8 @@
     "hibp": {
       "api_key": ""
     }
+  },
+  "sections_enabled": {
+    "gaming": true
   }
 }

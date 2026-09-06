@@ -489,73 +489,453 @@ const CommandCenter = (() => {
     }
   }
 
+  const settingsLocalState = {
+    initialized: false,
+    filterCategory: 'ALL',
+    visibleFields: {},
+    keyDrafts: {},
+    gitChecking: false,
+    gitPulling: false,
+    cachedConfig: null
+  };
+
+  const vaultSchema = [
+    {
+      id: 'stripe',
+      name: 'STRIPE REVENUE & BILLING',
+      category: 'FINANCE',
+      fields: [
+        { key: 'secret_key', label: 'SECRET KEY', placeholder: 'sk_live_... or sk_test_...' },
+        { key: 'currency', label: 'CURRENCY', placeholder: 'USD / AUD / EUR' }
+      ]
+    },
+    {
+      id: 'gmail',
+      name: 'GMAIL PRIORITY INBOX & COMMS',
+      category: 'COMMS',
+      fields: [
+        { key: 'client_id', label: 'CLIENT ID', placeholder: 'apps.googleusercontent.com' },
+        { key: 'client_secret', label: 'CLIENT SECRET', placeholder: 'GOCSPX-...' },
+        { key: 'refresh_token', label: 'REFRESH TOKEN', placeholder: '1//0...' }
+      ]
+    },
+    {
+      id: 'google_calendar',
+      name: 'GOOGLE CALENDAR AGENDA',
+      category: 'COMMS',
+      fields: [
+        { key: 'calendar_id', label: 'CALENDAR ID', placeholder: 'primary or email@domain.com' }
+      ]
+    },
+    {
+      id: 'twilio',
+      name: 'TWILIO SMS & VOICE TRUNK',
+      category: 'COMMS',
+      fields: [
+        { key: 'account_sid', label: 'ACCOUNT SID', placeholder: 'AC...' },
+        { key: 'auth_token', label: 'AUTH TOKEN', placeholder: '32-char auth token' },
+        { key: 'from_number', label: 'FROM PHONE NUMBER', placeholder: '+1XXXXXXXXXX' }
+      ]
+    },
+    {
+      id: 'anthropic',
+      name: 'ANTHROPIC CLAUDE 3.5 SONNET',
+      category: 'AI & MEDIA',
+      fields: [
+        { key: 'api_key', label: 'API KEY', placeholder: 'sk-ant-...' }
+      ]
+    },
+    {
+      id: 'openai',
+      name: 'OPENAI GPT-4o ENGINE',
+      category: 'AI & MEDIA',
+      fields: [
+        { key: 'api_key', label: 'API KEY', placeholder: 'sk-proj-... or sk-...' }
+      ]
+    },
+    {
+      id: 'canva',
+      name: 'CANVA CONNECT DESIGN STUDIO',
+      category: 'AI & MEDIA',
+      fields: [
+        { key: 'api_key', label: 'API KEY / CLIENT ID', placeholder: 'Canva Developer Key' }
+      ]
+    },
+    {
+      id: 'elevenlabs',
+      name: 'ELEVENLABS NEURAL TTS',
+      category: 'AI & MEDIA',
+      fields: [
+        { key: 'api_key', label: 'API KEY', placeholder: 'ElevenLabs API Key' }
+      ]
+    },
+    {
+      id: 'pexels',
+      name: 'PEXELS LICENSE-CLEAR MEDIA',
+      category: 'AI & MEDIA',
+      fields: [
+        { key: 'api_key', label: 'API KEY', placeholder: 'Pexels API Key' }
+      ]
+    },
+    {
+      id: 'hibp',
+      name: 'HAVEIBEENPWNED BREACH AUDITOR',
+      category: 'GAMING & OSINT',
+      fields: [
+        { key: 'api_key', label: 'API KEY', placeholder: 'HIBP Commercial API Key' }
+      ]
+    },
+    {
+      id: 'steamworks',
+      name: 'STEAMWORKS PUBLISHER API',
+      category: 'GAMING & OSINT',
+      fields: [
+        { key: 'app_id', label: 'STEAM APP ID', placeholder: 'e.g. 480 or puzzle game app ID' },
+        { key: 'publisher_key', label: 'PUBLISHER WEB API KEY', placeholder: 'Key' }
+      ]
+    },
+    {
+      id: 'app_store_connect',
+      name: 'APPLE APP STORE CONNECT',
+      category: 'GAMING & OSINT',
+      fields: [
+        { key: 'issuer_id', label: 'ISSUER ID', placeholder: 'UUID format' },
+        { key: 'key_id', label: 'KEY ID', placeholder: '10-char Key ID' }
+      ]
+    }
+  ];
+
+  function updateRailNavigationVisibility(sectionsEnabled) {
+    if (!sectionsEnabled) return;
+    const navMap = {
+      home: 'nav-home',
+      comms: 'nav-comms',
+      finance: 'nav-finance',
+      studio: 'nav-studio',
+      ai_workbench: 'nav-ai',
+      deploy: 'nav-deploy',
+      gaming: 'nav-gaming',
+      osint: 'nav-osint',
+      settings: 'nav-settings'
+    };
+
+    Object.entries(navMap).forEach(([sec, navId]) => {
+      const el = document.getElementById(navId);
+      if (el) {
+        const isEnabled = sectionsEnabled[sec] !== false;
+        el.style.display = isEnabled ? 'flex' : 'none';
+      }
+    });
+  }
+
   function renderSettingsPanel(settings) {
-    const container = document.getElementById('settingsContainer');
-    if (!container) return;
+    if (!settings) return;
+    const d = settings.data || {};
+    const integrations = d.integrations || {};
+    const updater = d.updater || {};
+    const sectionsEnabled = d.sections_enabled || {};
+    const prefs = d.system_preferences || {};
+    const guide = d.setup_reference_guide || [];
+    const env = d.server_environment || {};
 
-    fetch('/api/config')
-      .then(r => r.json())
-      .then(cfg => {
-        const intel = cfg.intelligence || {};
-        const integ = cfg.integrations || {};
+    // 0. Update rail visibility
+    updateRailNavigationVisibility(sectionsEnabled);
 
-        container.innerHTML = `
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-            <!-- Integration Keys Form -->
-            <div style="display:flex; flex-direction:column; gap:16px;">
-              <h3 style="font-family:var(--font-display); font-size:13px; color:var(--gold); letter-spacing:0.06em;">INTEGRATION API KEYS</h3>
-              
-              <div class="form-group">
-                <label class="mono" style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">STRIPE SECRET KEY</label>
-                <input type="password" id="inputStripeKey" class="mono form-input" placeholder="sk_live_..." value="${escapeHtml(integ.stripe?.secret_key || '')}">
-              </div>
+    // Update Header Indicators
+    const gitDot = document.getElementById('settingsGitDot');
+    const gitBranch = document.getElementById('settingsGitBranch');
+    if (gitDot && gitBranch) {
+      gitDot.className = `status-dot ${updater.has_git ? 'active' : 'unconfigured'}`;
+      gitBranch.textContent = `BRANCH: ${(updater.branch || 'MAIN').toUpperCase()}`;
+    }
 
-              <div class="form-group">
-                <label class="mono" style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">ANTHROPIC API KEY</label>
-                <input type="password" id="inputAnthropicKey" class="mono form-input" placeholder="sk-ant-..." value="${escapeHtml(integ.anthropic?.api_key || '')}">
-              </div>
+    if (!settingsLocalState.cachedConfig) {
+      fetch('/api/config')
+        .then(r => r.json())
+        .then(cfg => {
+          settingsLocalState.cachedConfig = cfg;
+          renderSettingsWidgets(d, cfg);
+        })
+        .catch(() => renderSettingsWidgets(d, {}));
+    } else {
+      renderSettingsWidgets(d, settingsLocalState.cachedConfig);
+    }
+  }
 
-              <div class="form-group">
-                <label class="mono" style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">OPENAI API KEY</label>
-                <input type="password" id="inputOpenAIKey" class="mono form-input" placeholder="sk-..." value="${escapeHtml(integ.openai?.api_key || '')}">
-              </div>
+  function renderSettingsWidgets(d, cfg) {
+    const integrations = d.integrations || {};
+    const updater = d.updater || {};
+    const sectionsEnabled = d.sections_enabled || {};
+    const prefs = d.system_preferences || {};
+    const guide = d.setup_reference_guide || [];
+    const env = d.server_environment || {};
+    const integConfig = cfg.integrations || {};
 
-              <div class="form-group">
-                <label class="mono" style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">TWILIO ACCOUNT SID</label>
-                <input type="password" id="inputTwilioSid" class="mono form-input" placeholder="AC..." value="${escapeHtml(integ.twilio?.account_sid || '')}">
-              </div>
+    // 1. Render Widget 1: Integration Credential Vault
+    const vaultContainer = document.getElementById('settingsVaultContainer');
+    if (vaultContainer) {
+      const categories = ['ALL', 'FINANCE', 'COMMS', 'AI & MEDIA', 'GAMING & OSINT'];
+      const filteredSchema = vaultSchema.filter(item => {
+        if (settingsLocalState.filterCategory === 'ALL') return true;
+        return item.category === settingsLocalState.filterCategory;
+      });
 
-              <div class="form-group">
-                <label class="mono" style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">TWILIO AUTH TOKEN</label>
-                <input type="password" id="inputTwilioToken" class="mono form-input" placeholder="..." value="${escapeHtml(integ.twilio?.auth_token || '')}">
-              </div>
+      vaultContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <!-- Category Filter Pills -->
+          <div class="osint-pill-row">
+            <span class="mono" style="font-size:10px; color:var(--text-muted); align-self:center;">FILTER:</span>
+            ${categories.map(cat => `
+              <span class="studio-pill mono ${settingsLocalState.filterCategory === cat ? 'active' : ''}" style="font-size:10px; padding:2px 8px;" onclick="CommandCenter.setSettingsCategory('${cat}')">
+                ${cat}
+              </span>
+            `).join('')}
+          </div>
 
-              <button class="btn btn-gold" style="align-self:flex-start; margin-top:8px;" onclick="CommandCenter.saveApiKeys()">SAVE CONFIGURATION</button>
+          <!-- Key Cards Grid -->
+          <div class="settings-vault-grid">
+            ${filteredSchema.map(item => {
+              const svcStatus = integrations[item.id] || {};
+              const isConfigured = Boolean(svcStatus.configured);
+              return `
+                <div class="settings-key-card ${isConfigured ? 'active' : ''}">
+                  <div class="settings-key-header">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span class="status-dot ${isConfigured ? 'active' : 'unconfigured'}"></span>
+                      <span class="settings-key-title">${escapeHtml(item.name)}</span>
+                    </div>
+                    <span class="mono" style="font-size:10px; font-weight:700; color:${isConfigured ? 'var(--gold)' : 'var(--text-muted)'};">
+                      ${isConfigured ? 'ACTIVE // CONNECTED' : `[UNCONFIGURED]`}
+                    </span>
+                  </div>
+
+                  <div style="display:flex; flex-direction:column; gap:6px;">
+                    ${item.fields.map(f => {
+                      const compoundId = `${item.id}.${f.key}`;
+                      const draftVal = settingsLocalState.keyDrafts[compoundId];
+                      const currentVal = draftVal !== undefined ? draftVal : (integConfig[item.id]?.[f.key] || '');
+                      const isVisible = Boolean(settingsLocalState.visibleFields[compoundId]);
+                      return `
+                        <div class="settings-field-row">
+                          <label class="mono" style="font-size:10px; color:var(--text-secondary);">${escapeHtml(f.label)}</label>
+                          <div class="password-input-wrap">
+                            <input type="${isVisible ? 'text' : 'password'}" id="input_${compoundId}" class="mono form-input" style="font-size:11px;" placeholder="${escapeHtml(f.placeholder)}" value="${escapeHtml(currentVal)}" oninput="CommandCenter.onSettingKeyInput('${item.id}', '${f.key}', this.value)">
+                            <button class="password-toggle-btn mono" id="btn_${compoundId}" onclick="CommandCenter.toggleFieldVisibility('${compoundId}')">
+                              ${isVisible ? 'HIDE' : 'SHOW'}
+                            </button>
+                          </div>
+                          <span class="mono" style="font-size:9.5px; color:var(--text-muted);">${item.id}.${f.key}</span>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Bottom Action Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-core); border:1px solid var(--border-subtle); padding:10px 14px;">
+            <span class="mono" style="font-size:10.5px; color:var(--text-muted);">MODIFICATIONS BUFFERED IN MEMORY BEFORE DISK WRITE</span>
+            <button class="btn btn-gold mono" style="font-size:11px;" onclick="CommandCenter.commitSettingsKeys()">
+              COMMIT KEYS &amp; HOT-RELOAD &rarr;
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. Render Widget 2: Git Auto-Updater & Environment
+    const updaterContainer = document.getElementById('settingsUpdaterContainer');
+    if (updaterContainer) {
+      updaterContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <!-- Git Telemetry Box -->
+          <div class="git-telemetry-box">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="mono" style="font-size:11px; font-weight:700; color:var(--gold);">GIT WORKING TREE TELEMETRY</span>
+              <span class="mono" style="font-size:10px; color:var(--text-muted);">TARGET: LOCAL HEAD</span>
             </div>
 
-            <!-- Auto-Updater & Environment -->
-            <div style="display:flex; flex-direction:column; gap:16px;">
-              <h3 style="font-family:var(--font-display); font-size:13px; color:var(--gold); letter-spacing:0.06em;">SYSTEM AUTO-UPDATER</h3>
-              
-              <div style="padding:16px; background:var(--bg-slab-elevated); border:1px solid var(--border-subtle); border-radius:2px;">
-                <div style="font-family:var(--font-display); font-size:12px; font-weight:700;">COMMAND CENTER REPO SYNC</div>
-                <div class="mono" style="font-size:11px; color:var(--text-muted); margin-top:4px;">Branch: main &bull; Upstream: origin/main</div>
-                <div style="margin-top:14px; display:flex; gap:10px;">
-                  <button class="btn btn-secondary" onclick="CommandCenter.checkRepoUpdates()">CHECK FOR UPDATES</button>
-                  <button class="btn btn-gold" onclick="CommandCenter.confirmPullUpdates()">PULL &amp; REBOOT</button>
-                </div>
+            <div class="git-commit-banner">
+              <div style="font-weight:700; display:flex; justify-content:space-between;">
+                <span>HEAD: ${escapeHtml(updater.commit || 'unknown')}</span>
+                <span>${escapeHtml(updater.commit_time || '')}</span>
+              </div>
+              <div style="color:var(--text-primary); margin-top:2px; font-size:10.5px;">"${escapeHtml(updater.commit_msg || 'Command Center Release')}"</div>
+            </div>
+
+            <div class="git-stat-row">
+              <span class="git-stat-label">ACTIVE BRANCH</span>
+              <span class="git-stat-value" style="color:var(--gold);">${escapeHtml(updater.branch || 'main')}</span>
+            </div>
+
+            <div class="git-stat-row">
+              <span class="git-stat-label">WORKING TREE STATUS</span>
+              <span class="git-stat-value" style="color:${updater.dirty ? '#E58C42' : '#74AA9C'};">
+                ${updater.dirty ? `[DIRTY // ${updater.dirty_files_count || '1+'} UNCOMMITTED FILES]` : '[CLEAN // SYNCHRONIZED]'}
+              </span>
+            </div>
+
+            <div class="git-stat-row">
+              <span class="git-stat-label">UPSTREAM REMOTE</span>
+              <span class="git-stat-value">${updater.remote_configured ? escapeHtml(updater.remote_url) : '[STANDALONE LOCAL // NO WAN REMOTE]'}</span>
+            </div>
+
+            <div class="git-stat-row" style="border-bottom:none; padding-bottom:0;">
+              <span class="git-stat-label">RELEASE STATUS</span>
+              <span class="git-stat-value" style="color:var(--gold);">v1.0.0-rc1 OPERATING SYSTEM</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:6px;">
+              <button class="btn btn-secondary mono" style="font-size:11px;" onclick="CommandCenter.checkRepoUpdates()">
+                ${settingsLocalState.gitChecking ? '[CHECKING...]' : 'CHECK REPO STATUS'}
+              </button>
+              <button class="btn btn-gold mono" style="font-size:11px;" onclick="CommandCenter.confirmPullUpdates()">
+                ${settingsLocalState.gitPulling ? '[PULLING...]' : 'PULL &amp; REBOOT &rarr;'}
+              </button>
+            </div>
+          </div>
+
+          <!-- Environment Specifications Card -->
+          <div style="background:var(--bg-core); border:1px solid var(--border-subtle); padding:12px; display:flex; flex-direction:column; gap:6px;">
+            <span class="mono" style="font-size:10.5px; font-weight:700; color:var(--text-primary); margin-bottom:2px;">LOCAL RUNTIME ENVIRONMENT</span>
+            <div class="git-stat-row">
+              <span class="git-stat-label">NETWORK BINDING</span>
+              <span class="git-stat-value mono">${escapeHtml(env.binding || '127.0.0.1:8787')}</span>
+            </div>
+            <div class="git-stat-row">
+              <span class="git-stat-label">PLATFORM / ARCH</span>
+              <span class="git-stat-value mono">${escapeHtml(env.os_platform || 'macOS Darwin arm64')}</span>
+            </div>
+            <div class="git-stat-row">
+              <span class="git-stat-label">PYTHON RUNTIME</span>
+              <span class="git-stat-value mono">Python ${escapeHtml(env.python_version || '3.x')}</span>
+            </div>
+            <div class="git-stat-row" style="border-bottom:none; padding-bottom:0;">
+              <span class="git-stat-label">LOCAL CONFIG FILE</span>
+              <span class="git-stat-value mono" style="font-size:10px; color:var(--gold);">config.json</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. Render Widget 3: Subsystem Toggles & UI Preferences
+    const prefsContainer = document.getElementById('settingsPrefsContainer');
+    if (prefsContainer) {
+      const allSections = [
+        { id: 'home', label: 'HOME OS' },
+        { id: 'comms', label: 'COMMS' },
+        { id: 'finance', label: 'FINANCE' },
+        { id: 'studio', label: 'STUDIO' },
+        { id: 'ai_workbench', label: 'AI WORKBENCH' },
+        { id: 'deploy', label: 'DEPLOY' },
+        { id: 'gaming', label: 'GAMING' },
+        { id: 'osint', label: 'OSINT' },
+        { id: 'settings', label: 'SETTINGS' }
+      ];
+
+      const currentAccent = prefs.accent_color || '#E9B44C';
+      const isReduced = Boolean(prefs.reduced_motion);
+      const pollSec = prefs.refresh_interval_sec || 5;
+
+      prefsContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <!-- Section Visibility Sub-panel -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span class="mono" style="font-size:11px; font-weight:700; color:var(--gold);">SUBSYSTEM VISIBILITY TOGGLES</span>
+              <span class="mono" style="font-size:10px; color:var(--text-muted);">UPDATES LEFT RAIL</span>
+            </div>
+            <div class="subsystem-toggle-grid">
+              ${allSections.map(sec => {
+                const isEnabled = sectionsEnabled[sec.id] !== false;
+                return `
+                  <div class="toggle-card">
+                    <span class="toggle-label">${escapeHtml(sec.label)}</span>
+                    <label class="toggle-switch">
+                      <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="CommandCenter.toggleSectionVisibility('${sec.id}', this.checked)">
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Display & Theme Settings -->
+          <div style="background:var(--bg-core); border:1px solid var(--border-subtle); padding:12px; display:flex; flex-direction:column; gap:10px;">
+            <span class="mono" style="font-size:11px; font-weight:700; color:var(--gold);">THEME &amp; DISPLAY PREFERENCES</span>
+            
+            <!-- Accent Swatches -->
+            <div>
+              <span class="mono" style="font-size:10px; color:var(--text-secondary); display:block; margin-bottom:4px;">ACCENT ILLUMINATION PALETTE:</span>
+              <div class="theme-swatch-row">
+                <div class="theme-swatch ${currentAccent === '#E9B44C' ? 'active' : ''}" style="background:#E9B44C;" title="Classic Gold #E9B44C" onclick="CommandCenter.setThemeAccent('#E9B44C')"></div>
+                <div class="theme-swatch ${currentAccent === '#F59E0B' ? 'active' : ''}" style="background:#F59E0B;" title="Amber Flare #F59E0B" onclick="CommandCenter.setThemeAccent('#F59E0B')"></div>
+                <div class="theme-swatch ${currentAccent === '#D97706' ? 'active' : ''}" style="background:#D97706;" title="Deep Bronze #D97706" onclick="CommandCenter.setThemeAccent('#D97706')"></div>
+                <div class="theme-swatch ${currentAccent === '#10B981' ? 'active' : ''}" style="background:#10B981;" title="Cyber Emerald #10B981" onclick="CommandCenter.setThemeAccent('#10B981')"></div>
+                <span class="mono" style="font-size:10.5px; color:var(--gold); margin-left:8px; font-weight:700;">${currentAccent}</span>
+              </div>
+            </div>
+
+            <!-- Motion & Interval Row -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:4px;">
+              <div class="toggle-card">
+                <span class="toggle-label">REDUCED MOTION</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" ${isReduced ? 'checked' : ''} onchange="CommandCenter.toggleReducedMotion(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
               </div>
 
-              <h3 style="font-family:var(--font-display); font-size:13px; color:var(--gold); letter-spacing:0.06em; margin-top:10px;">ENVIRONMENT</h3>
-              <div class="mono" style="font-size:11px; color:var(--text-secondary); line-height:1.6; background:#08090B; padding:12px; border:1px solid var(--border-subtle);">
-                <div>BINDING: 127.0.0.1:8787 (LOCAL ONLY)</div>
-                <div>CONFIG: /scratch/command-center/config.json</div>
-                <div>THEME: #08090B DARK GOLD #E9B44C</div>
+              <div style="display:flex; flex-direction:column; gap:3px;">
+                <label class="mono" style="font-size:10px; color:var(--text-secondary);">POLLING INTERVAL</label>
+                <select class="mono ai-select" style="font-size:10.5px; padding:4px;" onchange="CommandCenter.setPollingInterval(this.value)">
+                  <option value="2" ${pollSec === 2 ? 'selected' : ''}>2s (High-Frequency)</option>
+                  <option value="5" ${pollSec === 5 ? 'selected' : ''}>5s (Balanced / Standard)</option>
+                  <option value="10" ${pollSec === 10 ? 'selected' : ''}>10s (Eco Mode)</option>
+                </select>
               </div>
             </div>
           </div>
-        `;
-      });
+        </div>
+      `;
+    }
+
+    // 4. Render Widget 4: Master API Key Setup Directory & Manual
+    const guideContainer = document.getElementById('settingsGuideContainer');
+    if (guideContainer) {
+      guideContainer.innerHTML = `
+        <div class="guide-list">
+          ${guide.map(item => `
+            <div class="guide-item">
+              <div class="guide-item-top">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="guide-name">${escapeHtml(item.name)}</span>
+                  <span class="guide-category">${escapeHtml(item.category)}</span>
+                </div>
+                <a href="${escapeHtml(item.portal_url)}" target="_blank" rel="noopener noreferrer" class="guide-portal-link">
+                  OPEN PORTAL &rarr;
+                </a>
+              </div>
+
+              <div class="guide-desc">${escapeHtml(item.guide)}</div>
+
+              <div class="guide-meta">
+                <span class="guide-key-path mono">${escapeHtml(item.local_path)}</span>
+                <button class="mini-btn mono" onclick="CommandCenter.copyReferencePath('${escapeHtml(item.local_path)}')">
+                  COPY PATH
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    settingsLocalState.initialized = true;
   }
 
   function renderCommsSection(comms) {
@@ -3300,56 +3680,243 @@ const CommandCenter = (() => {
     els.confirmModal.classList.add('open');
   }
 
+  function openConfirmModal(opts) {
+    if (typeof opts === 'object' && !Array.isArray(opts)) {
+      showConfirmModal(opts.title, opts.desc, opts.code, opts.onConfirm);
+    } else {
+      showConfirmModal(...arguments);
+    }
+  }
+
   /* ========================================================
-     ACTIONS & DISPATCHERS
+     SETTINGS & SYSTEM ACTIONS
      ======================================================== */
-  function saveApiKeys() {
-    const stripe = document.getElementById('inputStripeKey')?.value.trim();
-    const anthropic = document.getElementById('inputAnthropicKey')?.value.trim();
-    const openai = document.getElementById('inputOpenAIKey')?.value.trim();
-    const twilioSid = document.getElementById('inputTwilioSid')?.value.trim();
-    const twilioToken = document.getElementById('inputTwilioToken')?.value.trim();
+  function onSettingKeyInput(serviceId, keyName, value) {
+    const compound = `${serviceId}.${keyName}`;
+    settingsLocalState.keyDrafts[compound] = value;
+  }
 
-    const payload = {
-      integrations: {
-        stripe: { secret_key: stripe },
-        anthropic: { api_key: anthropic },
-        openai: { api_key: openai },
-        twilio: { account_sid: twilioSid, auth_token: twilioToken }
+  function toggleFieldVisibility(fieldId) {
+    settingsLocalState.visibleFields[fieldId] = !settingsLocalState.visibleFields[fieldId];
+    const inp = document.getElementById(`input_${fieldId}`);
+    const btn = document.getElementById(`btn_${fieldId}`);
+    if (inp && btn) {
+      const isVis = Boolean(settingsLocalState.visibleFields[fieldId]);
+      inp.type = isVis ? 'text' : 'password';
+      btn.textContent = isVis ? 'HIDE' : 'SHOW';
+    }
+  }
+
+  function setSettingsCategory(cat) {
+    settingsLocalState.filterCategory = cat;
+    if (currentState && currentState.services && currentState.services.settings) {
+      renderSettingsPanel(currentState.services.settings);
+    }
+  }
+
+  function commitSettingsKeys() {
+    const keysObj = {};
+    Object.entries(settingsLocalState.keyDrafts).forEach(([k, v]) => {
+      const parts = k.split('.');
+      if (parts.length === 2 && v !== undefined && v !== '') {
+        const [svc, prop] = parts;
+        if (!keysObj[svc]) keysObj[svc] = {};
+        keysObj[svc][prop] = v;
       }
-    };
+    });
 
-    fetch('/api/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(res => {
-      alert(res.success ? 'Configuration updated successfully.' : 'Failed to save configuration.');
-      fetchState();
+    if (Object.keys(keysObj).length === 0) {
+      showNotification('No credential modifications detected.');
+      return;
+    }
+
+    openConfirmModal({
+      title: 'COMMIT INTEGRATION CREDENTIALS',
+      desc: 'Writes API keys to local config.json and performs hot-reload across all active services.',
+      code: `CONFIG TARGET: /scratch/command-center/config.json\nSERVICES MODIFIED: ${Object.keys(keysObj).join(', ')}\nENCRYPTION: LOCAL DISK / STRICT LOCAL FEEDER`,
+      onConfirm: () => {
+        showNotification('Saving credentials and hot-reloading...');
+        fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service: 'settings',
+            action: 'save_keys',
+            payload: { keys: keysObj }
+          })
+        })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showNotification('Credentials updated. Services hot-reloaded.');
+            settingsLocalState.keyDrafts = {};
+            settingsLocalState.cachedConfig = null;
+          } else {
+            showNotification(`Save error: ${res.error}`);
+          }
+          fetchState();
+        })
+        .catch(err => {
+          showNotification(`Network error: ${err.message}`);
+          fetchState();
+        });
+      }
     });
   }
 
   function checkRepoUpdates() {
+    settingsLocalState.gitChecking = true;
+    showNotification('Querying local repository and git tracking...');
+
     fetch('/api/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ service: 'settings', action: 'check_updates' })
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'check_updates'
+      })
     })
     .then(r => r.json())
-    .then(res => alert(res.message || 'Build is up to date.'));
+    .then(res => {
+      settingsLocalState.gitChecking = false;
+      if (res.success) {
+        showNotification(res.message || 'Repository verified.');
+      } else {
+        showNotification(`Git error: ${res.error}`);
+      }
+      fetchState();
+    })
+    .catch(err => {
+      settingsLocalState.gitChecking = false;
+      showNotification(`Git check failed: ${err.message}`);
+      fetchState();
+    });
   }
 
   function confirmPullUpdates() {
-    showConfirmModal(
-      'PULL UPDATES & REBOOT',
-      'This will execute git pull against the Command Center repository and restart the local feeder.',
-      'git pull origin main && ./server.py --reboot',
-      () => {
-        alert('Update command confirmed.');
+    openConfirmModal({
+      title: 'GIT REPOSITORY PULL & REBOOT',
+      desc: 'Executes git pull on local repository, verifies clean working tree, and triggers hot-reload of local feeder.',
+      code: 'git pull origin main\nSAFETY CHECK: LOCAL WORKTREE VERIFIED\nDAEMON: 127.0.0.1:8787 HOT-RESTART',
+      onConfirm: () => {
+        settingsLocalState.gitPulling = true;
+        showNotification('Initiating git pull on main branch...');
+
+        fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service: 'settings',
+            action: 'pull_updates',
+            payload: { confirmed: true }
+          })
+        })
+        .then(r => r.json())
+        .then(res => {
+          settingsLocalState.gitPulling = false;
+          if (res.success) {
+            showNotification(res.message || 'Git update executed.');
+          } else {
+            showNotification(`Pull error: ${res.error}`);
+          }
+          fetchState();
+        })
+        .catch(err => {
+          settingsLocalState.gitPulling = false;
+          showNotification(`Pull failed: ${err.message}`);
+          fetchState();
+        });
       }
-    );
+    });
+  }
+
+  function toggleSectionVisibility(sectionId, enabled) {
+    showNotification(`Updating ${sectionId} visibility...`);
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'toggle_section',
+        payload: { section_id: sectionId, enabled: enabled }
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        showNotification(`Section ${sectionId} ${enabled ? 'enabled' : 'disabled'}`);
+      }
+      fetchState();
+    })
+    .catch(err => {
+      showNotification(`Error: ${err.message}`);
+      fetchState();
+    });
+  }
+
+  function setThemeAccent(hexColor) {
+    document.documentElement.style.setProperty('--gold', hexColor);
+    // Approximate a dim background tint
+    document.documentElement.style.setProperty('--gold-dim', hexColor + '26');
+
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'update_preferences',
+        payload: { preferences: { accent_color: hexColor } }
+      })
+    })
+    .then(() => {
+      showNotification(`Accent color updated: ${hexColor}`);
+      fetchState();
+    });
+  }
+
+  function toggleReducedMotion(enabled) {
+    if (enabled) {
+      document.body.classList.add('reduced-motion');
+    } else {
+      document.body.classList.remove('reduced-motion');
+    }
+
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'update_preferences',
+        payload: { preferences: { reduced_motion: Boolean(enabled) } }
+      })
+    })
+    .then(() => {
+      showNotification(`Reduced motion ${enabled ? 'activated' : 'deactivated'}`);
+      fetchState();
+    });
+  }
+
+  function setPollingInterval(sec) {
+    const val = parseInt(sec, 10) || 5;
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'update_preferences',
+        payload: { preferences: { refresh_interval_sec: val } }
+      })
+    })
+    .then(() => {
+      showNotification(`Feeder interval set to ${val}s`);
+      fetchState();
+    });
+  }
+
+  function copyReferencePath(pathText) {
+    navigator.clipboard.writeText(pathText)
+      .then(() => showNotification(`Copied path: ${pathText}`))
+      .catch(() => showNotification(`Path: ${pathText}`));
   }
 
   function inspectGitHubRepo() {
@@ -3864,7 +4431,16 @@ STATUS: RESOLVED // NOMINAL
     checkBreachAudit,
     scanBrandKeyword,
     filterBrandKeyword,
-    refreshBrandMentions
+    refreshBrandMentions,
+    onSettingKeyInput,
+    toggleFieldVisibility,
+    setSettingsCategory,
+    commitSettingsKeys,
+    toggleSectionVisibility,
+    setThemeAccent,
+    toggleReducedMotion,
+    setPollingInterval,
+    copyReferencePath
   };
 })();
 

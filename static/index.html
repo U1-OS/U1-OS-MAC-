@@ -960,13 +960,66 @@
         <!-- SECTION 9: SETTINGS -->
         <!-- ======================================================== -->
         <section class="section-grid" id="section-settings" data-section-name="Settings">
-          <article class="slab-panel span-12">
+          <!-- Widget 1: Integration Credential Vault -->
+          <article class="slab-panel span-7">
             <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
             <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
             <header class="slab-header">
-              <div class="slab-title-group"><span class="slab-kicker mono">SETTINGS // 01</span><h2 class="slab-title">INTEGRATIONS, KEYS &amp; AUTO-UPDATER</h2></div>
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 01</span>
+                <h2 class="slab-title">INTEGRATION CREDENTIAL VAULT</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="mono" id="settingsVaultStatus" style="font-size:10px; color:var(--text-muted);">LOCAL CONFIG: config.json</span>
+              </div>
             </header>
-            <div class="slab-body" id="settingsContainer"></div>
+            <div class="slab-body" id="settingsVaultContainer"></div>
+          </article>
+
+          <!-- Widget 2: Git Auto-Updater & Environment -->
+          <article class="slab-panel span-5">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 02</span>
+                <h2 class="slab-title">GIT AUTO-UPDATER &amp; ENVIRONMENT</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="status-dot active" id="settingsGitDot"></span>
+                <span class="mono" id="settingsGitBranch" style="font-size:10px; color:var(--gold);">BRANCH: MAIN</span>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsUpdaterContainer"></div>
+          </article>
+
+          <!-- Widget 3: Subsystem Toggles & UI Preferences -->
+          <article class="slab-panel span-5">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 03</span>
+                <h2 class="slab-title">SUBSYSTEM TOGGLES &amp; DISPLAY</h2>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsPrefsContainer"></div>
+          </article>
+
+          <!-- Widget 4: Master API Key Setup Directory -->
+          <article class="slab-panel span-7">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 04</span>
+                <h2 class="slab-title">API KEY SETUP DIRECTORY &amp; MANUAL</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="mono" style="font-size:10.5px; color:var(--gold);">12 OFFICIAL PORTALS</span>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsGuideContainer"></div>
           </article>
         </section>
 
