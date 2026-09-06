@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COMMAND CENTER // macOS Business OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800;900&family=Archivo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="booting">
+  <!-- Ambient background glow layer -->
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <!-- The Business OS Shell -->
+  <div class="os-shell">
+
+    <!-- Top Bezel: Live Intelligence Strip (Persistent Across All Sections) -->
+    <header class="top-bezel" id="topBezel">
+      <div class="bezel-left">
+        <div class="sys-brand">
+          <span class="brand-monogram">CC</span>
+          <span class="brand-divider">/</span>
+          <span class="brand-os">macOS OS</span>
+        </div>
+        <div class="sys-heartbeat" title="Local Feeder: 127.0.0.1:8787">
+          <span class="pulse-dot"></span>
+          <span class="heartbeat-label">FEEDER 8787</span>
+        </div>
+      </div>
+
+      <!-- Live News & Intelligence Ticker Strip -->
+      <div class="bezel-ticker-wrap">
+        <div class="ticker-badge">LIVE INTEL</div>
+        <div class="ticker-viewport" id="tickerViewport">
+          <div class="ticker-content" id="tickerContent">
+            <span class="ticker-item"><span class="t-source">[SYSTEM]</span> Command Center feeder listening on 127.0.0.1:8787</span>
+            <span class="ticker-item"><span class="t-source">[INTEL]</span> Syncing real-time global telemetry feeds...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry Strip: Pool, Weather, Clock -->
+      <div class="bezel-right">
+        <!-- Pool Telemetry -->
+        <div class="bezel-widget pool-widget" id="bezelPool">
+          <svg class="w-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M2 12c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2"/>
+            <path d="M2 17c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2"/>
+          </svg>
+          <span class="widget-val mono" id="poolStatusVal">POOL: UNPAIRED</span>
+        </div>
+
+        <!-- Live Weather Strip -->
+        <div class="bezel-widget weather-widget" id="bezelWeather" title="Click to refresh weather">
+          <svg class="w-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+          </svg>
+          <span class="widget-val mono" id="weatherVal">--°C</span>
+          <span class="widget-sub mono" id="weatherCity">LOCATING</span>
+        </div>
+
+        <!-- Synchronized Clock -->
+        <div class="bezel-widget clock-widget" id="bezelClock">
+          <span class="clock-time mono" id="sysClock">00:00:00</span>
+          <span class="clock-tz mono" id="sysDate">---</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Shell Body: Left Nav Rail + Main Slab Grid Area -->
+    <div class="shell-body">
+
+      <!-- Fixed Left Rail Navigation -->
+      <aside class="left-rail" id="leftRail">
+        <div class="rail-spine-track">
+          <!-- Physical sliding gold indicator spine -->
+          <div class="rail-sliding-spine" id="slidingSpine"></div>
+        </div>
+
+        <nav class="rail-nav" id="railNav" aria-label="Section Navigation">
+          <button class="nav-item active" data-section="home" id="nav-home">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            </span>
+            <span class="nav-label">Home</span>
+          </button>
+
+          <button class="nav-item" data-section="comms" id="nav-comms">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5C2 7 4 5 6.5 5H18c2.5 0 4 2 4 4.5V17z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </span>
+            <span class="nav-label">Comms</span>
+          </button>
+
+          <button class="nav-item" data-section="finance" id="nav-finance">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </span>
+            <span class="nav-label">Finance</span>
+          </button>
+
+          <button class="nav-item" data-section="studio" id="nav-studio">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                <line x1="7" y1="2" x2="7" y2="22"/>
+                <line x1="17" y1="2" x2="17" y2="22"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <line x1="2" y1="7" x2="7" y2="7"/>
+                <line x1="2" y1="17" x2="7" y2="17"/>
+                <line x1="17" y1="17" x2="22" y2="17"/>
+                <line x1="17" y1="7" x2="22" y2="7"/>
+              </svg>
+            </span>
+            <span class="nav-label">Studio</span>
+          </button>
+
+          <button class="nav-item" data-section="ai" id="nav-ai">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            </span>
+            <span class="nav-label">AI Workbench</span>
+          </button>
+
+          <button class="nav-item" data-section="deploy" id="nav-deploy">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
+              </svg>
+            </span>
+            <span class="nav-label">Deploy</span>
+          </button>
+
+          <button class="nav-item" data-section="gaming" id="nav-gaming">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <line x1="6" y1="12" x2="10" y2="12"/>
+                <line x1="8" y1="10" x2="8" y2="14"/>
+                <line x1="15" y1="13" x2="15.01" y2="13"/>
+                <line x1="18" y1="11" x2="18.01" y2="11"/>
+                <rect x="2" y="6" width="20" height="12" rx="2"/>
+              </svg>
+            </span>
+            <span class="nav-label">Gaming</span>
+          </button>
+
+          <button class="nav-item" data-section="osint" id="nav-osint">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </span>
+            <span class="nav-label">OSINT</span>
+          </button>
+
+          <button class="nav-item" data-section="settings" id="nav-settings">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </span>
+            <span class="nav-label">Settings</span>
+          </button>
+        </nav>
+
+        <!-- Rail Footer Telemetry -->
+        <div class="rail-footer">
+          <div class="load-badge">
+            <span class="load-label">SYS LOAD</span>
+            <span class="load-val mono" id="loadVal">0.00</span>
+          </div>
+          <div class="version-tag mono">v1.0.0 // LOCAL</div>
+        </div>
+      </aside>
+
+      <!-- Main Stage Area (Swappable Slab Grid Views) -->
+      <main class="stage-viewport" id="stageViewport">
+
+        <!-- ======================================================== -->
+        <!-- SECTION 1: HOME (Grid of At-a-Glance Slab Widgets) -->
+        <!-- ======================================================== -->
+        <section class="section-grid active" id="section-home" data-section-name="Home">
+          
+          <!-- Widget 1: Today's Revenue (Stripe) [Span 4] -->
+          <article class="slab-panel span-4" id="homeRevenuePanel" data-service="finance">
+            <div class="corner-tick top-left"></div>
+            <div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div>
+            <div class="corner-tick bottom-right"></div>
+
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">01 // REVENUE</span>
+                <h2 class="slab-title">TODAY'S REVENUE</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="revenueStatusDot"></span>
+                <span class="status-text mono" id="revenueStatusText">STRIPE</span>
+              </div>
+            </header>
+
+            <div class="slab-body" id="revenueBody">
+              <!-- Rendered dynamically by JS: real data or clean 'connect me' state -->
+              <div class="metric-display">
+                <span class="metric-unit mono" id="revCurrency">$</span>
+                <span class="metric-value mono counter" id="revValue">--</span>
+              </div>
+              <div class="metric-sub mono" id="revSub">PENDING SYNC</div>
+              <div class="sparkline-container">
+                <canvas id="revSparkline" width="280" height="46"></canvas>
+              </div>
+            </div>
+
+            <footer class="slab-footer">
+              <span class="footer-meta mono" id="revFooterMeta">PROVIDER: STRIPE API</span>
+              <button class="action-link mono" onclick="CommandCenter.switchSection('finance')">FINANCE VIEW &rarr;</button>
+            </footer>
+          </article>
+
+          <!-- Widget 2: Next Appointment (Google Calendar) [Span 4] -->
+          <article class="slab-panel span-4" id="homeCalendarPanel" data-service="comms">
+            <div class="corner-tick top-left"></div>
+            <div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div>
+            <div class="corner-tick bottom-right"></div>
+
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">02 // SCHEDULE</span>
+                <h2 class="slab-title">NEXT APPOINTMENT</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="calStatusDot"></span>
+                <span class="status-text mono" id="calStatusText">CALENDAR</span>
+              </div>
+            </header>
+
+            <div class="slab-body" id="calendarBody">
+              <div class="agenda-item-large" id="nextAppointmentBlock">
+                <!-- Injected by app.js: real event or 'connect me' -->
+              </div>
+            </div>
+
+            <footer class="slab-footer">
+              <span class="footer-meta mono">GOOGLE CALENDAR</span>
+              <button class="action-link mono" onclick="CommandCenter.switchSection('comms')">COMMS VIEW &rarr;</button>
+            </footer>
+          </article>
+
+          <!-- Widget 3: Unread Priority Email (Gmail) [Span 4] -->
+          <article class="slab-panel span-4" id="homeEmailPanel" data-service="comms">
+            <div class="corner-tick top-left"></div>
+            <div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div>
+            <div class="corner-tick bottom-right"></div>
+
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">03 // INBOX</span>
+                <h2 class="slab-title">PRIORITY INBOX</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="gmailStatusDot"></span>
+                <span class="status-text mono" id="gmailStatusText">GMAIL</span>
+              </div>
+            </header>
+
+            <div class="slab-body" id="inboxBody">
+              <!-- Injected by app.js -->
+            </div>
+
+            <footer class="slab-footer">
+              <span class="footer-meta mono">DETECTED BILLS & THREADS</span>
+              <button class="action-link mono" onclick="CommandCenter.switchSection('comms')">INBOX VIEW &rarr;</button>
+            </footer>
+          </article>
+
+          <!-- Widget 4: Local Repo Activity (Git / Deploy) [Span 6] -->
+          <article class="slab-panel span-6" id="homeRepoPanel" data-service="deploy">
+            <div class="corner-tick top-left"></div>
+            <div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div>
+            <div class="corner-tick bottom-right"></div>
+
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">04 // CODE REPO</span>
+                <h2 class="slab-title">REPO ACTIVITY</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot active"></span>
+                <span class="status-text mono" id="repoBranchName">LOCAL GIT</span>
+              </div>
+            </header>
+
+            <div class="slab-body" id="repoBody">
+              <!-- Real local git activity -->
+            </div>
+
+            <footer class="slab-footer">
+              <span class="footer-meta mono" id="repoFooterStatus">WORKING TREE CLEAN</span>
+              <button class="action-link mono" onclick="CommandCenter.switchSection('deploy')">DEPLOY CONSOLE &rarr;</button>
+            </footer>
+          </article>
+
+          <!-- Widget 5: AI Workbench Usage & Tokens [Span 6] -->
+          <article class="slab-panel span-6" id="homeAIPanel" data-service="ai_workbench">
+            <div class="corner-tick top-left"></div>
+            <div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div>
+            <div class="corner-tick bottom-right"></div>
+
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">05 // INTELLIGENCE</span>
+                <h2 class="slab-title">AI USAGE &amp; TOKENS</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="aiStatusDot"></span>
+                <span class="status-text mono">DUAL PROVIDER</span>
+              </div>
+            </header>
+
+            <div class="slab-body" id="aiBody">
+              <!-- Injected by app.js: Claude + OpenAI side by side stats or connect prompt -->
+            </div>
+
+            <footer class="slab-footer">
+              <span class="footer-meta mono">ANTHROPIC // OPENAI API</span>
+              <button class="action-link mono" onclick="CommandCenter.switchSection('ai')">WORKBENCH &rarr;</button>
+            </footer>
+          </article>
+
+          <!-- Widget 6: Studio Render Queue [Span 12] -->
+          <article class="slab-panel span-12" id="homeStudioPanel" data-service="studio">
+            <div class="corner-tick top-left"></div>
+            <div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div>
+            <div class="corner-tick bottom-right"></div>
+
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">06 // PRODUCTION</span>
+                <h2 class="slab-title">STUDIO PIPELINE &amp; RENDER QUEUE</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="studioStatusDot"></span>
+                <span class="status-text mono" id="studioQueueCount">QUEUE (0)</span>
+              </div>
+            </header>
+
+            <div class="slab-body" id="studioBody">
+              <!-- Injected by app.js: render queue status, ffmpeg detection, presets -->
+            </div>
+
+            <footer class="slab-footer">
+              <span class="footer-meta mono">TTS &bull; LICENSED STOCK B-ROLL &bull; CAPTIONS &bull; FFMPEG</span>
+              <button class="action-link mono" onclick="CommandCenter.switchSection('studio')">LAUNCH STUDIO &rarr;</button>
+            </footer>
+          </article>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 2: COMMS -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-comms" data-section-name="Comms">
+          <!-- Widget 1: Priority Inbox [Span 7] -->
+          <article class="slab-panel span-7" id="commsGmailPanel" data-service="comms">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">COMMS // 01</span>
+                <h2 class="slab-title">PRIORITY INBOX &bull; GMAIL</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="commsGmailDot"></span>
+                <span class="status-text mono" id="commsGmailStatusText">GMAIL API</span>
+              </div>
+            </header>
+            <div class="slab-body" id="commsInboxContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono" id="inboxFooterMeta">FILTER: PRIORITY ONLY</span>
+              <button class="action-link mono" onclick="CommandCenter.refreshComms()">REFRESH THREADS &rarr;</button>
+            </footer>
+          </article>
+
+          <!-- Widget 2: Detected Bills [Span 5] -->
+          <article class="slab-panel span-5" id="commsBillsPanel" data-service="comms">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">COMMS // 02</span>
+                <h2 class="slab-title">DETECTED INVOICES &amp; BILLS</h2>
+              </div>
+              <span class="status-dot active"></span>
+            </header>
+            <div class="slab-body" id="commsBillsContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">OCR &bull; PATTERN PARSER</span>
+              <button class="action-link mono" onclick="CommandCenter.switchSection('finance')">VIEW IN FINANCE &rarr;</button>
+            </footer>
+          </article>
+
+          <!-- Widget 3: Gmail Compose & Drafts [Span 6] -->
+          <article class="slab-panel span-6" id="commsComposePanel" data-service="comms">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">COMMS // 03</span>
+                <h2 class="slab-title">COMPOSE EMAIL &bull; DRAFTS</h2>
+              </div>
+              <span class="status-dot active"></span>
+            </header>
+            <div class="slab-body" id="commsComposeContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">EVERY SEND CONFIRMS BEFORE FIRING</span>
+              <span class="footer-meta mono">SAFETY GATE ACTIVE</span>
+            </footer>
+          </article>
+
+          <!-- Widget 4: Calendar Agenda & Quick Create [Span 6] -->
+          <article class="slab-panel span-6" id="commsCalendarPanel" data-service="comms">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">COMMS // 04</span>
+                <h2 class="slab-title">CALENDAR AGENDA &amp; SCHEDULE</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="commsCalDot"></span>
+                <span class="status-text mono" id="commsCalStatusText">PRIMARY CALENDAR</span>
+              </div>
+            </header>
+            <div class="slab-body" id="commsAgendaContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">TIMEZONE: LOCAL</span>
+              <span class="footer-meta mono">SYNC INTERVAL: 300S</span>
+            </footer>
+          </article>
+
+          <!-- Widget 5: Twilio SMS & Voice Console [Span 12] -->
+          <article class="slab-panel span-12" id="commsTwilioPanel" data-service="comms">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">COMMS // 05</span>
+                <h2 class="slab-title">TWILIO SMS &amp; VOICE TRUNK</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="commsTwilioDot"></span>
+                <span class="status-text mono" id="commsTwilioStatusText">CARRIER ROUTE</span>
+              </div>
+            </header>
+            <div class="slab-body" id="commsTwilioContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">EXPLICIT DIAL CONFIRMATION REQUIRED</span>
+              <span class="footer-meta mono">TRUNK: 127.0.0.1 PROXY</span>
+            </footer>
+          </article>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 3: FINANCE -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-finance" data-section-name="Finance">
+          <!-- Widget 1: Stripe Revenue & Month View [Span 8] -->
+          <article class="slab-panel span-8" id="financeStripePanel" data-service="finance">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">FINANCE // 01</span>
+                <h2 class="slab-title">STRIPE REVENUE &bull; MONTH VIEW</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="finStripeDot"></span>
+                <span class="status-text mono" id="finStripeStatus">STRIPE ENGINE</span>
+              </div>
+            </header>
+            <div class="slab-body" id="financeStripeContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">SETTLEMENT: ROLLING DAILY</span>
+              <span class="footer-meta mono" id="finPendingPayout">PENDING PAYOUT: $0.00</span>
+            </footer>
+          </article>
+
+          <!-- Widget 2: Bills Widget & Upcoming Payments [Span 4] -->
+          <article class="slab-panel span-4" id="financeBillsPanel" data-service="finance">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">FINANCE // 02</span>
+                <h2 class="slab-title">ACCOUNTS PAYABLE &bull; BILLS</h2>
+              </div>
+              <span class="status-dot active"></span>
+            </header>
+            <div class="slab-body" id="financeBillsContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">SYNCED FROM COMMS &amp; INVOICES</span>
+            </footer>
+          </article>
+
+          <!-- Widget 3: Trade Panel & Active Positions [Span 12] -->
+          <article class="slab-panel span-12" id="financeTradePanel" data-service="finance">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">FINANCE // 03</span>
+                <h2 class="slab-title">TRADE PANEL &bull; ACTIVE POSITIONS &amp; EXECUTION</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot active"></span>
+                <span class="status-text mono" id="tradeFeedStatus">REAL-TIME QUOTES ONLINE</span>
+              </div>
+            </header>
+            <div class="slab-body" id="financeTradeContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">MARKET TELEMETRY: COINGECKO // PUBLIC ORACLES</span>
+              <span class="footer-meta mono">ORDER DISPATCH GATED BY EXPLICIT CONFIRMATION</span>
+            </footer>
+          </article>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 4: STUDIO -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-studio" data-section-name="Studio">
+          <!-- Widget 1: Faceless Video Builder [Span 7] -->
+          <article class="slab-panel span-7" id="studioVideoPanel" data-service="studio">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">STUDIO // 01</span>
+                <h2 class="slab-title">FACELESS VIDEO BUILDER &bull; PIPELINE DESK</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="studioFfmpegDot"></span>
+                <span class="status-text mono" id="studioFfmpegStatus">CHECKING</span>
+              </div>
+            </header>
+            <div class="slab-body" id="studioVideoContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PIPELINE: SCRIPT &rarr; TTS AUDIO &rarr; B-ROLL MUX &rarr; WORD CAPTIONS &rarr; MP4</span>
+            </footer>
+          </article>
+
+          <!-- Widget 2: Source Clipper & Key Moments [Span 5] -->
+          <article class="slab-panel span-5" id="studioClipperPanel" data-service="studio">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">STUDIO // 02</span>
+                <h2 class="slab-title">SOURCE CLIPPER &bull; KEY MOMENTS</h2>
+              </div>
+              <span class="status-dot active"></span>
+            </header>
+            <div class="slab-body" id="studioClipperContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">ZERO RE-ENCODE STREAM COPY VIA FFMPEG</span>
+            </footer>
+          </article>
+
+          <!-- Widget 3: Local Rendering Queue [Span 7] -->
+          <article class="slab-panel span-7" id="studioQueuePanel" data-service="studio">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">STUDIO // 03</span>
+                <h2 class="slab-title">LOCAL FFMPEG RENDER QUEUE &bull; PROGRESS</h2>
+              </div>
+              <button class="mini-btn mono" onclick="CommandCenter.clearCompletedRenders()">CLEAR COMPLETED</button>
+            </header>
+            <div class="slab-body" id="studioQueueContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">OUTPUT DIRECTORY: /scratch/command-center/exports/</span>
+            </footer>
+          </article>
+
+          <!-- Widget 4: Stock B-Roll Browser [Span 5] -->
+          <article class="slab-panel span-5" id="studioBrollPanel" data-service="studio">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">STUDIO // 04</span>
+                <h2 class="slab-title">B-ROLL MEDIA FETCHER &bull; PEXELS</h2>
+              </div>
+              <span class="footer-meta mono" id="studioBrollCount">5 CLIPS</span>
+            </header>
+            <div class="slab-body" id="studioBrollContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">COMMERCIAL USE LICENSE-CLEAR &bull; ZERO COPYRIGHT CLAIMS</span>
+            </footer>
+          </article>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 5: AI WORKBENCH -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-ai" data-section-name="AI Workbench">
+          <!-- Widget 1: Telemetry & Saved Workflows [Span 12] -->
+          <article class="slab-panel span-12" id="aiTelemetryPanel" data-service="ai_workbench">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">AI WORKBENCH // 01</span>
+                <h2 class="slab-title">FRONTIER LLM TELEMETRY &bull; SAVED WORKFLOWS</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="aiWorkbenchStatusDot"></span>
+                <span class="status-text mono" id="aiWorkbenchStatusText">INITIALIZING</span>
+              </div>
+            </header>
+            <div class="slab-body" id="aiWorkbenchTelemetryContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">TRACKING LIVE ANTHROPIC &amp; OPENAI METRICS &bull; TOKEN EXPENDITURE IN USD</span>
+              <button class="mini-btn" onclick="CommandCenter.resetAITelemetry()">RESET COUNTERS</button>
+            </footer>
+          </article>
+
+          <!-- Widget 2: Claude 3.5 Sonnet Console [Span 6] -->
+          <article class="slab-panel span-6" id="aiClaudePanel" data-service="ai_workbench">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">AI CONSOLE // 02</span>
+                <h2 class="slab-title">ANTHROPIC CLAUDE 3.5 PROMPT DESK</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="aiClaudeStatusDot"></span>
+                <span class="status-text mono" id="aiClaudeKeyStatus">CHECKING</span>
+              </div>
+            </header>
+            <div class="slab-body" id="aiClaudeContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">API: https://api.anthropic.com/v1/messages</span>
+              <span class="footer-meta mono" id="aiClaudeFooterTokens">0 TOKENS TODAY</span>
+            </footer>
+          </article>
+
+          <!-- Widget 3: OpenAI GPT-4o Console [Span 6] -->
+          <article class="slab-panel span-6" id="aiOpenAIPanel" data-service="ai_workbench">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">AI CONSOLE // 03</span>
+                <h2 class="slab-title">OPENAI GPT-4O PROMPT DESK</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="aiOpenAIStatusDot"></span>
+                <span class="status-text mono" id="aiOpenAIKeyStatus">CHECKING</span>
+              </div>
+            </header>
+            <div class="slab-body" id="aiOpenAIContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">API: https://api.openai.com/v1/chat/completions</span>
+              <span class="footer-meta mono" id="aiOpenAIFooterTokens">0 TOKENS TODAY</span>
+            </footer>
+          </article>
+
+          <!-- Widget 4: Canva Asset Studio [Span 6] -->
+          <article class="slab-panel span-6" id="aiCanvaPanel" data-service="ai_workbench">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">DESIGN ENGINE // 04</span>
+                <h2 class="slab-title">CANVA API &bull; BRAND ASSET STUDIO</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="aiCanvaStatusDot"></span>
+                <span class="status-text mono" id="aiCanvaKeyStatus">CHECKING</span>
+              </div>
+            </header>
+            <div class="slab-body" id="aiCanvaContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">CANVA CONNECT API &bull; BRAND ASSETS</span>
+            </footer>
+          </article>
+
+          <!-- Widget 5: Execution Audit Ledger [Span 6] -->
+          <article class="slab-panel span-6" id="aiLedgerPanel" data-service="ai_workbench">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">LEDGER // 05</span>
+                <h2 class="slab-title">LIVE TOKEN AUDIT LEDGER &bull; SPEND</h2>
+              </div>
+              <span class="footer-meta mono" id="aiLedgerCount">0 CALLS</span>
+            </header>
+            <div class="slab-body" id="aiLedgerContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">REAL-TIME COST ACCRUAL PER CALL</span>
+            </footer>
+          </article>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 6: DEPLOY -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-deploy" data-section-name="Deploy">
+          <!-- Widget 1: GitHub Cloner & Stack Inspector [Span 7] -->
+          <article class="slab-panel span-7" id="deployInspectPanel" data-service="deploy">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">DEPLOY // 01</span>
+                <h2 class="slab-title">GITHUB CLONER &bull; STACK INSPECTOR</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot active"></span>
+                <span class="status-text mono">GIT CREDENTIALS READY</span>
+              </div>
+            </header>
+            <div class="slab-body" id="deployInspectContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">USES LOCAL SSH / HTTPS GIT CREDENTIALS</span>
+              <span class="footer-meta mono">UNTRUSTED SCRIPTS GATED</span>
+            </footer>
+          </article>
+
+          <!-- Widget 2: Registered Code Registry [Span 5] -->
+          <article class="slab-panel span-5" id="deployRegistryPanel" data-service="deploy">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">DEPLOY // 02</span>
+                <h2 class="slab-title">CODE REGISTRY &bull; REPOSITORIES</h2>
+              </div>
+              <span class="status-dot active"></span>
+            </header>
+            <div class="slab-body" id="deployRegistryContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">LOCAL SANDBOX: /scratch/command-center/deployments</span>
+            </footer>
+          </article>
+
+          <!-- Widget 3: Live Terminal Stream [Span 12] -->
+          <article class="slab-panel span-12" id="deployTerminalPanel" data-service="deploy">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">DEPLOY // 03</span>
+                <h2 class="slab-title">LIVE STREAM TERMINAL &bull; GOLD MONO</h2>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span class="status-dot active"></span>
+                <span class="status-text mono" id="terminalStatusText">STREAMING: 127.0.0.1</span>
+                <button class="mini-btn" onclick="CommandCenter.clearDeployLog()">CLEAR</button>
+              </div>
+            </header>
+            <div class="slab-body" id="deployTerminalContainer" style="padding:0;">
+              <div class="terminal-screen mono" id="deployTerminalScreen">
+                <div class="t-line"><span class="t-prompt">[SYSTEM]</span> Deploy Engine ready. Paste GitHub URL above to clone and inspect.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">DARWIN ZSH / BASH RUNTIME</span>
+              <span class="footer-meta mono">EXECUTION SAFETY: CONFIRM BEFORE RUN</span>
+            </footer>
+          </article>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 7: GAMING -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-gaming" data-section-name="Gaming">
+          <!-- Widget 1: Puzzle Suite Build Status [Span 7] -->
+          <article class="slab-panel span-7" id="gamingBuildPanel" data-service="gaming">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">GAMING // 01</span>
+                <h2 class="slab-title">PUZZLE SUITE &bull; BUILD STATUS &bull; ARTIFACTS</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot active" id="gamingBuildDot"></span>
+                <span class="status-text mono" id="gamingBuildStatus">HEALTHY // COMPILED</span>
+              </div>
+            </header>
+            <div class="slab-body" id="gamingBuildContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">COMPILER: RUST BEVY / METAL API &bull; APPLE SILICON ARM64</span>
+              <button class="mini-btn mono" onclick="CommandCenter.triggerGameBuild()">REBUILD SUITE</button>
+            </footer>
+          </article>
+
+          <!-- Widget 2: Local Playtest Launcher [Span 5] -->
+          <article class="slab-panel span-5" id="gamingLauncherPanel" data-service="gaming">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">GAMING // 02</span>
+                <h2 class="slab-title">LOCAL PLAYTEST LAUNCHER</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="gamingSessionDot"></span>
+                <span class="status-text mono" id="gamingSessionText">STANDBY</span>
+              </div>
+            </header>
+            <div class="slab-body" id="gamingLauncherContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">LOCAL EXECUTABLE: games/puzzle-suite/bin/puzzle-suite-mac</span>
+            </footer>
+          </article>
+
+          <!-- Widget 3: Live Session Telemetry & Level Matrix [Span 7] -->
+          <article class="slab-panel span-7" id="gamingTelemetryPanel" data-service="gaming">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">GAMING // 03</span>
+                <h2 class="slab-title">SESSION TELEMETRY &bull; LEVEL MATRIX</h2>
+              </div>
+              <span class="footer-meta mono" id="gamingCompletionRate">87.5% CLEARED</span>
+            </header>
+            <div class="slab-body" id="gamingTelemetryContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROMOTION 120HZ ADAPTIVE REFRESH &bull; REAL-TIME HEURISTICS</span>
+            </footer>
+          </article>
+
+          <!-- Widget 4: Store Sync & Telemetry Bridge [Span 5] -->
+          <article class="slab-panel span-5" id="gamingStorePanel" data-service="gaming">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">GAMING // 04</span>
+                <h2 class="slab-title">STORE SYNC &bull; TELEMETRY BRIDGE</h2>
+              </div>
+              <span class="status-dot unconfigured" id="gamingStoreDot"></span>
+            </header>
+            <div class="slab-body" id="gamingStoreContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">STEAMWORKS API &bull; APP STORE CONNECT API</span>
+            </footer>
+          </article>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 8: OSINT -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-osint" data-section-name="OSINT">
+          <!-- Widget 1: DNS Resolver Matrix [Span 7] -->
+          <article class="slab-panel span-7" id="osintDnsPanel" data-service="osint">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">OSINT // 01</span>
+                <h2 class="slab-title">PUBLIC RESEARCH &bull; DNS RESOLVER MATRIX</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot active"></span>
+                <span class="status-text mono" id="osintDnsLatency">RESOLVER ACTIVE</span>
+              </div>
+            </header>
+            <div class="slab-body" id="osintDnsContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">RECURSIVE RESOLVER &bull; A / AAAA / MX / TXT / NS</span>
+            </footer>
+          </article>
+
+          <!-- Widget 2: WHOIS Registration Inspector [Span 5] -->
+          <article class="slab-panel span-5" id="osintWhoisPanel" data-service="osint">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">OSINT // 02</span>
+                <h2 class="slab-title">WHOIS &bull; REGISTRY INSPECTOR</h2>
+              </div>
+              <span class="status-dot active"></span>
+            </header>
+            <div class="slab-body" id="osintWhoisContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PORT 43 REGISTRY PROTOCOL &bull; RFC 3912</span>
+            </footer>
+          </article>
+
+          <!-- Widget 3: HaveIBeenPwned Breach Check [Span 6] -->
+          <article class="slab-panel span-6" id="osintHibpPanel" data-service="osint">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">OSINT // 03</span>
+                <h2 class="slab-title">HAVEIBEENPWNED &bull; BREACH AUDIT</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot" id="osintHibpDot"></span>
+                <span class="status-text mono" id="osintHibpStatus">CHECKING</span>
+              </div>
+            </header>
+            <div class="slab-body" id="osintHibpContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">OWNED ASSETS ONLY &bull; ZERO UNLICENSED RECONNAISSANCE</span>
+            </footer>
+          </article>
+
+          <!-- Widget 4: Brand & Asset Mention Tracker [Span 6] -->
+          <article class="slab-panel span-6" id="osintBrandPanel" data-service="osint">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">OSINT // 04</span>
+                <h2 class="slab-title">BRAND &bull; ASSET MENTION TRACKER</h2>
+              </div>
+              <button class="mini-btn mono" onclick="CommandCenter.refreshBrandMentions()">REFRESH</button>
+            </header>
+            <div class="slab-body" id="osintBrandContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PUBLIC FORUM &amp; TECH NEWS ORACLES (HACKER NEWS ALGOLIA)</span>
+            </footer>
+          </article>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 9: SETTINGS -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-settings" data-section-name="Settings">
+          <article class="slab-panel span-12">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group"><span class="slab-kicker mono">SETTINGS // 01</span><h2 class="slab-title">INTEGRATIONS, KEYS &amp; AUTO-UPDATER</h2></div>
+            </header>
+            <div class="slab-body" id="settingsContainer"></div>
+          </article>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Safety Confirmation Modal -->
+  <div class="modal-overlay" id="confirmModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="corner-tick top-left"></div>
+      <div class="corner-tick top-right"></div>
+      <div class="corner-tick bottom-left"></div>
+      <div class="corner-tick bottom-right"></div>
+      <div class="modal-header">
+        <span class="modal-kicker mono">CRITICAL ACTION // CONFIRMATION</span>
+        <h3 class="modal-title" id="modalTitle">CONFIRM EXECUTION</h3>
+      </div>
+      <p class="modal-desc" id="modalDesc">This operation communicates with external production APIs or runs local shell commands.</p>
+      <div class="modal-code mono" id="modalCode"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modalCancelBtn">ABORT</button>
+        <button class="btn btn-gold" id="modalConfirmBtn">CONFIRM &amp; EXECUTE</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
