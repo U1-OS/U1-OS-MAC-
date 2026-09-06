@@ -1796,6 +1796,17 @@ const CommandCenter = (() => {
 
   function renderCryptoSection(crypto) {
     if (!crypto || !crypto.data) return;
+    if (crypto.data.setup_required) {
+      ['cryptoTokensContainer','cryptoSwapContainer','cryptoAlphaContainer','cryptoCopyContainer','cryptoAlertsContainer','cryptoPositionsContainer','cryptoBotContainer'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<p class="mono" style="color:var(--text-muted);line-height:1.7">Installed for later setup. Live data and trading are not configured.<br><a href="/integrations.html" style="color:var(--gold)">Open Integrations</a></p>';
+      });
+      ['cryptoScreenerStatus','copyTradingStatus','cryptoBotStatusBadge','cryptoPortfolioPnlBadge','cryptoTotalMcap','activeAlertsBadge'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = 'NOT CONFIGURED';
+      });
+      document.querySelectorAll('#section-crypto button').forEach(button => {button.disabled = true;});
+      return;
+    }
     const d = crypto.data;
     const tokens = d.tokens || [];
     const alphaTweets = d.alpha_tweets || [];
@@ -6686,4 +6697,3 @@ STATUS: RESOLVED // NOMINAL
 
 // Boot on DOM Ready
 document.addEventListener('DOMContentLoaded', CommandCenter.init);
-

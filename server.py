@@ -21,6 +21,8 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from utils import macos
+from utils import integrations_hub
+from utils import workspace_hub
 from utils.scheduler import AutomationScheduler
 from services.intelligence import IntelligenceService
 from services.finance import FinanceService
@@ -263,6 +265,27 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split("?")[0]
 
+        if path.startswith("/api/workspace/"):
+            if not self.integration_request_allowed():
+                self.send_json({"success": False, "error": "Local same-origin request required"}, 403)
+                return
+            from urllib.parse import parse_qs, urlsplit
+            try:
+                result = workspace_hub.handle_get(path.removeprefix("/api/workspace/"), parse_qs(urlsplit(self.path).query))
+                self.send_json(result)
+            except ValueError as exc:
+                self.send_json({"success": False, "error": str(exc)}, 400)
+            except Exception:
+                self.send_json({"success": False, "error": "This provider is temporarily unavailable"}, 503)
+            return
+
+        if path == "/api/integrations":
+            if not self.integration_request_allowed():
+                self.send_json({"success": False, "error": "Local same-origin request required"}, 403)
+                return
+            self.send_json(integrations_hub.catalog(feeder.config, BASE_DIR))
+            return
+
         if path == "/api/state":
             state = feeder.get_full_state()
             self.send_json(state)
@@ -391,8 +414,35 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
     def do_HEAD(self):
         self.do_GET()
 
+    def integration_request_allowed(self):
+        port = feeder.config.get("system", {}).get("port", 8788)
+        allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+        host = self.headers.get("Host", "")
+        origin = self.headers.get("Origin")
+        return (host in allowed_hosts and self.headers.get("Sec-Fetch-Site") != "cross-site"
+                and (not origin or origin == f"http://{host}"))
+
     def do_POST(self):
         path = self.path.split("?")[0]
+        if path.startswith("/api/workspace/"):
+            import secrets
+            if not self.integration_request_allowed() or not secrets.compare_digest(self.headers.get("X-U1-CSRF", ""), integrations_hub.CSRF_TOKEN):
+                self.send_json({"success": False, "error": "Reload the page before running an action"}, 403)
+                return
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                if not 0 < length <= 65536:
+                    raise ValueError("Invalid request size")
+                request = json.loads(self.rfile.read(length))
+                if not isinstance(request, dict):
+                    raise ValueError("Expected a JSON object")
+                if getattr(feeder.services.get("settings"), "lockdown_active", False):
+                    self.send_json({"success": False, "error": "Workspace actions are paused by lockdown"}, 403)
+                    return
+                self.send_json(workspace_hub.handle_post(path.removeprefix("/api/workspace/"), request))
+            except (ValueError, TypeError) as exc:
+                self.send_json({"success": False, "error": str(exc)}, 400)
+            return
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length)
 
@@ -400,6 +450,26 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             payload = json.loads(body.decode("utf-8")) if body else {}
         except Exception:
             self.send_json({"success": False, "error": "Invalid JSON"}, 400)
+            return
+
+        if path == "/api/integrations":
+            import secrets
+            supplied = self.headers.get("X-U1-CSRF", "")
+            if not self.integration_request_allowed() or not secrets.compare_digest(supplied, integrations_hub.CSRF_TOKEN):
+                self.send_json({"success": False, "error": "Reload the integrations page before saving"}, 403)
+                return
+            try:
+                with feeder.lock:
+                    updated = integrations_hub.updated_config(feeder.config, payload)
+                    integrations_hub.persist(updated, feeder.config_path)
+                    feeder.config = updated
+                    for service in feeder.services.values():
+                        service.config = updated
+                self.send_json({"success": True, "message": "Settings saved; account access not verified"})
+            except ValueError as exc:
+                self.send_json({"success": False, "error": str(exc)}, 400)
+            except OSError:
+                self.send_json({"success": False, "error": "Could not save local configuration"}, 500)
             return
 
         # Check if Emergency Lockdown is active

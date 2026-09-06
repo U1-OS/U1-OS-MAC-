@@ -1,198 +1,82 @@
 <div align="center">
 
-```
-██╗   ██╗ ██╗     ██████╗ ███████╗
-██║   ██║ ██║    ██╔═══██╗██╔════╝
-██║   ██║ ██║    ██║   ██║███████╗
-██║   ██║ ██║    ██║   ██║╚════██║
-╚██████╔╝ ██║    ╚██████╔╝███████║
- ╚═════╝  ╚═╝     ╚═════╝ ╚══════╝
-```
+![U1 OS: your personal operating space](docs/cover.svg)
 
-# U1 OS — Autonomous Business Operating System
+# U1 OS
 
-**A futuristic, self-contained macOS command center.**  
-AI trading bots · Crypto desk · OSINT engine · Cyber terminal · Executive dossier — all running locally at `127.0.0.1:8787`.
+**Your ideas, signals and next move. One workspace on your Mac.**
 
-[![Tests](https://img.shields.io/badge/tests-95%2F95%20passing-10b981?style=flat-square&logo=checkmarx)](https://github.com/U1-OS/U1-OS-MAC-)
-[![Subsystems](https://img.shields.io/badge/subsystems-32%20active-00f0ff?style=flat-square)](https://github.com/U1-OS/U1-OS-MAC-)
-[![Python](https://img.shields.io/badge/python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![License](https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square)](LICENSE)
-[![GitHub Pages](https://img.shields.io/badge/site-live-10b981?style=flat-square&logo=github)](https://u1-os.github.io/U1-OS-MAC-)
-[![Localhost](https://img.shields.io/badge/binding-127.0.0.1%3A8787-e9b44c?style=flat-square)](http://127.0.0.1:8787)
+[Explore the project](https://github.com/U1-OS/U1-OS-MAC-) · [Installation](INSTALLATION.md) · [Design overview](docs/index.html)
 
-[🌐 Live Site](https://u1-os.github.io/U1-OS-MAC-) · [📖 Docs](#quick-start) · [🚀 Features](#features) · [⚡ Install](#quick-start)
+**Development snapshot. Provider-dependent features are not a verified production release.**
 
 </div>
 
----
+## A more personal workspace
 
-## What is U1 OS?
+U1 OS brings a configurable desktop-style dashboard, public information feeds, AI handoffs and local research tools into a localhost web app. The interface uses translucent panels, colourful wordmarks, purposeful animation and reduced-motion support.
 
-U1 OS is a **fully autonomous, localhost-bound business operating system** built for macOS. It replaces dozens of SaaS dashboards with a single, neon-lit command center that runs entirely on your machine — no cloud, no subscriptions, no data leaving your device.
+| Workspace | Included in this rebuild |
+| --- | --- |
+| Home | Configurable weather, news, time, sports, crypto, stocks, AI usage, tools, notes and research widgets |
+| Information bar | Feed status, public crypto streaming with snapshot fallback, warning links and exchange-session clocks |
+| News and shares | Attributed RSS headlines and editable indicative stock watchlists with source timestamps |
+| AI | Local prompt builder, explicit Claude Code/Codex CLI tasks and a user-triggered agent meeting flow |
+| Research | Local tool launchers, supported embedded views, command-line lookup forms and a local casebook |
+| Auto Finder | A bounded local maintenance advisor; no automatic repairs, paid model calls or background OSINT scans |
+| Integrations | An account-settings catalog that distinguishes saved settings, adapter files and unfinished setup slots |
 
-```bash
-git clone https://github.com/U1-OS/U1-OS-MAC-.git
-cd U1-OS-MAC-
-./command-center start
-# → http://127.0.0.1:8787
+## Start locally
+
+Requires macOS and Python 3.11 or newer. The core web server uses Python's standard library.
+
+```sh
+python3 -m venv .runtime
+cp config.example.json config.json
+chmod 600 config.json
+./start-u1-os.command
 ```
 
----
+The launcher uses `http://127.0.0.1:8788`. On an already configured installation, keep your existing `config.json` rather than replacing it. You can also open `U1 OS.app` **inside this repository folder**; it is a launcher, not a self-contained signed macOS application.
 
-## Features
+Local third-party tool repositories, their runtimes, AI CLI applications, provider accounts, FFmpeg and Ollama are separate installations. They are not bundled by cloning this repository. See [INSTALLATION.md](INSTALLATION.md).
 
-### 💹 Crypto Desk
-| Module | Description |
-|--------|-------------|
-| **Photon DEX Screener** | Live on-chain token feed — 5m/1h/24h PnL, liquidity depth, volume |
-| **Twitter / X Alpha Radar** | Real-time memecoin alpha with social velocity scoring |
-| **Copy Trading Engine** | Mirror whale wallets by Twitter/X username — 85%+ win rate filter |
-| **AI Trading Bot** | Alpha Sniper · Whale Shadow · Mean Reversion — autonomous execution |
-| **Quantitative Backtester** | 100-epoch Monte Carlo · Win Rate · Sharpe Ratio · Max Drawdown |
-| **Price Alert Watchdog** | Multi-token price sentinels with threshold notifications |
+## Real data, explicit boundaries
 
-### 🕵️ OSINT Intelligence
-- Authoritative DNS matrix & WHOIS inspector
-- HaveIBeenPwned breach auditor
-- Brand & asset mention crawler
-- SSL/TLS certificate sentinel
-- Localhost port security audit
-- Network gateway diagnostics
+- A failed feed shows unavailable or stale data, not an invented value.
+- Public stock snapshots may be delayed. Quote time is separate from retrieval time. No trades are placed by the information widgets.
+- ASX cash and NYSE core-session clocks use the published 2026 calendar snapshot. They are not live exchange-halt monitors and require calendar maintenance for later years.
+- Weather warnings cover Victoria and link to the Bureau of Meteorology. This is not an emergency-alert service or an all-clear indicator.
+- Sports coverage depends on each provider. All four requested sports have interfaces, but current availability has not been verified end to end.
+- Codex quota reading and local Claude/Antigravity telemetry have different capabilities. Missing subscription percentages are not fabricated.
+- Claude and Codex tasks use separately installed, signed-in local CLIs. Canva and Antigravity handoffs do not establish an authenticated local API integration.
+- The new Home suppresses inherited overview/demo panels. Other recovered modules may still contain sandbox or demonstration behavior and have not been fully audited.
+- Crypto execution remains disabled in setup mode. Recovered trading helpers are unfinished and must not be treated as production trading infrastructure.
 
-### 🤖 AI Workbench
-- GPT-4o & Claude Sonnet integration
-- Offline Ollama LLM (zero internet)
-- Executive business dossier generator
-- AI content & copy engine
+## Research privacy
 
-### 🔐 Security Suite
-- PBKDF2-CTR encrypted credential vault
-- Emergency lockdown killswitch (one-click freeze)
-- macOS process watchdog
-- SQLite immutable audit ledger
-- HMAC-SHA256 tamper detection
+The casebook stores research targets, observations, original source links, notes and optional user-attached photo thumbnails locally. Matching handles, registration signals and source badges do not prove a person's identity or account ownership.
 
-### 🖥️ macOS Native
-- Desktop push notifications
-- LaunchAgent auto-start daemon
-- Menu bar status extra
-- Voice audio briefing (`/usr/bin/say`)
-- Hardware telemetry HUD (CPU/RAM/disk/thermal)
+U1-run Sherlock and Holehe results can be saved automatically. Embedded third-party app results need an explicit import. The TikTok importer supports public oEmbed video metadata and profile references, not hidden accounts or private linked email addresses. Use research tools only where you are authorized.
 
-### ⚡ Cyber Terminal
-```
-⚡ [U1-OS ~]$ bot status
-⚡ [U1-OS ~]$ swap BUY BONK 0.5
-⚡ [U1-OS ~]$ alpha
-⚡ [U1-OS ~]$ lockdown engage
-⚡ [U1-OS ~]$ ledger tail 20
-```
-Press `` ` `` anywhere to open. Tab completion · command history · CRT scanline aesthetics.
-
----
-
-## Quick Start
-
-**Requirements:** macOS 12+, Python 3.11+
-
-```bash
-# 1. Clone
-git clone https://github.com/U1-OS/U1-OS-MAC-.git
-cd U1-OS-MAC-
-
-# 2. Start
-./command-center start
-
-# 3. Open
-open http://127.0.0.1:8787
-```
-
-### CLI Commands
-
-```bash
-./command-center start          # Boot U1 OS
-./command-center stop           # Graceful shutdown
-./command-center restart        # Hot reload
-./command-center status         # Health check
-./command-center test           # Run 95-test verification suite
-./command-center logs           # Live log tail
-./command-center bot status     # AI bot status
-./command-center bot backtest 100  # Run quantitative backtest
-./command-center crypto tokens  # Live DEX token feed
-./command-center lockdown       # Emergency freeze
-```
-
----
+Credentials and casebook data are stored in owner-only local files, **not encrypted by these interfaces**. Runtime data, secrets, logs and exports are excluded from the source upload. Deleting a case does not delete separate tool logs, exported copies or backups.
 
 ## Architecture
 
-```
-U1-OS-MAC-/
-├── command-center          # CLI entrypoint (bash)
-├── server.py               # Flask HTTP + SSE server (127.0.0.1:8787)
-├── services/
-│   ├── crypto.py           # Crypto desk, AI bot, DEX, backtester
-│   ├── finance.py          # Stripe revenue engine
-│   ├── ai_workbench.py     # GPT-4o, Claude, Ollama
-│   ├── osint.py            # DNS, WHOIS, breach, SSL, ports
-│   ├── comms.py            # Email, Twilio SMS
-│   ├── deploy.py           # Deploy automation
-│   ├── gaming.py           # Gaming engine
-│   ├── intelligence.py     # Executive dossier
-│   ├── studio.py           # Faceless video studio
-│   └── settings.py         # Vault, git updater
-├── static/
-│   ├── index.html          # Single-page OS shell
-│   ├── css/style.css       # Neon/cyber design system
-│   └── js/app.js           # Frontend engine
-├── tests/
-│   └── test_full_suite.py  # 95-test master verification suite
-└── docs/
-    └── index.html          # GitHub Pages site
+```text
+server.py                  Local HTTP server and event stream
+services/                  Recovered service modules
+utils/workspace_hub.py      Workspace routes and bounded tool jobs
+utils/live_bar.py           Public snapshots, warning RSS and session clocks
+utils/news_markets.py       Headline and indicative share feeds
+utils/osint_casebook.py     Local SQLite research records
+utils/improvement_agent.py  Local maintenance suggestions
+static/                    Browser interface and widget layers
+docs/                      Static project overview, not a hosted operating system
 ```
 
----
+## Verification and deployment status
 
-## Test Suite
+The rebuild contains substantial implementation work that has not received a complete runtime, browser, accessibility or security validation pass. Do not interpret this source snapshot as evidence that every route or integration works. The inherited full test suite performs system and outbound actions; it is not a safe default smoke test.
 
-```bash
-./command-center test
-
-# TOTAL TESTS PASSED:   95 / 95
-# [PASS] ALL SUBSYSTEMS 100% OPERATIONAL
-```
-
-32 verified modules across: Finance · Comms · Deploy · AI · Studio · Gaming · OSINT · Settings · macOS · SSE · Vault · Ollama · Dossier · Menu Bar · Hardware · Webhooks · Scheduler · Voice · SSL · Ports · Network · Watchdog · Ledger · Lockdown · Photon DEX · Twitter Alpha · Copy Trading · Price Alerts · AI Bot · Backtester · Cyber Terminal
-
----
-
-## Security
-
-- **Localhost only.** Strictly bound to `127.0.0.1:8787`. Zero external exposure.
-- **Encrypted vault.** PBKDF2-CTR with HMAC-SHA256 tamper detection.
-- **Audit ledger.** Every action written to an immutable SQLite log.
-- **Emergency killswitch.** One command freezes all outbound mutations.
-
----
-
-## Roadmap
-
-- [ ] Real Solana wallet connect (Phantom)
-- [ ] Live Jupiter on-chain swap execution
-- [ ] Telegram bot remote control
-- [ ] VPS 24/7 cloud deploy
-- [ ] PostgreSQL backend
-- [ ] PWA / iPhone home screen app
-- [ ] AI autonomous agent (GPT-4o acts across all sections)
-- [ ] Multi-wallet PnL dashboard
-
----
-
-## License
-
-MIT © U1-OS · [u1-os.github.io/U1-OS-MAC-](https://u1-os.github.io/U1-OS-MAC-)
-
-<div align="center">
-<sub>Built for speed. Built for autonomy. Built for macOS.</sub>
-</div>
+The static `docs/` site does not run the backend. Publishing a branch does not deploy a native app or update GitHub Pages automatically. This project does not enable unattended commits or pushes of future local changes.

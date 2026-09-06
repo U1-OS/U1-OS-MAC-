@@ -1,11 +1,11 @@
 {
-  "name": "Command Center OS",
-  "short_name": "Command Center",
-  "description": "macOS Business Operating System with Living Interface",
+  "name": "U1 OS",
+  "short_name": "U1 OS",
+  "description": "Your personal operating workspace for macOS.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#08090B",
-  "theme_color": "#08090B",
+  "background_color": "#0a1015",
+  "theme_color": "#0a1015",
   "icons": [
     {
       "src": "/favicon.svg",

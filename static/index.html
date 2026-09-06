@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800;900&family=Archivo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/u1-next.css">
+  <link rel="stylesheet" href="/css/aurora-workspace.css">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,9 +31,9 @@
           <span class="brand-divider">/</span>
           <span class="brand-os" style="color: var(--neon-cyan);">OS</span>
         </div>
-        <div class="sys-heartbeat" title="Local Feeder: 127.0.0.1:8787">
+        <div class="sys-heartbeat" title="Local Feeder: 127.0.0.1:8788">
           <span class="pulse-dot"></span>
-          <span class="heartbeat-label">FEEDER 8787</span>
+          <span class="heartbeat-label">LOCAL WORKSPACE</span>
         </div>
         <div class="sys-heartbeat" id="bezelSseWrap" title="Real-Time Event Stream (Server-Sent Events)">
           <span class="pulse-dot active" id="ssePulseDot"></span>
@@ -44,7 +46,7 @@
         <div class="ticker-badge">LIVE INTEL</div>
         <div class="ticker-viewport" id="tickerViewport">
           <div class="ticker-content" id="tickerContent">
-            <span class="ticker-item"><span class="t-source">[SYSTEM]</span> U1 OS feeder listening on 127.0.0.1:8787</span>
+            <span class="ticker-item"><span class="t-source">[SYSTEM]</span> U1 OS feeder listening on 127.0.0.1:8788</span>
             <span class="ticker-item"><span class="t-source">[INTEL]</span> Syncing real-time global telemetry feeds...</span>
           </div>
         </div>
@@ -146,6 +148,8 @@
             </span>
             <span class="nav-label">Home</span>
           </button>
+
+          <a href="/integrations.html" style="display:flex;align-items:center;gap:12px;padding:14px 18px;color:var(--gold);text-decoration:none" title="Accounts and integrations"><span aria-hidden="true">+</span><span class="nav-label">Integrations</span></a>
 
           <button class="nav-item" data-section="comms" id="nav-comms">
             <span class="nav-icon">
@@ -744,7 +748,7 @@
             <div class="slab-body" id="cryptoBotContainer"></div>
             <footer class="slab-footer">
               <span class="footer-meta mono">STRATEGIES: ALPHA SNIPER (SOCIAL VELOCITY) &bull; WHALE SHADOW &bull; MEAN REVERSION</span>
-              <span class="footer-meta mono">EXECUTION: STRICT PAPER TRADING SIMULATION (ZERO FINANCIAL RISK)</span>
+              <span class="footer-meta mono">EXECUTION: ACCOUNT SETUP DEFERRED</span>
             </footer>
           </article>
         </section>
@@ -1458,5 +1462,15 @@
   </div>
 
   <script src="/js/app.js"></script>
+  <script src="/js/u1-next.js"></script>
+  <script src="/js/workspace-pages.js"></script>
+  <script src="/js/aurora-workspace.js"></script>
+  <link rel="stylesheet" href="/css/live-bar.css">
+  <script src="/js/live-bar.js"></script>
+  <script src="/js/osint-casebook.js"></script>
+  <link rel="stylesheet" href="/css/neon-desktop.css">
+  <script src="/js/neon-desktop.js"></script>
+  <link rel="stylesheet" href="/css/news-markets.css">
+  <script src="/js/news-markets.js"></script>
 </body>
 </html>

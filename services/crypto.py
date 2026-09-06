@@ -243,6 +243,17 @@ DEFAULT_COPY_TRADERS = [
 class CryptoService(BaseService):
     def __init__(self, config):
         super().__init__("crypto", config)
+        self.setup_required = config.get("system", {}).get("setup_mode", True)
+        if self.setup_required:
+            self.tokens = []
+            self.positions = []
+            self.alpha_tweets = []
+            self.copy_traders = []
+            self.price_alerts = []
+            self.bot_state = {"status": "NOT_CONFIGURED", "bot_positions": []}
+            self.bot_log = []
+            self.poll()
+            return
         self.configured = True
         self.status = "active"
         self.tokens = list(DEFAULT_TOKENS)
@@ -341,6 +352,15 @@ class CryptoService(BaseService):
         self.poll()
 
     def poll(self):
+        if self.setup_required:
+            with self.lock:
+                self.data = {"setup_required": True, "tokens": [], "positions": [],
+                             "alpha_tweets": [], "copy_traders": [], "price_alerts": [],
+                             "bot_state": self.bot_state, "bot_log": [],
+                             "portfolio_summary": {},
+                             "notice": "Adapter files installed. Live account connections and trading implementation are pending."}
+                self.last_updated = time.time()
+            return
         # Micro-fluctuate prices for living telemetry effect
         for t in self.tokens:
             drift = (random.random() - 0.49) * 0.008
@@ -649,6 +669,9 @@ class CryptoService(BaseService):
 
     def dispatch_action(self, action, payload=None):
         payload = payload or {}
+        if self.setup_required:
+            return {"success": False, "error": "CRYPTO_NOT_CONFIGURED",
+                    "message": "Crypto setup is deferred. Open Integrations to review installed adapters."}
 
         if action == "execute_swap":
             if not payload.get("confirmed"):
