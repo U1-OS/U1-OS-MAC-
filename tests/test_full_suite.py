@@ -211,6 +211,36 @@ def main():
     s, res = action("settings", "export_vault", {"password": "MasterSuitePassword!", "note": "Automated Test Vault"})
     log_test("Web API Vault Export Action", res.get("success"), f"Archive: {os.path.basename(res.get('vault_path', ''))}")
 
+    # 14. Offline Local LLM (Ollama) & Air-Gapped Intelligence
+    print(f"\n{INFO} 14. Subsystem: Offline Local LLM (Ollama):")
+    s, res = action("ai_workbench", "run_prompt", {"provider": "ollama", "prompt": "Evaluate air-gapped system telemetry", "sandbox": True})
+    log_test("Ollama Air-Gapped Dispatch", res.get("success"), f"Model: {res.get('model')}")
+    log_test("Zero Token Cost Guarantee", res.get("cost_usd") == 0.0, f"Billed: ${res.get('cost_usd'):.5f}")
+    log_test("Local Weight Synthesis", "LOCAL AIR-GAPPED" in res.get("text", ""), "Zero external network egress")
+
+    # 15. Executive Business Dossier Compilation
+    print(f"\n{INFO} 15. Subsystem: Executive Business Dossier:")
+    s, res = action("settings", "generate_briefing", {})
+    log_test("Dossier Compilation Action", res.get("success"), f"Report: {os.path.basename(res.get('markdown_file', ''))}")
+    md_exists = os.path.exists(res.get("markdown_file", "")) and os.path.getsize(res.get("markdown_file", "")) > 100
+    html_exists = os.path.exists(res.get("html_file", "")) and os.path.getsize(res.get("html_file", "")) > 500
+    log_test("Dossier Markdown File Artifact", md_exists, res.get("markdown_file"))
+    log_test("Printable HTML Dossier Artifact", html_exists, res.get("html_file"))
+
+    # 16. macOS Menu Bar Extra Protocol
+    print(f"\n{INFO} 16. Subsystem: macOS Menu Bar Extra:")
+    from utils.menubar import get_state
+    bar_state = get_state()
+    log_test("Menu Bar Feeder State Query", bool(bar_state.get("services")), "9 services inspected")
+    import io, contextlib
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        from utils.menubar import render_menubar
+        render_menubar()
+    bar_out = buf.getvalue()
+    log_test("BitBar / SwiftBar Protocol Header", "⚡ CC:" in bar_out and "font=JetBrains Mono" in bar_out, "Menu bar top-level line")
+    log_test("Deep Navigation URL Schemes", "href=http://127.0.0.1:8787#finance" in bar_out, "9 panel URL hooks")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

@@ -151,6 +151,29 @@ cmd_vault() {
   python3 utils/vault.py "$SUB" "$@"
 }
 
+cmd_briefing() {
+  echo -e "\033[33m[DOSSIER]\033[0m Compiling Command Center Executive Business Dossier..."
+  python3 utils/briefing.py
+}
+
+cmd_menubar() {
+  python3 utils/menubar.py
+}
+
+cmd_llm() {
+  PROMPT="${2:-Analyze current business velocity and market conditions.}"
+  PROVIDER="${3:-ollama}"
+  echo -e "\033[33m[AI WORKBENCH]\033[0m Dispatching query via $PROVIDER..."
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'service': 'ai_workbench', 'action': 'run_prompt', 'payload': {'provider': '$PROVIDER', 'prompt': '$PROMPT', 'sandbox': True}}).encode('utf-8')
+req = urllib.request.Request('http://127.0.0.1:8787/api/action', data=payload, headers={'Content-Type': 'application/json'})
+with urllib.request.urlopen(req) as r:
+    res = json.loads(r.read().decode('utf-8'))
+    print(res.get('text', ''))
+"
+}
+
 case "$1" in
   start)
     cmd_start
@@ -182,12 +205,23 @@ case "$1" in
   vault)
     cmd_vault "$@"
     ;;
+  briefing)
+    cmd_briefing
+    ;;
+  menubar)
+    cmd_menubar
+    ;;
+  llm)
+    cmd_llm "$@"
+    ;;
   *)
-    echo "Usage: ./command-center {start|stop|restart|status|open|test|install-agent|uninstall-agent|notify|vault}"
-    echo "       ./command-center notify \"Title\" \"Message\""
-    echo "       ./command-center vault export --password <pass> [--out <file>]"
-    echo "       ./command-center vault import --vault <file> --password <pass>"
-    echo "       ./command-center vault inspect --vault <file>"
+    echo "Usage: ./command-center {start|stop|restart|status|open|test|install-agent|uninstall-agent|notify|vault|briefing|menubar|llm}"
+    echo "       ./command-center briefing                        # Generate executive dossier"
+    echo "       ./command-center menubar                         # Run macOS status bar stream"
+    echo "       ./command-center llm \"prompt\" [provider]         # Query AI Workbench"
+    echo "       ./command-center notify \"Title\" \"Message\"        # Test macOS notification"
+    echo "       ./command-center vault export --password <pass>  # Export encrypted vault"
+    echo "       ./command-center vault import --vault <file>     # Restore encrypted vault"
     exit 1
     ;;
 esac

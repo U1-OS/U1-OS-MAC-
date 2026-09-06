@@ -3978,6 +3978,9 @@ const CommandCenter = (() => {
     { group: 'ACTIONS', id: 'whois', title: 'Query Port 43 WHOIS', desc: 'Inspect IANA / ICANN domain registrar', shortcut: 'WHOIS', action: () => { switchSection('osint'); document.getElementById('osintWhoisInput')?.focus(); } },
     { group: 'ACTIONS', id: 'breach', title: 'Audit Account Breach (HIBP)', desc: 'Scan corporate email against HaveIBeenPwned', shortcut: 'HIBP', action: () => { switchSection('osint'); document.getElementById('osintHibpInput')?.focus(); } },
     { group: 'ACTIONS', id: 'updater', title: 'Check Git Repo Updates', desc: 'Query git repository and tracking branch', shortcut: 'GIT', action: () => { checkRepoUpdates(); } },
+    { group: 'ACTIONS', id: 'briefing', title: 'Generate Executive Business Dossier', desc: 'Compile multi-service report into markdown and print HTML', shortcut: 'BRIEF', action: () => generateExecutiveBriefing() },
+    { group: 'ACTIONS', id: 'ollama', title: 'Dispatch Local Offline Model (Ollama)', desc: 'Run air-gapped zero-cost local inference', shortcut: 'LOCAL', action: () => { dispatchOllamaPrompt(); } },
+    { group: 'ACTIONS', id: 'menubar', title: 'macOS Menu Bar Extra', desc: 'Query SwiftBar / BitBar feeder stream', shortcut: 'BAR', action: () => showMenuBarInfo() },
 
     // Theme & Preferences
     { group: 'THEME', id: 'theme_gold', title: 'Theme: Classic Dark Gold (#E9B44C)', desc: 'Default industrial signature aesthetic', shortcut: 'GOLD', action: () => setThemeAccent('#E9B44C') },
@@ -4968,6 +4971,57 @@ STATUS: RESOLVED // NOMINAL
     );
   }
 
+  function generateExecutiveBriefing() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    showNotification('Compiling Executive Business Dossier...');
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'generate_briefing',
+        payload: {}
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showConfirmModal(
+          'EXECUTIVE DOSSIER READY',
+          'Business Operating System dossier compiled successfully. Click below to view or print the standalone dark-gold report.',
+          `Report: ${res.markdown_file}\nPrintable HTML: ${res.html_file}`,
+          () => {
+            window.open('/' + res.html_file, '_blank');
+          }
+        );
+      } else {
+        showNotification('Briefing generation failed: ' + (res.error || 'Unknown error'), 'error');
+      }
+    });
+  }
+
+  function dispatchOllamaPrompt() {
+    switchSection('ai');
+    const claudeBox = document.getElementById('claudePromptInput');
+    if (claudeBox) {
+      claudeBox.value = 'Evaluate current air-gapped system telemetry and business velocity.';
+      claudeBox.focus();
+    }
+    showNotification('AI Workbench focused: Ollama local mode ready');
+  }
+
+  function showMenuBarInfo() {
+    showConfirmModal(
+      'macOS MENU BAR EXTRA',
+      'The menu bar extra script generates live status lines for SwiftBar, xbar, and BitBar.',
+      'CLI Command: ./command-center menubar\nScript: utils/menubar.py',
+      () => {
+        showNotification('Run ./command-center menubar in Terminal for live stream');
+      }
+    );
+  }
+
   /* ========================================================
      HELPERS
      ======================================================== */
@@ -4994,6 +5048,9 @@ STATUS: RESOLVED // NOMINAL
     testMacosNotification,
     exportSecurityVault,
     prepareVaultRestore,
+    generateExecutiveBriefing,
+    dispatchOllamaPrompt,
+    showMenuBarInfo,
     saveApiKeys,
     checkRepoUpdates,
     confirmPullUpdates,

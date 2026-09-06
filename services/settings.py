@@ -6,6 +6,7 @@ import subprocess
 from services.base import BaseService
 from utils import macos
 from utils import vault
+from utils import briefing
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -530,5 +531,14 @@ class SettingsService(BaseService):
                 return res
             except Exception as e:
                 return {"success": False, "error": f"Vault import failed: {e}"}
+
+        # --- Executive Briefing Generator ---
+        elif action == "generate_briefing":
+            out_dir = os.path.join(self.root_dir, "exports")
+            port = self.config.get("system", {}).get("port", 8787)
+            res = briefing.generate_briefing(out_dir, port=port)
+            if res.get("success"):
+                self.add_event("briefing_generated", f"Executive Briefing Dossier compiled ({os.path.basename(res['html_file'])})")
+            return res
 
         return super().dispatch_action(action, payload)
