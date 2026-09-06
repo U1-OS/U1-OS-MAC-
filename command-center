@@ -405,6 +405,112 @@ else:
 " "$2"
 }
 
+cmd_crypto() {
+  SUB="$2"
+  python3 -c "
+import sys, json, urllib.request
+
+sub = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else 'tokens'
+host = '$HOST'
+port = $PORT
+
+def call_api(path, data=None):
+    url = f'http://{host}:{port}{path}'
+    if data is not None:
+        req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
+    else:
+        req = urllib.request.Request(url)
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        print(f'Error connecting to feeder: {e}')
+        sys.exit(1)
+
+if sub == 'tokens':
+    state = call_api('/api/state')
+    tokens = state.get('services', {}).get('crypto', {}).get('data', {}).get('tokens', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Dedicated Crypto & Trading Desk (Photon / DEX Screener)')
+    print('========================================================================================')
+    print(f'{\"SYMBOL\":<8} {\"NAME\":<18} {\"PRICE\":<12} {\"5m%\":<8} {\"1h%\":<8} {\"24h%\":<8} {\"LIQUIDITY\":<14} {\"MARKET CAP\"}')
+    print('----------------------------------------------------------------------------------------')
+    for t in tokens:
+        p_str = f\"\${t['price_usd']:.6f}\" if t['price_usd'] < 0.01 else f\"\${t['price_usd']:.2f}\"
+        liq_str = f\"\${t['liquidity_usd']/1e6:.1f}M\"
+        mc_str = f\"\${t['market_cap_usd']/1e6:.1f}M\" if t['market_cap_usd'] < 1e9 else f\"\${t['market_cap_usd']/1e9:.1f}B\"
+        print(f\"{t['symbol']:<8} {t['name']:<18} {p_str:<12} {t['pnl_5m']:+6.2f}% {t['pnl_1h']:+6.2f}% {t['pnl_24h']:+6.2f}% {liq_str:<14} {mc_str}\")
+    print('========================================================================================')
+
+elif sub == 'alpha':
+    state = call_api('/api/state')
+    tweets = state.get('services', {}).get('crypto', {}).get('data', {}).get('alpha_tweets', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Twitter / X Memecoin & Alpha Social Monitor')
+    print('========================================================================================')
+    for tw in tweets[:8]:
+        cas = ', '.join(tw.get('contract_addresses', [])) or 'None detected'
+        print(f\"[{tw.get('handle')}] ({tw.get('sentiment')}) - {tw.get('likes')} likes | {tw.get('retweets')} RTs\")
+        print(f\"   Text: {tw.get('text')}\")
+        print(f\"   CAs:  {cas}\")
+        print(f\"   Photon: {tw.get('photon_link')}\")
+        print('----------------------------------------------------------------------------------------')
+
+elif sub == 'copy':
+    state = call_api('/api/state')
+    traders = state.get('services', {}).get('crypto', {}).get('data', {}).get('copy_traders', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Alpha Whitelist & Copy Trading Engine')
+    print('========================================================================================')
+    print(f'{\"HANDLE\":<18} {\"WIN RATE\":<10} {\"PNL (30d)\":<14} {\"ALLOCATION\":<12} {\"STATUS\"}')
+    print('----------------------------------------------------------------------------------------')
+    for c in traders:
+        status = 'ACTIVE (Auto-Copy)' if c.get('active') else 'PAUSED'
+        handle = c.get('handle') or c.get('username') or 'unknown'
+        win = c.get('win_rate_pct') or c.get('win_rate') or 0
+        pnl = c.get('pnl_30d_usd') if c.get('pnl_30d_usd') is not None else c.get('pnl_total_usd', 0)
+        alloc = c.get('allocation_sol', 0.5)
+        print(f\"{handle:<18} {win}%{'':<5} \${pnl:+10,.0f} USD  {alloc} SOL{'':<5} {status}\")
+    print('========================================================================================')
+
+elif sub == 'positions':
+    state = call_api('/api/state')
+    positions = state.get('services', {}).get('crypto', {}).get('data', {}).get('positions', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Active Memecoin Positions & Unrealized PnL')
+    print('========================================================================================')
+    print(f'{\"SYMBOL\":<8} {\"AMOUNT\":<14} {\"ENTRY\":<10} {\"MARK\":<10} {\"VALUE\":<10} {\"PNL ($)\":<12} {\"PNL (%)\"}')
+    print('----------------------------------------------------------------------------------------')
+    for p in positions:
+        print(f\"{p.get('symbol'):<8} {p.get('amount'):<14,.1f} \${p.get('entry_price'):<9.4f} \${p.get('mark_price'):<9.4f} \${p.get('value_usd'):<9.2f} \${p.get('unrealized_pnl_usd'):<11.2f} {p.get('unrealized_pnl_pct'):+6.2f}%\")
+    print('========================================================================================')
+
+elif sub == 'alert':
+    state = call_api('/api/state')
+    alerts = state.get('services', {}).get('crypto', {}).get('data', {}).get('price_alerts', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Real-Time Crypto Price Alerts')
+    print('========================================================================================')
+    for a in alerts:
+        print(f\"[{a.get('id')}] \${a.get('symbol')} {a.get('condition')} \${a.get('target_price')} (Current: \${a.get('current_price', '--')}) - Status: {a.get('status')}\")
+    print('========================================================================================')
+
+elif sub == 'swap':
+    args = sys.argv[2:]
+    if len(args) < 3:
+        print('Usage: ./command-center crypto swap <BUY|SELL> <SYMBOL> <AMOUNT_SOL> [--confirm]')
+        sys.exit(1)
+    side, sym, amt = args[0].upper(), args[1].upper(), float(args[2])
+    confirmed = '--confirm' in args
+    res = call_api('/api/action', {
+        'service': 'crypto',
+        'action': 'execute_swap',
+        'payload': {'side': side, 'symbol': sym, 'amount': amt, 'confirmed': confirmed}
+    })
+    print(json.dumps(res, indent=2))
+" "$2" "$3" "$4" "$5" "$6"
+}
+
 case "$1" in
   start)
     cmd_start
@@ -475,8 +581,12 @@ case "$1" in
   ledger)
     cmd_ledger "$@"
     ;;
+  crypto)
+    cmd_crypto "$@"
+    ;;
   *)
-    echo "Usage: ./command-center {start|stop|restart|status|open|test|top|kill|lockdown|ledger|ssl|ports|hardware|speak|briefing|...}"
+    echo "Usage: ./command-center {start|stop|restart|status|open|test|crypto|top|kill|lockdown|ledger|...}"
+    echo "       ./command-center crypto [tokens|alpha|copy|alert|positions|swap] # Dedicated Crypto Desk"
     echo "       ./command-center top [--cpu|--mem]               # macOS Process Resource Watchdog"
     echo "       ./command-center kill <pid>                      # Terminate rogue process with guard"
     echo "       ./command-center lockdown [on|off|status]        # Emergency security lockdown killswitch"

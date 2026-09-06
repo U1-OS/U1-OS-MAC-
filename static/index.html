@@ -161,6 +161,15 @@
             <span class="nav-label">Finance</span>
           </button>
 
+          <button class="nav-item" data-section="crypto" id="nav-crypto">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </span>
+            <span class="nav-label">Crypto Desk</span>
+          </button>
+
           <button class="nav-item" data-section="studio" id="nav-studio">
             <span class="nav-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -592,6 +601,122 @@
             <footer class="slab-footer">
               <span class="footer-meta mono">MARKET TELEMETRY: COINGECKO // PUBLIC ORACLES</span>
               <span class="footer-meta mono">ORDER DISPATCH GATED BY EXPLICIT CONFIRMATION</span>
+            </footer>
+          </article>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION: DEDICATED CRYPTO & TRADING DESK -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-crypto" data-section-name="Crypto Desk">
+          <!-- Widget 1: Photon / DEX Memecoin Terminal Screener [Span 8] -->
+          <article class="slab-panel span-8 scanline-hud" id="cryptoPhotonPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">CRYPTO // 01 &bull; PHOTON DEX</span>
+                <h2 class="slab-title">MEMECOIN RADAR &bull; LIVE SCREENER</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot active" style="background:var(--neon-cyan);"></span>
+                <span class="status-text mono" id="cryptoScreenerStatus">DEX STREAM ONLINE</span>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoTokensContainer" style="overflow-x:auto;"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">SPEED ROUTING: PHOTON-SOL TINYASTRO</span>
+              <span class="footer-meta mono" id="cryptoTotalMcap">TRACKED TOKENS: 8 ASSETS</span>
+            </footer>
+          </article>
+
+          <!-- Widget 2: Photon Instant Swap Execution Desk [Span 4] -->
+          <article class="slab-panel span-4" id="cryptoSwapPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-magenta);">CRYPTO // 02 &bull; SWAP DESK</span>
+                <h2 class="slab-title">PHOTON INSTANT ROUTER</h2>
+              </div>
+              <span class="status-dot active" style="background:var(--neon-magenta);"></span>
+            </header>
+            <div class="slab-body" id="cryptoSwapContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">SLIPPAGE TOLERANCE: AUTO 2.5%</span>
+            </footer>
+          </article>
+
+          <!-- Widget 3: Twitter / X Memecoin & Social Alpha Monitor [Span 6] -->
+          <article class="slab-panel span-6" id="cryptoAlphaPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">CRYPTO // 03 &bull; SOCIAL RADAR</span>
+                <h2 class="slab-title">TWITTER / X ALPHA &bull; CA SCRAPER</h2>
+              </div>
+              <div class="slab-actions">
+                <button class="btn btn-secondary btn-sm mono" onclick="CommandCenter.scanAlphaTweets()">SCAN ALPHA</button>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoAlphaContainer" style="max-height:480px; overflow-y:auto;"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">REGEX ENGINE: SOL BASE58 + EVM 0x</span>
+            </footer>
+          </article>
+
+          <!-- Widget 4: Influencer & Alpha Copy Trading Engine [Span 6] -->
+          <article class="slab-panel span-6" id="cryptoCopyPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-emerald);">CRYPTO // 04 &bull; COPY ENGINE</span>
+                <h2 class="slab-title">ALPHA WHITELIST &bull; COPY TRADING</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot active" style="background:var(--neon-emerald);"></span>
+                <span class="status-text mono" id="copyTradingStatus">AUTO-EXEC ON</span>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoCopyContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROTECTION: STRICT MAX ALLOCATION GUARD</span>
+            </footer>
+          </article>
+
+          <!-- Widget 5: Real-Time Price Target Alerts & Audio Watchdog [Span 6] -->
+          <article class="slab-panel span-6" id="cryptoAlertsPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--gold);">CRYPTO // 05 &bull; VOLATILITY SENTINEL</span>
+                <h2 class="slab-title">PRICE TARGET ALERTS &bull; AUDIO CHIME</h2>
+              </div>
+              <span class="mono" id="activeAlertsBadge" style="font-size:11px; color:var(--gold);">-- ACTIVE</span>
+            </header>
+            <div class="slab-body" id="cryptoAlertsContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">CRON INTERVAL: 60s DAEMON POLL</span>
+            </footer>
+          </article>
+
+          <!-- Widget 6: Active Memecoin Positions & Unrealized PnL Desk [Span 6] -->
+          <article class="slab-panel span-6" id="cryptoPositionsPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">CRYPTO // 06 &bull; HOLDINGS</span>
+                <h2 class="slab-title">ACTIVE POSITIONS &bull; UNREALIZED PNL</h2>
+              </div>
+              <span class="mono" id="cryptoPortfolioPnlBadge" style="font-size:11px; font-weight:700;">--</span>
+            </header>
+            <div class="slab-body" id="cryptoPositionsContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">MARK-TO-MARKET: REAL-TIME ON-CHAIN ORACLES</span>
             </footer>
           </article>
         </section>

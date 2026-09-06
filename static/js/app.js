@@ -604,6 +604,8 @@ const CommandCenter = (() => {
       renderGamingSection(s.gaming);
     } else if (sectionId === 'osint') {
       renderOSINTSection(s.osint);
+    } else if (sectionId === 'crypto') {
+      renderCryptoSection(s.crypto);
     }
   }
 
@@ -1781,6 +1783,488 @@ const CommandCenter = (() => {
         updateTradeEstimate();
       }, 20);
     }
+  }
+
+  /* ========================================================
+     SECTION: DEDICATED CRYPTO & TRADING DESK
+     Photon DEX Screener, Twitter Alpha, Copy Trading & Alerts
+     ======================================================== */
+  let cryptoSelectedToken = 'BONK';
+  let cryptoSwapSide = 'BUY';
+  let cryptoSwapSlippage = 2.5;
+
+  function renderCryptoSection(crypto) {
+    if (!crypto || !crypto.data) return;
+    const d = crypto.data;
+    const tokens = d.tokens || [];
+    const alphaTweets = d.alpha_tweets || [];
+    const copyTraders = d.copy_traders || [];
+    const priceAlerts = d.price_alerts || [];
+    const positions = d.positions || [];
+    const summary = d.portfolio_summary || {};
+
+    // Badges & Footers
+    const totalMcapEl = document.getElementById('cryptoTotalMcap');
+    if (totalMcapEl) {
+      const solToken = tokens.find(t => t.symbol === 'SOL');
+      totalMcapEl.textContent = `TRACKED TOKENS: ${tokens.length} | SOL: $${solToken ? solToken.price_usd.toFixed(2) : '--'}`;
+    }
+
+    const alertsBadge = document.getElementById('activeAlertsBadge');
+    if (alertsBadge) {
+      alertsBadge.textContent = `${summary.active_alerts_count || 0} ACTIVE SENTINELS`;
+    }
+
+    const pnlBadge = document.getElementById('cryptoPortfolioPnlBadge');
+    if (pnlBadge) {
+      const pnl = summary.total_unrealized_pnl_usd || 0;
+      const sign = pnl >= 0 ? '+' : '';
+      pnlBadge.textContent = `UNREALIZED: ${sign}$${formatNumber(pnl)}`;
+      pnlBadge.style.color = pnl >= 0 ? 'var(--neon-emerald)' : 'var(--neon-crimson)';
+    }
+
+    // 1. Photon / DEX Screener Table
+    const tokensEl = document.getElementById('cryptoTokensContainer');
+    if (tokensEl) {
+      tokensEl.innerHTML = `
+        <table class="crypto-screener-table">
+          <thead>
+            <tr>
+              <th>TOKEN</th>
+              <th>PRICE</th>
+              <th>5M</th>
+              <th>1H</th>
+              <th>24H</th>
+              <th>LIQUIDITY</th>
+              <th>VOLUME (24H)</th>
+              <th>ROUTING</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tokens.map(t => {
+              const p5 = t.pnl_5m || 0;
+              const p1 = t.pnl_1h || 0;
+              const p24 = t.pnl_24h || 0;
+              const priceFormatted = t.price_usd < 0.01 ? `$${t.price_usd.toFixed(7)}` : `$${t.price_usd.toFixed(2)}`;
+              return `
+                <tr class="crypto-token-row">
+                  <td>
+                    <div class="token-symbol-badge">
+                      <span>$${escapeHtml(t.symbol)}</span>
+                      <span class="chain-pill">${escapeHtml(t.chain || 'sol')}</span>
+                    </div>
+                    <div style="font-size:10px; color:var(--text-muted);">${escapeHtml(t.name)}</div>
+                  </td>
+                  <td class="mono" style="font-weight:700; color:var(--text-primary);">${priceFormatted}</td>
+                  <td><span class="pnl-chip ${p5 >= 0 ? 'up' : 'down'}">${p5 >= 0 ? '+' : ''}${p5.toFixed(2)}%</span></td>
+                  <td><span class="pnl-chip ${p1 >= 0 ? 'up' : 'down'}">${p1 >= 0 ? '+' : ''}${p1.toFixed(2)}%</span></td>
+                  <td><span class="pnl-chip ${p24 >= 0 ? 'up' : 'down'}">${p24 >= 0 ? '+' : ''}${p24.toFixed(2)}%</span></td>
+                  <td class="mono" style="color:var(--text-secondary);">$${formatNumber(t.liquidity_usd || 0)}</td>
+                  <td class="mono" style="color:var(--text-secondary);">$${formatNumber(t.volume_24h_usd || 0)}</td>
+                  <td>
+                    <div style="display:flex; gap:6px;">
+                      <button class="btn btn-secondary btn-sm mono" style="font-size:10px; padding:3px 8px; border-color:var(--neon-cyan); color:var(--neon-cyan);" onclick="CommandCenter.selectCryptoToken('${escapeHtml(t.symbol)}')">SWAP</button>
+                      <a href="${escapeHtml(t.photon_url)}" target="_blank" rel="noopener noreferrer" class="btn-photon">
+                        PHOTON &nearr;
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // 2. Photon Swap Desk Form
+    const swapEl = document.getElementById('cryptoSwapContainer');
+    if (swapEl) {
+      swapEl.innerHTML = `
+        <div class="swap-form-wrap">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-sm mono ${cryptoSwapSide === 'BUY' ? 'btn-gold' : 'btn-secondary'}" style="${cryptoSwapSide === 'BUY' ? 'background:var(--neon-emerald); color:#000; border-color:var(--neon-emerald);' : ''}" onclick="CommandCenter.setCryptoSwapSide('BUY')">BUY</button>
+              <button class="btn btn-sm mono ${cryptoSwapSide === 'SELL' ? 'btn-gold' : 'btn-secondary'}" style="${cryptoSwapSide === 'SELL' ? 'background:var(--neon-crimson); color:#FFF; border-color:var(--neon-crimson);' : ''}" onclick="CommandCenter.setCryptoSwapSide('SELL')">SELL</button>
+            </div>
+            <span class="mono" style="font-size:11px; color:var(--neon-cyan);">PHOTON-SOL ROUTER</span>
+          </div>
+
+          <div class="swap-input-group">
+            <label>Select Target Token</label>
+            <select id="cryptoSwapTokenSelect" class="swap-select" onchange="CommandCenter.selectCryptoToken(this.value)">
+              ${tokens.map(t => `<option value="${t.symbol}" ${t.symbol === cryptoSelectedToken ? 'selected' : ''}>$${t.symbol} — ${t.name}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="swap-input-group">
+            <label>Amount (in SOL)</label>
+            <div class="swap-input-row">
+              <input type="number" id="cryptoSwapAmount" class="swap-input" step="0.05" min="0.01" value="0.5" oninput="CommandCenter.updateSwapEstimate()">
+            </div>
+            <div style="display:flex; gap:4px; margin-top:4px;">
+              <button class="btn btn-secondary btn-sm mono" style="font-size:10px; padding:2px 6px;" onclick="CommandCenter.setCryptoSwapAmount(0.1)">0.1 SOL</button>
+              <button class="btn btn-secondary btn-sm mono" style="font-size:10px; padding:2px 6px;" onclick="CommandCenter.setCryptoSwapAmount(0.5)">0.5 SOL</button>
+              <button class="btn btn-secondary btn-sm mono" style="font-size:10px; padding:2px 6px;" onclick="CommandCenter.setCryptoSwapAmount(1.0)">1.0 SOL</button>
+              <button class="btn btn-secondary btn-sm mono" style="font-size:10px; padding:2px 6px;" onclick="CommandCenter.setCryptoSwapAmount(2.0)">2.0 SOL</button>
+            </div>
+          </div>
+
+          <div class="swap-input-group">
+            <label>Slippage Tolerance</label>
+            <div style="display:flex; gap:6px;">
+              ${[0.5, 1.0, 2.5, 5.0].map(slip => `
+                <button class="btn btn-sm mono ${cryptoSwapSlippage === slip ? 'btn-gold' : 'btn-secondary'}" style="font-size:10px; padding:3px 8px; flex:1;" onclick="CommandCenter.setCryptoSlippage(${slip})">${slip}%</button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); padding:10px; border-radius:2px; font-family:var(--font-mono); font-size:11px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <span style="color:var(--text-secondary);">ESTIMATED OUTPUT:</span>
+              <span id="cryptoEstimatedOutput" style="font-weight:700; color:var(--gold);">--</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <span style="color:var(--text-secondary);">PRIORITY FEE:</span>
+              <span style="color:var(--neon-cyan);">0.0005 SOL (Turbo)</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-secondary);">ROUTE:</span>
+              <span style="color:var(--text-muted);">Raydium / Orca / Whirlpool</span>
+            </div>
+          </div>
+
+          <button class="btn btn-gold mono" style="width:100%; padding:10px; font-weight:700; letter-spacing:0.05em;" onclick="CommandCenter.confirmExecuteSwap()">
+            EXECUTE PHOTON SWAP &rarr;
+          </button>
+        </div>
+      `;
+      setTimeout(updateSwapEstimate, 20);
+    }
+
+    // 3. Twitter / X Social Alpha Monitor
+    const alphaEl = document.getElementById('cryptoAlphaContainer');
+    if (alphaEl) {
+      alphaEl.innerHTML = alphaTweets.length === 0 ? '<div class="mono" style="padding:15px; color:var(--text-muted); text-align:center;">No social alpha captured yet. Click SCAN ALPHA.</div>' :
+        alphaTweets.map(tw => {
+          const tagClass = tw.sentiment === 'MOONSHOT' ? 'tag-moonshot' : (tw.sentiment === 'ACCUMULATE' ? 'tag-accumulate' : 'tag-bullish');
+          const cas = tw.contract_addresses || [];
+          return `
+            <div class="alpha-tweet-card">
+              <div class="alpha-header">
+                <div>
+                  <span class="alpha-handle">${escapeHtml(tw.handle)}</span>
+                  <span style="font-size:11px; color:var(--text-secondary); margin-left:6px;">${escapeHtml(tw.name)}</span>
+                </div>
+                <span class="alpha-tag ${tagClass}">${escapeHtml(tw.sentiment || 'BULLISH')}</span>
+              </div>
+              <div class="alpha-text">${escapeHtml(tw.text)}</div>
+              ${cas.length > 0 ? `
+                <div style="margin-bottom:8px; display:flex; flex-wrap:wrap; gap:6px;">
+                  ${cas.map(ca => `
+                    <span class="alpha-ca-badge" title="Click to copy CA" onclick="CommandCenter.copyCaToClipboard('${escapeHtml(ca)}')">
+                      <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      CA: ${ca.slice(0, 8)}...${ca.slice(-6)}
+                    </span>
+                  `).join('')}
+                </div>
+              ` : ''}
+              <div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">
+                <div>
+                  <span>&hearts; ${tw.likes || 0}</span>
+                  <span style="margin-left:8px;">&circlearrowright; ${tw.retweets || 0} RTs</span>
+                </div>
+                ${tw.photon_link ? `
+                  <a href="${escapeHtml(tw.photon_link)}" target="_blank" rel="noopener noreferrer" class="btn-photon" style="font-size:10px; padding:2px 6px;">
+                    BUY ON PHOTON &nearr;
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+    }
+
+    // 4. Alpha Whitelist & Copy Trading Engine
+    const copyEl = document.getElementById('cryptoCopyContainer');
+    if (copyEl) {
+      copyEl.innerHTML = copyTraders.length === 0 ? '<div class="mono" style="padding:15px; color:var(--text-muted); text-align:center;">No copy trading traders whitelisted.</div>' :
+        `
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            ${copyTraders.map(c => `
+              <div class="copy-trader-item ${c.active ? 'active' : ''}">
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="mono" style="font-weight:700; color:var(--neon-cyan);">${escapeHtml(c.handle)}</span>
+                    <span class="mono trader-stat" style="color:var(--text-muted); font-size:10px;">${escapeHtml(c.name)}</span>
+                  </div>
+                  <div style="display:flex; gap:12px; margin-top:4px;">
+                    <span class="trader-stat">WIN RATE: <span class="trader-winrate">${c.win_rate_pct}%</span></span>
+                    <span class="trader-stat">30D PNL: <span style="color:var(--neon-emerald); font-weight:700;">+$${formatNumber(c.pnl_30d_usd || 0)}</span></span>
+                    <span class="trader-stat">SIZE: <span class="mono" style="color:var(--gold);">${c.allocation_sol} SOL</span></span>
+                  </div>
+                </div>
+                <div>
+                  <button class="btn btn-sm mono ${c.active ? 'btn-secondary' : 'btn-gold'}" style="font-size:10px; padding:4px 8px;" onclick="CommandCenter.toggleCryptoCopyTrading('${escapeHtml(c.handle)}', ${!c.active})">
+                    ${c.active ? 'PAUSE' : 'ENABLE'}
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+    }
+
+    // 5. Price Target Alerts
+    const alertsEl = document.getElementById('cryptoAlertsContainer');
+    if (alertsEl) {
+      alertsEl.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; gap:8px; align-items:center; background:rgba(255,255,255,0.02); padding:8px; border:1px solid var(--border-subtle); border-radius:2px;">
+            <select id="alertSymbolSelect" class="swap-select" style="width:110px; font-size:11px; padding:6px;">
+              ${tokens.map(t => `<option value="${t.symbol}">${t.symbol}</option>`).join('')}
+            </select>
+            <select id="alertConditionSelect" class="swap-select" style="width:95px; font-size:11px; padding:6px;">
+              <option value="ABOVE">&gt;= ABOVE</option>
+              <option value="BELOW">&lt;= BELOW</option>
+            </select>
+            <input type="number" id="alertTargetPrice" class="swap-input" placeholder="Target Price $" step="any" style="flex:1; font-size:11px; padding:6px;">
+            <button class="btn btn-gold btn-sm mono" style="font-size:10px; padding:6px 10px;" onclick="CommandCenter.createCryptoAlert()">+ SET ALERT</button>
+          </div>
+
+          <div style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+            ${priceAlerts.length === 0 ? '<div class="mono" style="padding:15px; color:var(--text-muted); text-align:center;">No active price alerts.</div>' :
+              priceAlerts.map(a => `
+                <div class="crypto-alert-item ${a.status === 'TRIGGERED' ? 'triggered' : ''}">
+                  <div>
+                    <span class="mono" style="font-weight:700; color:var(--gold);">$${escapeHtml(a.symbol)}</span>
+                    <span class="mono" style="font-size:11px; color:var(--text-secondary); margin-left:6px;">${a.condition} $${formatNumber(a.target_price)}</span>
+                    <span class="mono" style="font-size:10px; color:var(--text-muted); margin-left:8px;">Current: $${formatNumber(a.current_price || 0)}</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="mono" style="font-size:10px; padding:2px 6px; border-radius:2px; ${a.status === 'TRIGGERED' ? 'background:rgba(239,68,68,0.2); color:var(--neon-crimson); font-weight:700;' : 'background:rgba(16,185,129,0.1); color:var(--neon-emerald);'}">${a.status}</span>
+                    <button class="btn btn-secondary btn-sm mono" style="font-size:10px; padding:2px 6px; color:var(--text-muted);" onclick="CommandCenter.deleteCryptoAlert('${escapeHtml(a.id)}')">&times;</button>
+                  </div>
+                </div>
+              `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 6. Active Positions & Unrealized PnL Desk
+    const posEl = document.getElementById('cryptoPositionsContainer');
+    if (posEl) {
+      posEl.innerHTML = positions.length === 0 ? '<div class="mono" style="padding:15px; color:var(--text-muted); text-align:center;">No open positions currently held.</div>' :
+        `
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            ${positions.map(p => {
+              const pnl = p.unrealized_pnl_usd || 0;
+              const pct = p.unrealized_pnl_pct || 0;
+              const isUp = pnl >= 0;
+              return `
+                <div class="position-item-card">
+                  <div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span class="mono" style="font-weight:700; color:var(--gold); font-size:13px;">$${escapeHtml(p.symbol)}</span>
+                      <span class="mono" style="font-size:11px; color:var(--text-secondary);">${formatNumber(p.amount)} tokens</span>
+                    </div>
+                    <div style="display:flex; gap:12px; margin-top:4px; font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">
+                      <span>ENTRY: $${formatNumber(p.entry_price)}</span>
+                      <span>MARK: $${formatNumber(p.mark_price)}</span>
+                      <span>VALUE: $${formatNumber(p.value_usd)}</span>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="text-align:right;">
+                      <div class="mono" style="font-weight:700; color:${isUp ? 'var(--neon-emerald)' : 'var(--neon-crimson)'};">
+                        ${isUp ? '+' : ''}$${formatNumber(pnl)}
+                      </div>
+                      <div class="mono" style="font-size:10px; color:${isUp ? 'var(--neon-emerald)' : 'var(--neon-crimson)'};">
+                        ${isUp ? '+' : ''}${pct.toFixed(2)}%
+                      </div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm mono" style="font-size:10px; padding:4px 8px; color:var(--neon-crimson); border-color:rgba(239,68,68,0.4);" onclick="CommandCenter.confirmCloseCryptoPosition('${escapeHtml(p.id)}', '${escapeHtml(p.symbol)}')">
+                      EXIT
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+    }
+  }
+
+  function selectCryptoToken(symbol) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.haptic();
+    cryptoSelectedToken = symbol;
+    const sel = document.getElementById('cryptoSwapTokenSelect');
+    if (sel) sel.value = symbol;
+    updateSwapEstimate();
+  }
+
+  function setCryptoSwapSide(side) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    cryptoSwapSide = side;
+    if (currentState && currentState.services && currentState.services.crypto) {
+      renderCryptoSection(currentState.services.crypto);
+    }
+  }
+
+  function setCryptoSwapAmount(amount) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const inp = document.getElementById('cryptoSwapAmount');
+    if (inp) inp.value = amount;
+    updateSwapEstimate();
+  }
+
+  function setCryptoSlippage(slippage) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    cryptoSwapSlippage = slippage;
+    if (currentState && currentState.services && currentState.services.crypto) {
+      renderCryptoSection(currentState.services.crypto);
+    }
+  }
+
+  function updateSwapEstimate() {
+    const outEl = document.getElementById('cryptoEstimatedOutput');
+    const amtInput = document.getElementById('cryptoSwapAmount');
+    if (!outEl || !amtInput) return;
+    const amt = parseFloat(amtInput.value) || 0;
+    if (!currentState || !currentState.services || !currentState.services.crypto) return;
+    const tokens = currentState.services.crypto.data ? (currentState.services.crypto.data.tokens || []) : [];
+    const solToken = tokens.find(t => t.symbol === 'SOL') || { price_usd: 180 };
+    const targetToken = tokens.find(t => t.symbol === cryptoSelectedToken);
+    if (!targetToken) {
+      outEl.textContent = '--';
+      return;
+    }
+    const solPrice = solToken.price_usd || 180;
+    const tokenPrice = targetToken.price_usd || 1;
+    if (cryptoSwapSide === 'BUY') {
+      const solValUsd = amt * solPrice;
+      const tokensOut = solValUsd / tokenPrice;
+      outEl.textContent = `~${formatNumber(tokensOut)} $${cryptoSelectedToken}`;
+    } else {
+      const tokenValUsd = amt * tokenPrice;
+      const solOut = tokenValUsd / solPrice;
+      outEl.textContent = `~${solOut.toFixed(4)} SOL`;
+    }
+  }
+
+  function confirmExecuteSwap() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const amtInput = document.getElementById('cryptoSwapAmount');
+    const amt = parseFloat(amtInput ? amtInput.value : '0') || 0;
+    if (amt <= 0) {
+      showNotification('Please enter a valid swap amount in SOL');
+      return;
+    }
+
+    showConfirmModal(
+      'EXECUTE PHOTON SWAP ORDER',
+      `Execute ${cryptoSwapSide} of ${amt} SOL worth of $${cryptoSelectedToken} via Photon DEX router with ${cryptoSwapSlippage}% slippage?`,
+      `ROUTER: Photon-SOL (TinyAstro)\nPAIR: SOL / $${cryptoSelectedToken}\nSIDE: ${cryptoSwapSide}\nSIZE: ${amt} SOL\nSLIPPAGE: ${cryptoSwapSlippage}%`,
+      async () => {
+        const res = await sendAction('crypto', 'execute_swap', {
+          side: cryptoSwapSide,
+          symbol: cryptoSelectedToken,
+          amount: amt,
+          slippage_pct: cryptoSwapSlippage,
+          confirmed: true
+        });
+        if (res.success) {
+          if (typeof AudioFeedback !== 'undefined') AudioFeedback.trade();
+          showNotification(`Photon swap executed: ${res.swap.side} $${res.swap.symbol} (${res.swap.amount} SOL)`);
+          fetchState();
+        } else {
+          showNotification(`Swap failed: ${res.error || res.message}`);
+        }
+      }
+    );
+  }
+
+  async function scanAlphaTweets() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.signal();
+    showNotification('Scanning Twitter / X memecoin alpha stream...');
+    const res = await sendAction('crypto', 'scan_alpha_tweets', {});
+    if (res.success) {
+      showNotification(`Alpha scan complete: ${res.total_tweets} tweets parsed`);
+      fetchState();
+    }
+  }
+
+  async function toggleCryptoCopyTrading(handle, active) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const res = await sendAction('crypto', 'toggle_copy_trading', { handle, active });
+    if (res.success) {
+      if (typeof AudioFeedback !== 'undefined') AudioFeedback.signal();
+      showNotification(`Copy trading for ${handle} ${active ? 'ACTIVATED' : 'PAUSED'}`);
+      fetchState();
+    }
+  }
+
+  async function createCryptoAlert() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const symSelect = document.getElementById('alertSymbolSelect');
+    const condSelect = document.getElementById('alertConditionSelect');
+    const targetInput = document.getElementById('alertTargetPrice');
+    const sym = symSelect ? symSelect.value : 'BONK';
+    const cond = condSelect ? condSelect.value : 'ABOVE';
+    const target = parseFloat(targetInput ? targetInput.value : '0') || 0;
+    if (target <= 0) {
+      showNotification('Enter a valid target price');
+      return;
+    }
+    const res = await sendAction('crypto', 'create_price_alert', {
+      symbol: sym,
+      target_price: target,
+      condition: cond
+    });
+    if (res.success) {
+      if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+      showNotification(`Price alert created: $${sym} ${cond} $${target}`);
+      if (targetInput) targetInput.value = '';
+      fetchState();
+    }
+  }
+
+  async function deleteCryptoAlert(alertId) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const res = await sendAction('crypto', 'delete_price_alert', { alert_id: alertId });
+    if (res.success) {
+      showNotification('Price alert deleted');
+      fetchState();
+    }
+  }
+
+  function confirmCloseCryptoPosition(posId, symbol) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    showConfirmModal(
+      'CLOSE CRYPTO POSITION',
+      `Are you sure you want to close and market exit open position for $${symbol}?`,
+      `POSITION ID: ${posId}\nSYMBOL: $${symbol}\nACTION: Immediate Market Exit via DEX`,
+      async () => {
+        const res = await sendAction('crypto', 'close_position', { position_id: posId, confirmed: true });
+        if (res.success) {
+          if (typeof AudioFeedback !== 'undefined') AudioFeedback.trade();
+          showNotification(`Closed position for $${symbol} (Realized: $${res.realized_pnl_usd})`);
+          fetchState();
+        } else {
+          showNotification(`Exit failed: ${res.error || res.message}`);
+        }
+      }
+    );
+  }
+
+  function copyCaToClipboard(ca) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.haptic();
+    navigator.clipboard.writeText(ca).then(() => {
+      showNotification(`Contract address copied: ${ca.slice(0, 8)}...${ca.slice(-6)}`);
+    }).catch(() => {
+      showNotification(`CA: ${ca}`);
+    });
   }
 
   function renderDeploySection(deploy) {
@@ -4353,9 +4837,16 @@ const CommandCenter = (() => {
         return enabled;
       },
       click: () => playTone(360, 180, 'sine', 0.035, 0.04),
+      haptic: () => playTone(880, 440, 'triangle', 0.02, 0.03),
       nav: () => playTone(480, 240, 'triangle', 0.04, 0.035),
       success: () => playTone(440, 587, 'sine', 0.12, 0.05),
-      alert: () => playTone(280, 220, 'sawtooth', 0.15, 0.04)
+      alert: () => playTone(180, 80, 'sawtooth', 0.25, 0.07),
+      trade: () => playTone(920, 220, 'sawtooth', 0.18, 0.06),
+      signal: () => {
+        playTone(523, 523, 'sine', 0.08, 0.04);
+        setTimeout(() => playTone(659, 659, 'sine', 0.08, 0.04), 70);
+        setTimeout(() => playTone(784, 784, 'sine', 0.14, 0.05), 140);
+      }
     };
   })();
 
@@ -4386,9 +4877,14 @@ const CommandCenter = (() => {
     { group: 'SECTIONS', id: 'deploy', title: 'Deploy // Code & Terminal', desc: 'Repo cloner, stack audit & log stream', shortcut: '6', action: () => switchSection('deploy') },
     { group: 'SECTIONS', id: 'gaming', title: 'Gaming // Puzzle Suite & HUD', desc: 'Bevy Metal engine, 120Hz HUD & levels', shortcut: '7', action: () => switchSection('gaming') },
     { group: 'SECTIONS', id: 'osint', title: 'OSINT // Public Research', desc: 'DNS resolver, WHOIS, HIBP & brand search', shortcut: '8', action: () => switchSection('osint') },
+    { group: 'SECTIONS', id: 'crypto', title: 'Crypto Desk // Photon Terminal', desc: 'DEX screener, Twitter/X alpha, copy trading & price alerts', shortcut: '0', action: () => switchSection('crypto') },
     { group: 'SECTIONS', id: 'settings', title: 'Settings // Credentials & Git', desc: 'API key vault, auto-updater & setup guide', shortcut: '9', action: () => switchSection('settings') },
 
     // Fast Action Shortcuts
+    { group: 'ACTIONS', id: 'crypto_swap', title: 'Photon Instant Swap Router', desc: 'Execute instant DEX swap on Solana memecoins', shortcut: 'SWAP', action: () => { switchSection('crypto'); document.getElementById('cryptoSwapAmount')?.focus(); } },
+    { group: 'ACTIONS', id: 'crypto_alpha', title: 'Scan Twitter / X Memecoin Alpha', desc: 'Real-time social sentiment and contract address extraction', shortcut: 'ALPHA', action: () => { switchSection('crypto'); scanAlphaTweets(); } },
+    { group: 'ACTIONS', id: 'crypto_copy', title: 'Alpha Whitelist & Copy Trading', desc: 'Review influencer win-rates and configure automated copy trading', shortcut: 'COPY', action: () => { switchSection('crypto'); } },
+    { group: 'ACTIONS', id: 'crypto_alert', title: 'Set Crypto Price Target Alert', desc: 'Configure threshold audio alert with macOS notification chime', shortcut: 'ALERT', action: () => { switchSection('crypto'); document.getElementById('alertTargetPrice')?.focus(); } },
     { group: 'ACTIONS', id: 'trade', title: 'Execute Market Order', desc: 'Jump to Trade Panel order desk', shortcut: 'TRADE', action: () => { switchSection('finance'); document.getElementById('orderQtyInput')?.focus(); } },
     { group: 'ACTIONS', id: 'compose', title: 'Compose Priority Email', desc: 'Jump to Gmail composer and draft', shortcut: 'MAIL', action: () => { switchSection('comms'); document.getElementById('commsRecipient')?.focus(); } },
     { group: 'ACTIONS', id: 'sms', title: 'Dispatch Outbound SMS', desc: 'Open outbound Twilio SMS trunk drawer', shortcut: 'SMS', action: () => { switchSection('comms'); document.getElementById('twilioMsgBody')?.focus(); } },
@@ -5746,7 +6242,19 @@ STATUS: RESOLVED // NOMINAL
     openPalette,
     closePalette,
     executePaletteItem,
-    toggleAudioFeedback
+    toggleAudioFeedback,
+    selectCryptoToken,
+    setCryptoSwapSide,
+    setCryptoSwapAmount,
+    setCryptoSlippage,
+    updateSwapEstimate,
+    confirmExecuteSwap,
+    scanAlphaTweets,
+    toggleCryptoCopyTrading,
+    createCryptoAlert,
+    deleteCryptoAlert,
+    confirmCloseCryptoPosition,
+    copyCaToClipboard
   };
 })();
 

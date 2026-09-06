@@ -30,6 +30,7 @@ from services.ai_workbench import AIWorkbenchService
 from services.studio import StudioService
 from services.gaming import GamingService
 from services.osint import OSINTService
+from services.crypto import CryptoService
 from services.settings import SettingsService
 
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
@@ -92,6 +93,7 @@ class CommandCenterFeeder:
         self.services["studio"] = StudioService(self.config)
         self.services["gaming"] = GamingService(self.config)
         self.services["osint"] = OSINTService(self.config)
+        self.services["crypto"] = CryptoService(self.config)
         self.services["settings"] = SettingsService(self.config, self.config_path, self.services)
         self.services["settings"].feeder = self
 
@@ -427,7 +429,7 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             # In lockdown mode, block outbound and hazardous mutations (except toggle_lockdown)
             MUTATING_BLOCKED_ACTIONS = {
                 "send_sms", "make_call", "dispatch_email", "execute_trade",
-                "pull_updates", "enqueue_video_render", "clone_and_inspect"
+                "execute_swap", "pull_updates", "enqueue_video_render", "clone_and_inspect"
             }
             if lockdown_active and action in MUTATING_BLOCKED_ACTIONS:
                 self.send_json({

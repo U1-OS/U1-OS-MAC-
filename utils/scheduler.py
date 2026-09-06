@@ -145,6 +145,15 @@ class AutomationScheduler:
             handler=self._job_telemetry_snapshot
         )
 
+        # 6. Real-Time Crypto Price Alert Watchdog
+        self.register_job(
+            "crypto_alert_watchdog",
+            "Crypto Desk Price Alert Watchdog",
+            "Monitors active price target alerts across tokens and issues macOS audio alerts when triggered",
+            interval_sec=60,
+            handler=self._job_crypto_alert_watchdog
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -222,6 +231,17 @@ class AutomationScheduler:
             return {"snapshot_id": sid, "summary": summary}
         except Exception as e:
             return {"error": str(e), "summary": f"Telemetry snapshot failed: {e}"}
+
+    def _job_crypto_alert_watchdog(self, feeder):
+        if feeder and hasattr(feeder, "services") and "crypto" in feeder.services:
+            crypto_svc = feeder.services["crypto"]
+            crypto_svc.poll()
+            alerts = crypto_svc.price_alerts
+            active_count = len([a for a in alerts if a.get("status") == "ACTIVE"])
+            triggered_count = len([a for a in alerts if a.get("status") == "TRIGGERED"])
+            summary = f"Crypto watchdog scanned {len(alerts)} alerts ({active_count} active, {triggered_count} triggered)"
+            return {"active_alerts": active_count, "triggered_alerts": triggered_count, "summary": summary}
+        return {"summary": "Crypto service unavailable for alert watchdog"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:

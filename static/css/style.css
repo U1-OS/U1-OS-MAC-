@@ -23,6 +23,20 @@
   --text-muted: #525866;
   --text-gold: #E9B44C;
 
+  --neon-cyan: #00F0FF;
+  --neon-cyan-glow: rgba(0, 240, 255, 0.45);
+  --neon-cyan-dim: rgba(0, 240, 255, 0.12);
+  --neon-magenta: #D946EF;
+  --neon-magenta-glow: rgba(217, 70, 239, 0.45);
+  --neon-magenta-dim: rgba(217, 70, 239, 0.12);
+  --neon-emerald: #10B981;
+  --neon-emerald-glow: rgba(16, 185, 129, 0.45);
+  --neon-emerald-dim: rgba(16, 185, 129, 0.12);
+  --neon-crimson: #EF4444;
+  --neon-crimson-glow: rgba(239, 68, 68, 0.45);
+  --neon-purple: #8B5CF6;
+  --neon-purple-glow: rgba(139, 92, 246, 0.45);
+
   --font-display: 'Archivo Expanded', -apple-system, sans-serif;
   --font-body: 'Archivo', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
@@ -3193,6 +3207,348 @@ body.booting .slab-panel:nth-child(6) { animation-delay: 0.30s; }
   margin-bottom: 6px;
   font-family: var(--font-mono);
   font-size: 11px;
+}
+
+/* ========================================================
+   SECTION 10: DEDICATED CRYPTO & TRADING DESK
+   Cyber-Futuristic Photon Terminal, Alpha Radar & Copy Desk
+   ======================================================== */
+
+/* Futuristic HUD & Scanlines */
+.scanline-hud {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanline-hud::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+  z-index: 2;
+  background-size: 100% 3px, 6px 100%;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.scanline-hud::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 100%;
+  background: linear-gradient(to bottom, transparent, rgba(0, 240, 255, 0.04), transparent);
+  pointer-events: none;
+  z-index: 3;
+  animation: scanlineSweep 8s linear infinite;
+}
+
+@keyframes scanlineSweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2), inset 0 0 10px rgba(0, 240, 255, 0.05);
+    border-color: rgba(0, 240, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4), inset 0 0 15px rgba(0, 240, 255, 0.1);
+    border-color: rgba(0, 240, 255, 0.8);
+  }
+}
+
+.neon-glow-cyan {
+  box-shadow: 0 0 15px var(--neon-cyan-glow);
+  border-color: var(--neon-cyan) !important;
+}
+
+.neon-glow-magenta {
+  box-shadow: 0 0 15px var(--neon-magenta-glow);
+  border-color: var(--neon-magenta) !important;
+}
+
+@keyframes flashPriceGreen {
+  0% { background: rgba(16, 185, 129, 0.45); }
+  100% { background: transparent; }
+}
+
+@keyframes flashPriceRed {
+  0% { background: rgba(239, 68, 68, 0.45); }
+  100% { background: transparent; }
+}
+
+.flash-up {
+  animation: flashPriceGreen 1.2s ease-out;
+}
+
+.flash-down {
+  animation: flashPriceRed 1.2s ease-out;
+}
+
+/* Crypto Token Table & Terminal */
+.crypto-screener-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.crypto-screener-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.crypto-screener-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.crypto-token-row:hover {
+  background: rgba(0, 240, 255, 0.03);
+}
+
+.token-symbol-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.token-symbol-badge .chain-pill {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--neon-cyan);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+.pnl-chip {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pnl-chip.up {
+  color: var(--neon-emerald);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.pnl-chip.down {
+  color: var(--neon-crimson);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-photon {
+  background: linear-gradient(135deg, rgba(217, 70, 239, 0.2), rgba(0, 240, 255, 0.2));
+  border: 1px solid rgba(0, 240, 255, 0.5);
+  color: #FFFFFF;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-snappy);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-photon:hover {
+  background: linear-gradient(135deg, rgba(217, 70, 239, 0.4), rgba(0, 240, 255, 0.4));
+  box-shadow: 0 0 12px var(--neon-cyan-glow);
+  transform: translateY(-1px);
+}
+
+/* Swap Form Desk */
+.swap-form-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.swap-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.swap-input-group label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.swap-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.swap-select, .swap-input {
+  background: rgba(15, 18, 24, 0.85);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border-radius: 2px;
+  width: 100%;
+}
+
+.swap-select:focus, .swap-input:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan-glow);
+}
+
+/* Alpha Social Stream */
+.alpha-tweet-card {
+  background: rgba(15, 18, 24, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.alpha-tweet-card:hover {
+  border-color: rgba(217, 70, 239, 0.4);
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.15);
+}
+
+.alpha-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.alpha-handle {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--neon-cyan);
+  font-size: 13px;
+}
+
+.alpha-tag {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  padding: 2px 7px;
+  border-radius: 2px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.tag-bullish {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--neon-emerald);
+  border: 1px solid var(--neon-emerald);
+}
+
+.tag-moonshot {
+  background: rgba(217, 70, 239, 0.15);
+  color: var(--neon-magenta);
+  border: 1px solid var(--neon-magenta);
+}
+
+.tag-accumulate {
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--neon-cyan);
+  border: 1px solid var(--neon-cyan);
+}
+
+.alpha-text {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.alpha-ca-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  word-break: break-all;
+}
+
+/* Copy Trading Rows */
+.copy-trader-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(15, 18, 24, 0.65);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+
+.copy-trader-item.active {
+  border-left: 3px solid var(--neon-emerald);
+}
+
+.trader-stat {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.trader-winrate {
+  color: var(--neon-emerald);
+  font-weight: 700;
+}
+
+/* Price Alerts */
+.crypto-alert-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(15, 18, 24, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  margin-bottom: 6px;
+}
+
+.crypto-alert-item.triggered {
+  border-color: var(--neon-crimson);
+  background: rgba(239, 68, 68, 0.06);
+  animation: neonPulse 2s infinite;
+}
+
+/* Active Positions Desk */
+.position-item-card {
+  background: rgba(15, 18, 24, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* ========================================================

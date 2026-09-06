@@ -350,6 +350,41 @@ def main():
         s, lock_off = action("settings", "toggle_lockdown", {"enable": False, "confirmed": True})
         log_test("Emergency Lockdown Clean Disengagement", lock_off.get("success") and not lock_off.get("lockdown_active"), "Normal operations restored across all subsystems")
 
+    # 27. Dedicated Crypto Desk: Photon / DEX Screener & Swap Router
+    print(f"\n{INFO} 27. Subsystem: Dedicated Crypto Desk (Photon / DEX Screener & Router):")
+    s, tok_res = action("crypto", "get_tokens")
+    tokens_list = tok_res.get("tokens", [])
+    log_test("Photon / DEX Screener Token Feed", tok_res.get("success") and len(tokens_list) >= 8, f"{len(tokens_list)} memecoin assets tracking live PnL and liquidity")
+    s, unconf_swap = action("crypto", "execute_swap", {"side": "BUY", "symbol": "BONK", "amount": 0.5, "confirmed": False})
+    log_test("Photon Unconfirmed Swap Execution Guard", not unconf_swap.get("success") and unconf_swap.get("error") == "CONFIRMATION_REQUIRED", "Confirmation required")
+    s, conf_swap = action("crypto", "execute_swap", {"side": "BUY", "symbol": "BONK", "amount": 0.5, "confirmed": True})
+    log_test("Photon Instant Swap Execution", conf_swap.get("success") and bool(conf_swap.get("tx_hash")), f"TX: {conf_swap.get('tx_hash')} // {conf_swap.get('tokens_received')} $BONK")
+
+    # 28. Twitter / X Social Sentiment Monitor & CA Extraction
+    print(f"\n{INFO} 28. Subsystem: Twitter / X Memecoin Alpha & CA Extraction:")
+    s, alpha_res = action("crypto", "scan_alpha_tweets")
+    tweets_list = alpha_res.get("tweets", [])
+    log_test("Twitter / X Alpha Stream Ingestion", alpha_res.get("success") and len(tweets_list) >= 4, f"{len(tweets_list)} alpha tweets parsed with social velocity")
+    all_cas = [ca for tw in tweets_list for ca in tw.get("detected_cas", [])]
+    log_test("Solana & EVM Contract Address Extraction", len(all_cas) > 0, f"{len(all_cas)} contract addresses regex extracted ({all_cas[0][:12]}...)")
+
+    # 29. Influencer & Alpha Copy Trading Engine
+    print(f"\n{INFO} 29. Subsystem: Influencer & Alpha Copy Trading Engine:")
+    s, toggle_res = action("crypto", "toggle_copy_trading", {"handle": "whale1.sol", "active": True})
+    log_test("Copy Trading Whitelist Toggle", toggle_res.get("success") and toggle_res.get("trader", {}).get("active") is True, "whale1.sol set to active auto-copy")
+    s, signal_res = action("crypto", "record_copy_signal", {"handle": "whale1.sol", "token_symbol": "WIF", "ca": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm", "side": "BUY", "size_sol": 0.5, "confirmed": True})
+    log_test("Copy Trading Signal Execution & Routing", signal_res.get("success") and signal_res.get("action") == "COPIED_BUY", f"Copied signal from {signal_res.get('handle')} for ${signal_res.get('token')}")
+
+    # 30. Price Alerts Watchdog & Open Positions Desk
+    print(f"\n{INFO} 30. Subsystem: Crypto Price Alerts Watchdog & Holdings Desk:")
+    s, alert_res = action("crypto", "create_price_alert", {"symbol": "WIF", "target_price": 3.00, "condition": "ABOVE"})
+    alert_obj = alert_res.get("alert", {})
+    log_test("Real-Time Crypto Price Alert Registration", alert_res.get("success") and alert_obj.get("status") == "ACTIVE", f"Alert: ${alert_obj.get('symbol')} {alert_obj.get('condition')} ${alert_obj.get('target_price')}")
+    s, del_alert = action("crypto", "delete_price_alert", {"alert_id": alert_obj.get("id")})
+    log_test("Price Alert Removal & Cleanup", del_alert.get("success"), f"Alert {alert_obj.get('id')} deleted cleanly")
+    s, sched_res = action("settings", "trigger_scheduled_task", {"job_id": "crypto_alert_watchdog"})
+    log_test("Automated Crypto Alert Watchdog Cron", sched_res.get("success") and sched_res.get("job", {}).get("status") == "COMPLETED", f"Duration: {sched_res.get('result', {}).get('duration_ms', 0)}ms")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")
