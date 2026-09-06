@@ -308,6 +308,48 @@ def main():
     s, job_res = action("settings", "trigger_scheduled_task", {"job_id": "daily_ssl_audit"})
     log_test("Automated SSL Audit Scheduled Execution", job_res.get("success") and job_res.get("job", {}).get("status") == "COMPLETED", f"Duration: {job_res.get('result', {}).get('duration_ms', 0)}ms")
 
+    # 24. macOS Process Resource Watchdog
+    print(f"\n{INFO} 24. Subsystem: macOS Process Resource Watchdog:")
+    s, proc_res = action("settings", "get_top_processes", {"by": "cpu", "limit": 10})
+    procs = proc_res.get("processes", [])
+    log_test("macOS Process Table Sampling", proc_res.get("success") and len(procs) > 0, f"{len(procs)} active processes sampled via ps")
+    from utils.process_watchdog import is_protected_pid
+    prot_check = is_protected_pid(1) and is_protected_pid(os.getpid())
+    log_test("Protected Process Shielding Guard", prot_check, "System daemons and feeder PID immune to termination")
+    s, unconf_res = action("settings", "terminate_process", {"pid": 99999, "confirmed": False})
+    log_test("Unconfirmed Process Termination Block", not unconf_res.get("success") and unconf_res.get("error") == "CONFIRMATION_REQUIRED", "Confirmation required")
+
+    # 25. SQLite Telemetry & Audit Ledger
+    print(f"\n{INFO} 25. Subsystem: SQLite Telemetry & Audit Ledger:")
+    s, stats_res = action("settings", "get_ledger_stats")
+    l_stats = stats_res.get("stats", {})
+    log_test("Persistent SQLite Ledger Database", stats_res.get("success") and os.path.exists(l_stats.get("db_path", "")), f"Size: {l_stats.get('db_size_kb')} KB // {l_stats.get('total_snapshots')} snapshots")
+    s, hist_res = action("settings", "get_ledger_history", {"metric": "load", "hours": 24})
+    log_test("Time-Series Historical Telemetry Query", hist_res.get("success") and hist_res.get("count", 0) >= 0, f"{hist_res.get('count')} time-series points retrieved")
+
+    # 26. Emergency Security Lockdown & Killswitch
+    print(f"\n{INFO} 26. Subsystem: Emergency Security Lockdown & Killswitch:")
+    s, lock_on = action("settings", "toggle_lockdown", {"enable": True, "reason": "Automated verification drill", "confirmed": True})
+    log_test("Emergency Lockdown Engagement", lock_on.get("success") and lock_on.get("lockdown_active"), f"Lockdown engaged: {lock_on.get('reason')}")
+    try:
+        whk_status = 0
+        try:
+            req = urllib.request.Request(f"{BASE_URL}/api/webhooks/github", data=b'{"drill": true}', headers={"Content-Type": "application/json"})
+            urllib.request.urlopen(req)
+        except urllib.error.HTTPError as e:
+            whk_status = e.code
+        log_test("Lockdown Inbound Webhook Blockade", whk_status == 403, "HTTP 403 Forbidden verified on webhook ingress")
+
+        act_status = 0
+        try:
+            action("finance", "execute_trade", {"symbol": "BTC", "side": "BUY", "amount": 0.01})
+        except urllib.error.HTTPError as e:
+            act_status = e.code
+        log_test("Lockdown Outbound Mutation Shield", act_status == 403, "HTTP 403 Forbidden verified on outbound trade action")
+    finally:
+        s, lock_off = action("settings", "toggle_lockdown", {"enable": False, "confirmed": True})
+        log_test("Emergency Lockdown Clean Disengagement", lock_off.get("success") and not lock_off.get("lockdown_active"), "Normal operations restored across all subsystems")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

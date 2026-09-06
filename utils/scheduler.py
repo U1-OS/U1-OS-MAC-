@@ -53,6 +53,18 @@ class ScheduledJob:
         return f"Every {sec}s"
 
     def execute(self, feeder=None):
+        if feeder and hasattr(feeder, "services"):
+            settings_svc = feeder.services.get("settings")
+            if getattr(settings_svc, "lockdown_active", False):
+                with self.lock:
+                    self.status = "PAUSED_LOCKDOWN"
+                    self.last_result = {
+                        "duration_ms": 0,
+                        "summary": "Execution suspended: system under emergency lockdown",
+                        "data": {}
+                    }
+                return self.last_result
+
         with self.lock:
             self.status = "RUNNING"
         start_t = time.time()
@@ -124,6 +136,15 @@ class AutomationScheduler:
             handler=self._job_ssl_audit
         )
 
+        # 5. Persistent Telemetry Ledger Snapshot
+        self.register_job(
+            "telemetry_snapshot",
+            "Telemetry Ledger Snapshot",
+            "Records system load, RAM, disk, battery, and listening port counts to local SQLite database",
+            interval_sec=300,
+            handler=self._job_telemetry_snapshot
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -166,6 +187,41 @@ class AutomationScheduler:
         if feeder and "settings" in feeder.services:
             feeder.services["settings"].add_event("vault_exported", summary)
         return {"vault": res, "summary": summary}
+
+    def _job_telemetry_snapshot(self, feeder):
+        from utils import ledger
+        try:
+            intel_svc = feeder.services.get("intelligence") if feeder and hasattr(feeder, "services") else None
+            osint_svc = feeder.services.get("osint") if feeder and hasattr(feeder, "services") else None
+
+            hw = intel_svc.data.get("hardware", {}) if intel_svc and hasattr(intel_svc, "data") else {}
+            sys_info = hw.get("system", {})
+            disk_info = hw.get("disk", {})
+            batt_info = hw.get("battery", {})
+            load_data = intel_svc.data.get("system_load", {}) if intel_svc and hasattr(intel_svc, "data") else {}
+
+            ports_data = osint_svc.data.get("listening_ports", {}) if osint_svc and hasattr(osint_svc, "data") else {}
+
+            snapshot = {
+                "timestamp": time.time(),
+                "cpu_load_1m": load_data.get("load_1m", 0.0),
+                "cpu_load_5m": load_data.get("load_5m", 0.0),
+                "ram_used_gb": round(sys_info.get("ram_gb", 0) * 0.5, 2),
+                "ram_total_gb": sys_info.get("ram_gb", 0.0),
+                "disk_free_gb": disk_info.get("free_gb", 0.0),
+                "disk_total_gb": disk_info.get("total_gb", 0.0),
+                "battery_percent": batt_info.get("percent", 100),
+                "power_source": batt_info.get("source", "AC Power"),
+                "ports_open": ports_data.get("total_open_ports", 0),
+                "ports_exposed": ports_data.get("exposed_count", 0)
+            }
+            sid = ledger.record_snapshot(snapshot)
+            summary = f"Telemetry snapshot #{sid} recorded to SQLite ledger"
+            if feeder and hasattr(feeder, "services") and "settings" in feeder.services:
+                feeder.services["settings"].add_event("telemetry_snapshot", summary)
+            return {"snapshot_id": sid, "summary": summary}
+        except Exception as e:
+            return {"error": str(e), "summary": f"Telemetry snapshot failed: {e}"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:

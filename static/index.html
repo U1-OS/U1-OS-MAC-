@@ -96,6 +96,12 @@
           <span>AUDIO BRIEF</span>
         </button>
 
+        <!-- Emergency Security Lockdown Killswitch Button -->
+        <button class="bezel-widget btn-palette-trigger mono" id="btnBezelLockdown" title="Emergency Security Lockdown Killswitch" onclick="CommandCenter.toggleLockdownModal()" style="padding:0 10px; font-size:10.5px; font-weight:700; color:var(--text); display:inline-flex; align-items:center; gap:5px;">
+          <span class="status-indicator" id="lockdownDot" style="width:6px; height:6px; border-radius:50%; background:#10B981; display:inline-block;"></span>
+          <span id="lockdownLabel">KILLSWITCH</span>
+        </button>
+
         <!-- Command Palette Trigger Button -->
         <button class="bezel-widget btn-palette-trigger mono" id="btnOpenPalette" title="Open Command Palette (Cmd+K or /)" onclick="CommandCenter.openPalette()">
           <span>⌘K</span>
@@ -1149,6 +1155,56 @@
               </div>
             </header>
             <div class="slab-body" id="settingsSchedulerWebhookContainer"></div>
+          </article>
+
+          <!-- Widget 8: macOS Process Resource Watchdog [Span 7] -->
+          <article class="slab-panel span-7" id="settingsProcessWatchdogPanel">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 08</span>
+                <h2 class="slab-title">macOS PROCESS RESOURCE WATCHDOG</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <button class="btn btn-secondary btn-sm mono" id="btnSortProcessCpu" onclick="CommandCenter.refreshProcesses('cpu')">SORT: CPU</button>
+                <button class="btn btn-secondary btn-sm mono" id="btnSortProcessMem" onclick="CommandCenter.refreshProcesses('mem')">SORT: MEM</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsProcessWatchdogContainer"></div>
+          </article>
+
+          <!-- Widget 9: Emergency Security Lockdown Killswitch [Span 5] -->
+          <article class="slab-panel span-5" id="settingsLockdownPanel">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 09</span>
+                <h2 class="slab-title">EMERGENCY SECURITY LOCKDOWN</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="agent-badge active" id="lockdownBadgeStatus">NOMINAL</span>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsLockdownContainer"></div>
+          </article>
+
+          <!-- Widget 10: Persistent SQLite Telemetry & Audit Ledger [Span 12] -->
+          <article class="slab-panel span-12" id="settingsLedgerPanel">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 10</span>
+                <h2 class="slab-title">PERSISTENT SQLITE TELEMETRY &amp; AUDIT LEDGER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="mono" id="ledgerSizeBadge" style="font-size:10px; color:var(--gold);">-- KB</span>
+                <button class="btn btn-secondary btn-sm mono" onclick="CommandCenter.refreshLedger()">QUERY LEDGER</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsLedgerContainer"></div>
           </article>
         </section>
 

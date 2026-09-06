@@ -274,6 +274,45 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.send_json({"success": True, "jobs": feeder.scheduler.get_status()})
             return
 
+        if path == "/api/ledger/history":
+            from urllib.parse import parse_qs, urlparse
+            query = parse_qs(urlparse(self.path).query)
+            metric = query.get("metric", ["load"])[0]
+            try:
+                hours = float(query.get("hours", [24.0])[0])
+            except ValueError:
+                hours = 24.0
+            from utils.ledger import get_history
+            history = get_history(metric=metric, hours=hours)
+            self.send_json({"success": True, "metric": metric, "history": history, "count": len(history)})
+            return
+
+        if path == "/api/ledger/audit":
+            from urllib.parse import parse_qs, urlparse
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                limit = int(query.get("limit", [50])[0])
+            except ValueError:
+                limit = 50
+            service = query.get("service", [None])[0]
+            from utils.ledger import get_audit_log
+            audit = get_audit_log(limit=limit, service=service)
+            self.send_json({"success": True, "audit": audit, "count": len(audit)})
+            return
+
+        if path == "/api/processes":
+            from urllib.parse import parse_qs, urlparse
+            query = parse_qs(urlparse(self.path).query)
+            by = query.get("by", ["cpu"])[0]
+            try:
+                limit = int(query.get("limit", [15])[0])
+            except ValueError:
+                limit = 15
+            from utils.process_watchdog import get_top_processes
+            procs = get_top_processes(by=by, limit=limit)
+            self.send_json({"success": True, "by": by, "processes": procs, "count": len(procs)})
+            return
+
         if path == "/api/events":
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
@@ -361,7 +400,19 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.send_json({"success": False, "error": "Invalid JSON"}, 400)
             return
 
+        # Check if Emergency Lockdown is active
+        settings_svc = feeder.services.get("settings")
+        lockdown_active = getattr(settings_svc, "lockdown_active", False)
+
         if path.startswith("/api/webhooks/"):
+            if lockdown_active:
+                self.send_json({
+                    "success": False,
+                    "error": "LOCKDOWN_ACTIVE",
+                    "message": "SYSTEM UNDER EMERGENCY LOCKDOWN: Inbound webhooks rejected."
+                }, 403)
+                return
+
             source = path[len("/api/webhooks/"):].strip("/") or "generic"
             headers_dict = dict(self.headers)
             entry = feeder.record_webhook(source, payload, headers_dict)
@@ -372,6 +423,19 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             service_name = payload.get("service")
             action = payload.get("action")
             action_payload = payload.get("payload", {})
+
+            # In lockdown mode, block outbound and hazardous mutations (except toggle_lockdown)
+            MUTATING_BLOCKED_ACTIONS = {
+                "send_sms", "make_call", "dispatch_email", "execute_trade",
+                "pull_updates", "enqueue_video_render", "clone_and_inspect"
+            }
+            if lockdown_active and action in MUTATING_BLOCKED_ACTIONS:
+                self.send_json({
+                    "success": False,
+                    "error": "LOCKDOWN_ACTIVE",
+                    "message": f"SYSTEM UNDER EMERGENCY LOCKDOWN: Action '{action}' blocked for system protection."
+                }, 403)
+                return
 
             if not service_name or service_name not in feeder.services:
                 self.send_json({"success": False, "error": f"Unknown service: {service_name}"}, 400)

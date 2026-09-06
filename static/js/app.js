@@ -256,6 +256,7 @@ const CommandCenter = (() => {
     const s = state.services;
 
     renderIntelligenceStrip(s.intelligence);
+    updateLockdownBezel(s.settings);
     renderHomeRevenue(s.finance);
     renderHomeCalendar(s.comms);
     renderHomeInbox(s.comms);
@@ -266,6 +267,28 @@ const CommandCenter = (() => {
     // If currently on another section, refresh its view
     if (currentSection !== 'home') {
       renderActiveSectionDetails(currentSection);
+    }
+  }
+
+  function updateLockdownBezel(settings) {
+    const ld = settings && settings.data ? settings.data.lockdown : null;
+    const ldDot = document.getElementById('lockdownDot');
+    const ldLabel = document.getElementById('lockdownLabel');
+    const ldBtn = document.getElementById('btnBezelLockdown');
+    if (!ld || !ldDot || !ldLabel || !ldBtn) return;
+
+    if (ld.active) {
+      ldDot.style.background = '#EF4444';
+      ldLabel.textContent = `LOCKDOWN (${ld.elapsed_sec || 0}s)`;
+      ldLabel.style.color = '#EF4444';
+      ldBtn.style.borderColor = '#EF4444';
+      ldBtn.style.background = 'rgba(239, 68, 68, 0.15)';
+    } else {
+      ldDot.style.background = '#10B981';
+      ldLabel.textContent = 'KILLSWITCH';
+      ldLabel.style.color = 'var(--text)';
+      ldBtn.style.borderColor = '';
+      ldBtn.style.background = '';
     }
   }
 
@@ -591,7 +614,10 @@ const CommandCenter = (() => {
     keyDrafts: {},
     gitChecking: false,
     gitPulling: false,
-    cachedConfig: null
+    cachedConfig: null,
+    processSort: 'cpu',
+    cachedProcesses: [],
+    cachedAudit: []
   };
 
   const vaultSchema = [
@@ -1197,6 +1223,146 @@ const CommandCenter = (() => {
               `).join('') : `
                 <div class="mono" style="font-size:10px; color:var(--text-muted); padding:16px; text-align:center;">
                   No inbound webhooks received yet.<br>Click "SIMULATE WEBHOOK" to test the real-time ingestion pipeline.
+                </div>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 8. Render Widget 8: macOS Process Resource Watchdog
+    const processContainer = document.getElementById('settingsProcessWatchdogContainer');
+    if (processContainer) {
+      const procs = (settingsLocalState.processSort === 'mem' ? (d.process_watchdog?.top_mem) : (d.process_watchdog?.top_cpu)) || [];
+      processContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:grid; grid-template-columns: 70px 1fr 70px 70px 80px; gap:8px; padding:6px 8px; background:rgba(0,0,0,0.3); border-bottom:1px solid var(--border-subtle); font-size:9.5px;" class="mono">
+            <span style="color:var(--text-secondary);">PID</span>
+            <span style="color:var(--text-secondary);">PROCESS</span>
+            <span style="color:var(--text-secondary); text-align:right;">CPU%</span>
+            <span style="color:var(--text-secondary); text-align:right;">MEM%</span>
+            <span style="color:var(--text-secondary); text-align:right;">ACTION</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px; max-height:260px; overflow-y:auto;">
+            ${procs.length > 0 ? procs.map(p => `
+              <div style="display:grid; grid-template-columns: 70px 1fr 70px 70px 80px; gap:8px; align-items:center; padding:5px 8px; background:var(--bg-slab-elevated); border:1px solid rgba(255,255,255,0.03); border-radius:2px; font-size:10px;" class="mono">
+                <span style="color:var(--text-muted);">${p.pid}</span>
+                <span style="color:var(--text-primary); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(p.command || '')}">${escapeHtml(p.name)}</span>
+                <span style="color:${p.cpu_pct > 20 ? 'var(--gold)' : 'var(--text-primary)'}; text-align:right;">${p.cpu_pct.toFixed(1)}%</span>
+                <span style="color:var(--text-secondary); text-align:right;">${p.mem_pct.toFixed(1)}%</span>
+                <div style="text-align:right;">
+                  ${p.is_protected ? `
+                    <span style="font-size:9px; color:var(--text-muted); padding:2px 4px; background:rgba(255,255,255,0.05); border-radius:2px;">SYS</span>
+                  ` : `
+                    <button class="mini-btn" style="color:#EF4444; border-color:rgba(239,68,68,0.3);" onclick="CommandCenter.confirmTerminateProcess(${p.pid}, '${escapeHtml(p.name)}')">KILL</button>
+                  `}
+                </div>
+              </div>
+            `).join('') : `
+              <div class="mono" style="font-size:10px; color:var(--text-muted); padding:16px; text-align:center;">Sampling macOS process table...</div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    // 9. Render Widget 9: Emergency Security Lockdown Killswitch
+    const lockdownContainer = document.getElementById('settingsLockdownContainer');
+    const lockdownBadge = document.getElementById('lockdownBadgeStatus');
+    const ld = d.lockdown || {};
+    if (lockdownBadge) {
+      lockdownBadge.className = ld.active ? 'agent-badge active' : 'agent-badge inactive';
+      lockdownBadge.textContent = ld.active ? 'LOCKDOWN ACTIVE' : 'NOMINAL';
+      lockdownBadge.style.color = ld.active ? '#EF4444' : '#10B981';
+      lockdownBadge.style.borderColor = ld.active ? '#EF4444' : '#10B981';
+    }
+
+    if (lockdownContainer) {
+      lockdownContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="background:${ld.active ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-slab-elevated)'}; border:1px solid ${ld.active ? '#EF4444' : 'var(--border-subtle)'}; padding:10px 12px; border-radius:2px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span class="mono" style="font-size:11px; font-weight:700; color:${ld.active ? '#EF4444' : 'var(--text-primary)'};">
+                ${ld.active ? '[!] EMERGENCY LOCKDOWN ACTIVE' : 'SYSTEM STATUS: NOMINAL'}
+              </span>
+              <span class="mono" style="font-size:9.5px; color:var(--text-muted);">
+                ${ld.active ? `Elapsed: ${ld.elapsed_sec || 0}s` : 'Zero Threat Isolation'}
+              </span>
+            </div>
+            <p class="mono" style="font-size:10px; color:var(--text-secondary); line-height:1.4; margin:0 0 8px 0;">
+              ${ld.active
+                ? `Emergency killswitch engaged: "${escapeHtml(ld.reason || 'Operator manual action')}". All inbound webhooks (POST /api/webhooks/*) and mutating actions are rejected.`
+                : 'Emergency killswitch instantly suspends inbound webhooks, blocks outbound API mutations, and pauses background automation cron jobs.'}
+            </p>
+            ${!ld.active ? `
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <input type="text" id="lockdownReasonInput" class="mono settings-key-input" placeholder="Incident reason (e.g. Unverified Port Exposure)..." style="font-size:11px;">
+                <button class="btn btn-secondary mono" style="align-self:flex-start; font-size:11px; padding:6px 14px; border-color:#EF4444; color:#EF4444;" onclick="CommandCenter.toggleLockdownModal(true)">
+                  ENGAGE EMERGENCY LOCKDOWN
+                </button>
+              </div>
+            ` : `
+              <button class="btn btn-gold mono" style="font-size:11px; padding:6px 16px; background:#10B981; color:#000; border-color:#10B981;" onclick="CommandCenter.toggleLockdownModal(false)">
+                DISENGAGE LOCKDOWN (RESTORE ALL)
+              </button>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    // 10. Render Widget 10: Persistent SQLite Telemetry Ledger
+    const ledgerContainer = document.getElementById('settingsLedgerContainer');
+    const ledgerSizeBadge = document.getElementById('ledgerSizeBadge');
+    const ledgerStats = d.ledger || {};
+    if (ledgerSizeBadge) {
+      ledgerSizeBadge.textContent = `${ledgerStats.db_size_kb || 0} KB // ${ledgerStats.total_snapshots || 0} SNAPSHOTS`;
+    }
+    if (ledgerContainer) {
+      const audits = settingsLocalState.cachedAudit || [];
+      ledgerContainer.innerHTML = `
+        <div style="display:grid; grid-template-columns: 320px 1fr; gap:16px;">
+          <!-- Column 1: Database Status & Snapshot Stats -->
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div class="vault-meta-row">
+              <span style="color:var(--text-secondary);">SQLITE STORAGE</span>
+              <span class="mono" style="color:var(--gold); font-size:10px;">data/commandcenter.db</span>
+            </div>
+            <div class="vault-meta-row">
+              <span style="color:var(--text-secondary);">SNAPSHOTS RECORDED</span>
+              <span class="mono" style="color:var(--text-primary); font-weight:700;">${ledgerStats.total_snapshots || 0} time-series points</span>
+            </div>
+            <div class="vault-meta-row">
+              <span style="color:var(--text-secondary);">AUDIT TRAIL LOGS</span>
+              <span class="mono" style="color:var(--text-primary); font-weight:700;">${ledgerStats.total_audits || 0} operations logged</span>
+            </div>
+            <div class="vault-meta-row">
+              <span style="color:var(--text-secondary);">DATABASE ENGINE</span>
+              <span class="mono" style="color:var(--text-primary);">Zero-Dependency SQLite3</span>
+            </div>
+            <button class="btn btn-secondary btn-sm mono" style="align-self:flex-start; margin-top:4px;" onclick="CommandCenter.recordTelemetrySnapshotNow()">
+              TRIGGER INSTANT SNAPSHOT
+            </button>
+          </div>
+
+          <!-- Column 2: Recent Audit Trail Table -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span class="mono" style="font-size:10px; font-weight:700; color:var(--gold);">RECENT IMMUTABLE AUDIT TRAIL</span>
+              <span class="mono" style="font-size:9.5px; color:var(--text-muted);">SECURITY &amp; SYSTEM OPERATIONS</span>
+            </div>
+            <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); padding:6px; border-radius:2px; max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
+              ${audits.length > 0 ? audits.map(a => `
+                <div style="display:grid; grid-template-columns: 80px 100px 1fr 60px; gap:8px; align-items:center; padding:4px 6px; background:var(--bg-slab-elevated); border-radius:2px; font-size:9.5px;" class="mono">
+                  <span style="color:var(--text-muted);">${new Date(a.timestamp * 1000).toLocaleTimeString()}</span>
+                  <span style="color:var(--gold); font-weight:600;">[${escapeHtml(a.service.toUpperCase())}]</span>
+                  <span style="color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(a.details || a.action)}</span>
+                  <span style="color:${a.status === 'ALERT' ? '#EF4444' : '#10B981'}; text-align:right; font-weight:700;">${escapeHtml(a.status)}</span>
+                </div>
+              `).join('') : `
+                <div class="mono" style="font-size:10px; color:var(--text-muted); padding:16px; text-align:center;">
+                  No audit entries in buffer. Click "QUERY LEDGER" to refresh.
                 </div>
               `}
             </div>
@@ -4241,6 +4407,9 @@ const CommandCenter = (() => {
     { group: 'ACTIONS', id: 'menubar', title: 'macOS Menu Bar Extra', desc: 'Query SwiftBar / BitBar feeder stream', shortcut: 'BAR', action: () => showMenuBarInfo() },
     { group: 'ACTIONS', id: 'ssl', title: 'Inspect SSL / TLS Certificate', desc: 'Port 443 handshake & certificate expiry sentinel', shortcut: 'SSL', action: () => { switchSection('osint'); inspectSslCertificate(); } },
     { group: 'ACTIONS', id: 'ports', title: 'Audit Localhost Listening Ports', desc: 'Scan local processes and open sockets via lsof', shortcut: 'PORTS', action: () => { switchSection('osint'); auditListeningPorts(); } },
+    { group: 'ACTIONS', id: 'top', title: 'Inspect macOS Process Watchdog', desc: 'Sample top CPU and Memory consuming processes via ps', shortcut: 'TOP', action: () => { switchSection('settings'); refreshProcesses('cpu'); } },
+    { group: 'ACTIONS', id: 'lockdown', title: 'Emergency Security Lockdown Killswitch', desc: 'Halt inbound webhooks and isolate system from outbound threats', shortcut: 'LOCK', action: () => { toggleLockdownModal(); } },
+    { group: 'ACTIONS', id: 'ledger', title: 'Query SQLite Telemetry Ledger', desc: 'Inspect persistent time-series snapshots and immutable audit log', shortcut: 'LEDGER', action: () => { switchSection('settings'); refreshLedger(); } },
 
     // Theme & Preferences
     { group: 'THEME', id: 'theme_gold', title: 'Theme: Classic Dark Gold (#E9B44C)', desc: 'Default industrial signature aesthetic', shortcut: 'GOLD', action: () => setThemeAccent('#E9B44C') },
@@ -5341,6 +5510,126 @@ STATUS: RESOLVED // NOMINAL
   }
 
   /* ========================================================
+     PHASE 14: PROCESS WATCHDOG, LOCKDOWN & LEDGER HANDLERS
+     ======================================================== */
+  async function refreshProcesses(by = 'cpu') {
+    settingsLocalState.processSort = by;
+    AudioFeedback.tick();
+    try {
+      const res = await apiAction('settings', 'get_top_processes', { by, limit: 15 });
+      if (res && res.success) {
+        settingsLocalState.cachedProcesses = res.processes || [];
+        fetchState();
+        showNotification(`Process table refreshed (Sorted by ${by.toUpperCase()})`);
+      }
+    } catch (err) {
+      showNotification('Failed to query processes: ' + err.message, 'error');
+    }
+  }
+
+  function confirmTerminateProcess(pid, name) {
+    showConfirmationModal(
+      'TERMINATE PROCESS',
+      `Are you sure you want to terminate process ${pid} (${name})? This will send SIGTERM to the process.`,
+      `kill -TERM ${pid} # Target: ${name}`,
+      async () => {
+        AudioFeedback.click();
+        try {
+          const res = await apiAction('settings', 'terminate_process', { pid, signal: 'TERM', confirmed: true });
+          if (res && res.success) {
+            AudioFeedback.success();
+            showNotification(`Process ${pid} (${name}) terminated`);
+            refreshProcesses(settingsLocalState.processSort);
+          } else {
+            showNotification(res.message || res.error || 'Failed to terminate process', 'error');
+          }
+        } catch (err) {
+          showNotification('Termination error: ' + err.message, 'error');
+        }
+      }
+    );
+  }
+
+  function toggleLockdownModal(enable = null) {
+    const currentState = state.services?.settings?.data?.lockdown?.active || false;
+    const targetState = enable !== null ? enable : !currentState;
+    const reasonInput = document.getElementById('lockdownReasonInput');
+    const reason = (reasonInput ? reasonInput.value.trim() : '') || 'Operator manual intervention';
+
+    if (targetState) {
+      showConfirmationModal(
+        'ENGAGE EMERGENCY LOCKDOWN',
+        `DANGER: Engaging Emergency Lockdown will immediately reject all inbound webhooks (HTTP 403), block outbound messaging/trades, and freeze scheduled automations.`,
+        `TARGET: LOCKDOWN ON // REASON: ${reason}`,
+        async () => {
+          AudioFeedback.click();
+          try {
+            const res = await apiAction('settings', 'toggle_lockdown', { enable: true, reason, confirmed: true });
+            if (res && res.success) {
+              AudioFeedback.success();
+              showNotification('EMERGENCY LOCKDOWN ENGAGED — SYSTEM PROTECTED', 'alert');
+              fetchState();
+            } else {
+              showNotification(res.error || 'Failed to engage lockdown', 'error');
+            }
+          } catch (err) {
+            showNotification('Lockdown error: ' + err.message, 'error');
+          }
+        }
+      );
+    } else {
+      showConfirmationModal(
+        'DISENGAGE EMERGENCY LOCKDOWN',
+        `Confirm restoration of normal operations. All inbound webhooks and outbound communication channels will be reactivated.`,
+        `TARGET: LOCKDOWN OFF // RESTORE SUBSYSTEMS`,
+        async () => {
+          AudioFeedback.click();
+          try {
+            const res = await apiAction('settings', 'toggle_lockdown', { enable: false, confirmed: true });
+            if (res && res.success) {
+              AudioFeedback.success();
+              showNotification('Emergency lockdown disengaged. Normal operations restored.');
+              fetchState();
+            } else {
+              showNotification(res.error || 'Failed to disengage lockdown', 'error');
+            }
+          } catch (err) {
+            showNotification('Lockdown disengage error: ' + err.message, 'error');
+          }
+        }
+      );
+    }
+  }
+
+  async function refreshLedger() {
+    AudioFeedback.tick();
+    try {
+      const res = await apiAction('settings', 'get_ledger_audit', { limit: 50 });
+      if (res && res.success) {
+        settingsLocalState.cachedAudit = res.entries || [];
+        fetchState();
+        showNotification(`Ledger retrieved: ${res.count} audit records`);
+      }
+    } catch (err) {
+      showNotification('Failed to query ledger: ' + err.message, 'error');
+    }
+  }
+
+  async function recordTelemetrySnapshotNow() {
+    AudioFeedback.tick();
+    try {
+      const res = await apiAction('settings', 'trigger_scheduled_task', { job_id: 'telemetry_snapshot' });
+      if (res && res.success) {
+        AudioFeedback.success();
+        showNotification(res.result?.summary || 'Telemetry snapshot recorded into SQLite');
+        refreshLedger();
+      }
+    } catch (err) {
+      showNotification('Snapshot error: ' + err.message, 'error');
+    }
+  }
+
+  /* ========================================================
      HELPERS
      ======================================================== */
   function formatNumber(num) {
@@ -5440,6 +5729,11 @@ STATUS: RESOLVED // NOMINAL
     refreshBrandMentions,
     inspectSslCertificate,
     auditListeningPorts,
+    refreshProcesses,
+    confirmTerminateProcess,
+    toggleLockdownModal,
+    refreshLedger,
+    recordTelemetrySnapshotNow,
     onSettingKeyInput,
     toggleFieldVisibility,
     setSettingsCategory,

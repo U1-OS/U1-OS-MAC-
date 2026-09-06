@@ -288,6 +288,123 @@ with urllib.request.urlopen(req) as r:
   echo "============================================================"
 }
 
+cmd_top() {
+  python3 -c "
+import sys
+from utils.process_watchdog import get_top_processes
+by = 'mem' if '--mem' in sys.argv else 'cpu'
+procs = get_top_processes(by=by, limit=12)
+print('============================================================')
+print(f' COMMAND CENTER // macOS Process Watchdog (Sort: {by.upper()})')
+print('============================================================')
+print(f'{\"PID\":<7} {\"CPU%\":>6} {\"MEM%\":>6} {\"STATUS\":<12} {\"PROCESS\"}')
+print('------------------------------------------------------------')
+for p in procs:
+    prot = '\033[33m[SYSTEM]\033[0m' if p.get('is_protected') else '\033[32m[APP]\033[0m'
+    print(f\"{p.get('pid'):<7} {p.get('cpu_pct'):>5.1f}% {p.get('mem_pct'):>5.1f}% {prot:<18} {p.get('name')}\")
+print('============================================================')
+" "$@"
+}
+
+cmd_kill() {
+  PID="$2"
+  SIG="${3:-TERM}"
+  if [ -z "$PID" ]; then
+    echo "Usage: ./command-center kill <pid> [TERM|KILL]"
+    exit 1
+  fi
+  echo -e "\033[33m[SAFETY GUARD]\033[0m Terminate process $PID with SIG$SIG?"
+  read -p "Type 'CONFIRM' to proceed: " CONF
+  if [ "$CONF" != "CONFIRM" ]; then
+    echo "Aborted."
+    exit 1
+  fi
+  python3 -c "
+from utils.process_watchdog import kill_process
+res = kill_process($PID, signal_name='$SIG', confirmed=True)
+if res.get('success'):
+    print('\033[32m[TERMINATED]\033[0m', res.get('message'))
+else:
+    print('\033[31m[ERROR]\033[0m', res.get('message', res.get('error')))
+"
+}
+
+cmd_lockdown() {
+  MODE="$2"
+  REASON="$3"
+  python3 -c "
+import urllib.request, json, sys
+mode = '$MODE'.lower()
+reason = '$REASON' or 'CLI Operator action'
+if mode in ['on', 'enable', 'true']:
+    body = json.dumps({'service': 'settings', 'action': 'toggle_lockdown', 'payload': {'enable': True, 'reason': reason, 'confirmed': True}}).encode('utf-8')
+    req = urllib.request.Request('http://127.0.0.1:8787/api/action', data=body, headers={'Content-Type': 'application/json'})
+    try:
+        with urllib.request.urlopen(req) as r:
+            res = json.loads(r.read().decode('utf-8'))
+            print('\033[31m[!] EMERGENCY LOCKDOWN ACTIVATED\033[0m')
+            print('    Reason:', res.get('reason'))
+            print('    All outbound actions & inbound webhooks halted.')
+    except Exception as e:
+        print('Failed to activate lockdown:', e)
+elif mode in ['off', 'disable', 'false']:
+    body = json.dumps({'service': 'settings', 'action': 'toggle_lockdown', 'payload': {'enable': False, 'confirmed': True}}).encode('utf-8')
+    req = urllib.request.Request('http://127.0.0.1:8787/api/action', data=body, headers={'Content-Type': 'application/json'})
+    try:
+        with urllib.request.urlopen(req) as r:
+            res = json.loads(r.read().decode('utf-8'))
+            print('\033[32m[✓] EMERGENCY LOCKDOWN DISENGAGED\033[0m')
+            print('    Normal operational state restored across all subsystems.')
+    except Exception as e:
+        print('Failed to disengage lockdown:', e)
+else:
+    try:
+        with urllib.request.urlopen('http://127.0.0.1:8787/api/state') as r:
+            st = json.loads(r.read().decode('utf-8'))
+            ld = st.get('services',{}).get('settings',{}).get('data',{}).get('lockdown',{})
+            print('============================================================')
+            print(' COMMAND CENTER // Emergency Lockdown Status')
+            print('============================================================')
+            if ld.get('active'):
+                print('Status:     \033[31mACTIVE // SYSTEM HALTED\033[0m')
+                print('Reason:    ', ld.get('reason'))
+                print(f'Elapsed:    {ld.get(\"elapsed_sec\")} seconds')
+            else:
+                print('Status:     \033[32mDISENGAGED // NOMINAL\033[0m')
+                print('Subsystems: All 9 feeder services running freely')
+            print('============================================================')
+    except Exception as e:
+        print('Could not query feeder:', e)
+"
+}
+
+cmd_ledger() {
+  python3 -c "
+from utils.ledger import get_stats, get_audit_log, get_history
+import sys, time
+sub = sys.argv[1] if len(sys.argv) > 1 else 'stats'
+if sub == 'history':
+    h = get_history('load', 24)
+    print('============================================================')
+    print(f' COMMAND CENTER // Telemetry Ledger (Last {len(h)} Snapshots)')
+    print('============================================================')
+    for row in h[-10:]:
+        t = time.strftime('%H:%M:%S', time.localtime(row['timestamp']))
+        print(f\"{t} | Load: {row.get('cpu_load_1m'):.2f} | RAM: {row.get('ram_used_gb', 0):.1f}GB | Batt: {row.get('battery_percent')}% | Ports: {row.get('ports_open')}\")
+    print('============================================================')
+else:
+    s = get_stats()
+    print('============================================================')
+    print(' COMMAND CENTER // SQLite Telemetry & Audit Ledger')
+    print('============================================================')
+    print(f\"Database:     {s.get('db_path')}\")
+    print(f\"Size:         {s.get('db_size_kb')} KB\")
+    print(f\"Snapshots:    {s.get('total_snapshots')} records\")
+    print(f\"Audit Logs:   {s.get('total_audits')} entries\")
+    print('============================================================')
+" "$2"
+}
+
 case "$1" in
   start)
     cmd_start
@@ -346,8 +463,24 @@ case "$1" in
   ports)
     cmd_ports
     ;;
+  top)
+    cmd_top "$@"
+    ;;
+  kill)
+    cmd_kill "$@"
+    ;;
+  lockdown)
+    cmd_lockdown "$@"
+    ;;
+  ledger)
+    cmd_ledger "$@"
+    ;;
   *)
-    echo "Usage: ./command-center {start|stop|restart|status|open|test|install-agent|uninstall-agent|notify|vault|briefing|menubar|llm|speak|hardware|webhook-test|scheduler|ssl|ports}"
+    echo "Usage: ./command-center {start|stop|restart|status|open|test|top|kill|lockdown|ledger|ssl|ports|hardware|speak|briefing|...}"
+    echo "       ./command-center top [--cpu|--mem]               # macOS Process Resource Watchdog"
+    echo "       ./command-center kill <pid>                      # Terminate rogue process with guard"
+    echo "       ./command-center lockdown [on|off|status]        # Emergency security lockdown killswitch"
+    echo "       ./command-center ledger [stats|history]          # SQLite telemetry & audit ledger"
     echo "       ./command-center briefing                        # Generate executive dossier"
     echo "       ./command-center ssl <domain>                    # Inspect SSL/TLS certificate"
     echo "       ./command-center ports                           # Audit localhost listening ports"

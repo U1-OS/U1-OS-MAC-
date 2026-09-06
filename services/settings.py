@@ -7,6 +7,8 @@ from services.base import BaseService
 from utils import macos
 from utils import vault
 from utils import briefing
+from utils import ledger
+from utils import process_watchdog
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -16,6 +18,9 @@ class SettingsService(BaseService):
         self.configured = True
         self.status = "active"
         self.root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.lockdown_active = False
+        self.lockdown_reason = ""
+        self.lockdown_timestamp = 0.0
 
         # Setup Reference Guide for all integrations
         self.setup_reference_guide = [
@@ -319,6 +324,17 @@ class SettingsService(BaseService):
                     "plist_path": macos.get_agent_plist_path()
                 },
                 "vault": self._get_vault_backups_info(),
+                "lockdown": {
+                    "active": self.lockdown_active,
+                    "reason": self.lockdown_reason,
+                    "timestamp": self.lockdown_timestamp,
+                    "elapsed_sec": int(time.time() - self.lockdown_timestamp) if self.lockdown_active else 0
+                },
+                "process_watchdog": {
+                    "top_cpu": process_watchdog.get_top_processes(by="cpu", limit=10),
+                    "top_mem": process_watchdog.get_top_processes(by="mem", limit=10)
+                },
+                "ledger": ledger.get_stats(),
                 "server_environment": {
                     "binding": "127.0.0.1:8787 (Strict Local Only)",
                     "config_path": self.config_path,
@@ -582,6 +598,81 @@ class SettingsService(BaseService):
                 entry = self.feeder.record_webhook(source, test_payload, headers)
                 return {"success": True, "entry": entry}
             return {"success": True, "message": "Test webhook dispatched"}
+
+        # --- Emergency Security Lockdown & Killswitch ---
+        elif action == "toggle_lockdown":
+            enable = payload.get("enable")
+            if enable is None:
+                enable = not self.lockdown_active
+            confirmed = payload.get("confirmed", False)
+            reason = payload.get("reason", "Operator manual override").strip() or "Operator manual override"
+            actor = payload.get("actor", "operator")
+
+            if not confirmed:
+                return {
+                    "success": False,
+                    "error": "CONFIRMATION_REQUIRED",
+                    "message": "Toggling emergency security lockdown requires explicit confirmation.",
+                    "requested_state": enable
+                }
+
+            self.lockdown_active = enable
+            if enable:
+                self.lockdown_timestamp = time.time()
+                self.lockdown_reason = reason
+                ledger.log_audit("security", "lockdown_engaged", f"Emergency lockdown engaged: {reason}", actor=actor, status="ALERT")
+                macos.notify("EMERGENCY LOCKDOWN ENGAGED", f"Reason: {reason}. Webhooks and outbound actions halted.", sound="Sosumi")
+                self.add_event("lockdown_engaged", f"EMERGENCY LOCKDOWN ACTIVATED: {reason}")
+            else:
+                elapsed = int(time.time() - self.lockdown_timestamp) if self.lockdown_timestamp else 0
+                prev_reason = self.lockdown_reason
+                self.lockdown_reason = ""
+                self.lockdown_timestamp = 0.0
+                ledger.log_audit("security", "lockdown_disengaged", f"Lockdown disengaged after {elapsed}s (was: {prev_reason})", actor=actor, status="OK")
+                macos.notify("LOCKDOWN DISENGAGED", "Normal operations restored across all subsystems.", sound="Glass")
+                self.add_event("lockdown_disengaged", "Emergency lockdown disengaged. Normal operations restored.")
+
+            self.poll()
+            return {
+                "success": True,
+                "lockdown_active": self.lockdown_active,
+                "reason": self.lockdown_reason,
+                "timestamp": self.lockdown_timestamp
+            }
+
+        # --- Process Resource Watchdog ---
+        elif action == "get_top_processes":
+            by = payload.get("by", "cpu")
+            limit = payload.get("limit", 15)
+            procs = process_watchdog.get_top_processes(by=by, limit=limit)
+            return {"success": True, "by": by, "processes": procs, "count": len(procs)}
+
+        elif action == "terminate_process":
+            pid = payload.get("pid")
+            sig = payload.get("signal", "TERM")
+            confirmed = payload.get("confirmed", False)
+            actor = payload.get("actor", "operator")
+            res = process_watchdog.kill_process(pid=pid, signal_name=sig, confirmed=confirmed, actor=actor)
+            if res.get("success"):
+                self.add_event("process_killed", f"Terminated PID {pid} via {sig.upper()}")
+            self.poll()
+            return res
+
+        # --- Telemetry & Audit Ledger ---
+        elif action == "get_ledger_stats":
+            return {"success": True, "stats": ledger.get_stats()}
+
+        elif action == "get_ledger_history":
+            metric = payload.get("metric", "load")
+            hours = payload.get("hours", 24)
+            history = ledger.get_history(metric=metric, hours=hours)
+            return {"success": True, "metric": metric, "history": history, "count": len(history)}
+
+        elif action == "get_ledger_audit":
+            limit = payload.get("limit", 50)
+            service = payload.get("service")
+            entries = ledger.get_audit_log(limit=limit, service=service)
+            return {"success": True, "entries": entries, "count": len(entries)}
 
         return super().dispatch_action(action, payload)
 

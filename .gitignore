@@ -10,3 +10,4 @@ sandboxes/
 *.log
 .command-center.pid
 backups/*.ccvault
+data/*.db
