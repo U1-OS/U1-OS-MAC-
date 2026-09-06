@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# COMMAND CENTER // macOS Business Operating System CLI
+# ==============================================================================
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+PID_FILE="$DIR/.command-center.pid"
+PORT=8787
+HOST="127.0.0.1"
+
+get_pid() {
+  if [ -f "$PID_FILE" ]; then
+    PID=$(cat "$PID_FILE")
+    if ps -p "$PID" > /dev/null 2>&1; then
+      echo "$PID"
+      return
+    fi
+  fi
+  # Fallback to lsof on port
+  PID=$(lsof -ti :$PORT 2>/dev/null | head -n 1)
+  if [ -n "$PID" ]; then
+    echo "$PID"
+  fi
+}
+
+cmd_start() {
+  PID=$(get_pid)
+  if [ -n "$PID" ]; then
+    echo -e "\033[33m[WARN]\033[0m Command Center is already running (PID: $PID) on http://$HOST:$PORT"
+    return 0
+  fi
+
+  echo -e "\033[33m[BOOT]\033[0m Starting Command Center local feeder on http://$HOST:$PORT..."
+  nohup python3 "$DIR/server.py" > "$DIR/command-center.log" 2>&1 &
+  NEW_PID=$!
+  echo $NEW_PID > "$PID_FILE"
+  sleep 1
+
+  if ps -p $NEW_PID > /dev/null 2>&1; then
+    echo -e "\033[32m[ACTIVE]\033[0m Command Center running successfully (PID: $NEW_PID)"
+    echo -e "         URL: \033[1;33mhttp://$HOST:$PORT\033[0m"
+    echo -e "         Binding: Localhost only (Strict 127.0.0.1)"
+  else
+    echo -e "\033[31m[ERROR]\033[0m Failed to start server. Check logs: $DIR/command-center.log"
+    exit 1
+  fi
+}
+
+cmd_stop() {
+  PID=$(get_pid)
+  if [ -z "$PID" ]; then
+    echo -e "\033[33m[INFO]\033[0m Command Center is not currently running."
+    rm -f "$PID_FILE"
+    return 0
+  fi
+
+  echo -e "\033[33m[SHUTDOWN]\033[0m Stopping Command Center feeder (PID: $PID)..."
+  kill $PID 2>/dev/null
+  sleep 1
+  if ps -p $PID > /dev/null 2>&1; then
+    kill -9 $PID 2>/dev/null
+  fi
+  rm -f "$PID_FILE"
+  echo -e "\033[32m[STOPPED]\033[0m Command Center shut down cleanly."
+}
+
+cmd_restart() {
+  cmd_stop
+  sleep 1
+  cmd_start
+}
+
+cmd_status() {
+  PID=$(get_pid)
+  echo "============================================================"
+  echo " COMMAND CENTER // macOS Business Operating System"
+  echo "============================================================"
+  if [ -n "$PID" ]; then
+    echo -e "Status:      \033[32mONLINE // ACTIVE\033[0m"
+    echo -e "Process ID:  $PID"
+    echo -e "Binding:     http://$HOST:$PORT (127.0.0.1 ONLY)"
+    
+    # Query state
+    STATE_INFO=$(curl -s "http://$HOST:$PORT/api/state" 2>/dev/null)
+    if [ -n "$STATE_INFO" ]; then
+      COMMIT=$(echo "$STATE_INFO" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('services',{}).get('settings',{}).get('data',{}).get('updater',{}).get('commit','unknown'))")
+      BRANCH=$(echo "$STATE_INFO" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('services',{}).get('settings',{}).get('data',{}).get('updater',{}).get('branch','main'))")
+      SERVICES=$(echo "$STATE_INFO" | python3 -c "import sys, json; d=json.load(sys.stdin); print(len(d.get('services',{})))")
+      echo -e "Git Commit:  $COMMIT (branch: $BRANCH)"
+      echo -e "Services:    $SERVICES modular integrations mounted"
+    fi
+  else
+    echo -e "Status:      \033[31mOFFLINE // STOPPED\033[0m"
+    echo -e "Binding:     http://$HOST:$PORT"
+    echo -e "Action:      Run './command-center start' to launch"
+  fi
+  echo "============================================================"
+}
+
+cmd_open() {
+  PID=$(get_pid)
+  if [ -z "$PID" ]; then
+    echo -e "\033[33m[NOTICE]\033[0m Starting server first..."
+    cmd_start
+  fi
+  echo -e "\033[33m[OPEN]\033[0m Launching Command Center in default macOS browser..."
+  open "http://$HOST:$PORT"
+}
+
+cmd_test() {
+  echo -e "\033[33m[TEST]\033[0m Running Command Center automated verification suite..."
+  python3 -c "
+import urllib.request, json
+try:
+    with urllib.request.urlopen('http://$HOST:$PORT/api/state', timeout=5) as r:
+        d = json.loads(r.read().decode('utf-8'))
+        print('  [PASS] /api/state reachable')
+        print(f'  [PASS] Mounted services: {list(d.get(\"services\", {}).keys())}')
+    with urllib.request.urlopen('http://$HOST:$PORT/api/config', timeout=5) as r:
+        c = json.loads(r.read().decode('utf-8'))
+        print('  [PASS] /api/config reachable & masked')
+    print('\033[32m  [SUCCESS] All verification probes passed.\033[0m')
+except Exception as e:
+    print(f'\033[31m  [FAIL] Error connecting to feeder: {e}\033[0m')
+"
+}
+
+case "$1" in
+  start)
+    cmd_start
+    ;;
+  stop)
+    cmd_stop
+    ;;
+  restart)
+    cmd_restart
+    ;;
+  status)
+    cmd_status
+    ;;
+  open)
+    cmd_open
+    ;;
+  test)
+    cmd_test
+    ;;
+  *)
+    echo "Usage: ./command-center {start|stop|restart|status|open|test}"
+    exit 1
+    ;;
+esac

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="10" fill="#08090B"/>
+  <rect x="2" y="2" width="60" height="60" rx="8" fill="none" stroke="#E9B44C" stroke-width="1.5" opacity="0.3"/>
+  
+  <!-- Corner Ticks -->
+  <path d="M 6 12 L 6 6 L 12 6" fill="none" stroke="#E9B44C" stroke-width="2"/>
+  <path d="M 52 6 L 58 6 L 58 12" fill="none" stroke="#E9B44C" stroke-width="2"/>
+  <path d="M 6 52 L 6 58 L 12 58" fill="none" stroke="#E9B44C" stroke-width="2"/>
+  <path d="M 52 58 L 58 58 L 58 52" fill="none" stroke="#E9B44C" stroke-width="2"/>
+
+  <!-- Command Center Centerpiece -->
+  <rect x="18" y="18" width="12" height="12" rx="2" fill="#E9B44C"/>
+  <rect x="34" y="18" width="12" height="12" rx="2" fill="#E9B44C" opacity="0.5"/>
+  <rect x="18" y="34" width="12" height="12" rx="2" fill="#E9B44C" opacity="0.5"/>
+  <rect x="34" y="34" width="12" height="12" rx="2" fill="#E9B44C"/>
+
+  <!-- Pulse Ring -->
+  <circle cx="32" cy="32" r="22" fill="none" stroke="#E9B44C" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+</svg>

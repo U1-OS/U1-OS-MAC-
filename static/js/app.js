@@ -56,7 +56,14 @@ const CommandCenter = (() => {
     modalDesc: document.getElementById('modalDesc'),
     modalCode: document.getElementById('modalCode'),
     modalCancelBtn: document.getElementById('modalCancelBtn'),
-    modalConfirmBtn: document.getElementById('modalConfirmBtn')
+    modalConfirmBtn: document.getElementById('modalConfirmBtn'),
+
+    // Command Palette & Audio
+    commandPalette: document.getElementById('commandPalette'),
+    paletteSearchInput: document.getElementById('paletteSearchInput'),
+    paletteResults: document.getElementById('paletteResults'),
+    btnOpenPalette: document.getElementById('btnOpenPalette'),
+    btnToggleAudio: document.getElementById('btnToggleAudio')
   };
 
   let pendingConfirmCallback = null;
@@ -68,6 +75,8 @@ const CommandCenter = (() => {
     setupNavigation();
     setupClock();
     setupModal();
+    setupCommandPalette();
+    setupKeyboardShortcuts();
     
     // Remove booting class after initial cascade completes
     setTimeout(() => {
@@ -97,6 +106,7 @@ const CommandCenter = (() => {
 
   function switchSection(sectionId) {
     if (!sectionId) return;
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.nav();
     currentSection = sectionId;
 
     // Update active nav button
@@ -3689,6 +3699,290 @@ const CommandCenter = (() => {
   }
 
   /* ========================================================
+     TACTILE AUDIO FEEDBACK (Web Audio API Synthesizer)
+     ======================================================== */
+  const AudioFeedback = (() => {
+    let ctx = null;
+    let enabled = true;
+
+    function getContext() {
+      if (!ctx && (window.AudioContext || window.webkitAudioContext)) {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return ctx;
+    }
+
+    function playTone(freqStart, freqEnd, type, duration, gainLevel) {
+      if (!enabled) return;
+      try {
+        const audioCtx = getContext();
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freqStart, audioCtx.currentTime);
+        if (freqEnd !== freqStart) {
+          osc.frequency.exponentialRampToValueAtTime(Math.max(10, freqEnd), audioCtx.currentTime + duration);
+        }
+
+        gain.gain.setValueAtTime(gainLevel, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        // Safe fallback if audio blocked
+      }
+    }
+
+    return {
+      isEnabled: () => enabled,
+      toggle: () => {
+        enabled = !enabled;
+        return enabled;
+      },
+      click: () => playTone(360, 180, 'sine', 0.035, 0.04),
+      nav: () => playTone(480, 240, 'triangle', 0.04, 0.035),
+      success: () => playTone(440, 587, 'sine', 0.12, 0.05),
+      alert: () => playTone(280, 220, 'sawtooth', 0.15, 0.04)
+    };
+  })();
+
+  function toggleAudioFeedback() {
+    const state = AudioFeedback.toggle();
+    const btn = document.getElementById('btnToggleAudio');
+    if (btn) {
+      btn.classList.toggle('active', state);
+      btn.title = state ? 'Tactile Audio Feedback: ON' : 'Tactile Audio Feedback: OFF';
+    }
+    if (state) AudioFeedback.success();
+    showNotification(`Audio feedback ${state ? 'activated' : 'muted'}`);
+  }
+
+  /* ========================================================
+     GLOBAL COMMAND PALETTE (Omnibar Cmd+K & Hotkeys)
+     ======================================================== */
+  let paletteSelectedIndex = 0;
+  let currentFilteredCommands = [];
+
+  const commandCatalog = [
+    // Navigation Targets
+    { group: 'SECTIONS', id: 'home', title: 'Home OS Dashboard', desc: 'At-a-glance business vitals & telemetry', shortcut: '1', action: () => switchSection('home') },
+    { group: 'SECTIONS', id: 'comms', title: 'Comms // Gmail & Twilio', desc: 'Priority inbox, agenda & SMS/voice trunk', shortcut: '2', action: () => switchSection('comms') },
+    { group: 'SECTIONS', id: 'finance', title: 'Finance // Stripe & Trade Desk', desc: 'Revenue velocity, bills & market desk', shortcut: '3', action: () => switchSection('finance') },
+    { group: 'SECTIONS', id: 'studio', title: 'Studio // Video Builder', desc: 'TTS voiceovers, B-roll & ffmpeg renderer', shortcut: '4', action: () => switchSection('studio') },
+    { group: 'SECTIONS', id: 'ai', title: 'AI Workbench // Claude & GPT-4o', desc: 'Dual prompt console, cost audit & Canva', shortcut: '5', action: () => switchSection('ai') },
+    { group: 'SECTIONS', id: 'deploy', title: 'Deploy // Code & Terminal', desc: 'Repo cloner, stack audit & log stream', shortcut: '6', action: () => switchSection('deploy') },
+    { group: 'SECTIONS', id: 'gaming', title: 'Gaming // Puzzle Suite & HUD', desc: 'Bevy Metal engine, 120Hz HUD & levels', shortcut: '7', action: () => switchSection('gaming') },
+    { group: 'SECTIONS', id: 'osint', title: 'OSINT // Public Research', desc: 'DNS resolver, WHOIS, HIBP & brand search', shortcut: '8', action: () => switchSection('osint') },
+    { group: 'SECTIONS', id: 'settings', title: 'Settings // Credentials & Git', desc: 'API key vault, auto-updater & setup guide', shortcut: '9', action: () => switchSection('settings') },
+
+    // Fast Action Shortcuts
+    { group: 'ACTIONS', id: 'trade', title: 'Execute Market Order', desc: 'Jump to Trade Panel order desk', shortcut: 'TRADE', action: () => { switchSection('finance'); document.getElementById('orderQtyInput')?.focus(); } },
+    { group: 'ACTIONS', id: 'compose', title: 'Compose Priority Email', desc: 'Jump to Gmail composer and draft', shortcut: 'MAIL', action: () => { switchSection('comms'); document.getElementById('commsRecipient')?.focus(); } },
+    { group: 'ACTIONS', id: 'sms', title: 'Dispatch Outbound SMS', desc: 'Open outbound Twilio SMS trunk drawer', shortcut: 'SMS', action: () => { switchSection('comms'); document.getElementById('twilioMsgBody')?.focus(); } },
+    { group: 'ACTIONS', id: 'video', title: 'Create Faceless Video', desc: 'Generate TTS script and render pipeline', shortcut: 'VIDEO', action: () => { switchSection('studio'); document.getElementById('studioScriptInput')?.focus(); } },
+    { group: 'ACTIONS', id: 'ai_dual', title: 'Compare Dual AI Models', desc: 'Prompt Claude 3.5 Sonnet and GPT-4o side-by-side', shortcut: 'AI', action: () => { switchSection('ai'); document.getElementById('claudePromptInput')?.focus(); } },
+    { group: 'ACTIONS', id: 'playtest', title: 'Launch 120Hz Playtest', desc: 'Launch puzzle game sandbox with Metal HUD', shortcut: 'PLAY', action: () => { switchSection('gaming'); launchPlaytest(); } },
+    { group: 'ACTIONS', id: 'dns', title: 'Lookup DNS Records', desc: 'Authoritative Port 53 DNS matrix resolver', shortcut: 'DNS', action: () => { switchSection('osint'); document.getElementById('osintDnsInput')?.focus(); } },
+    { group: 'ACTIONS', id: 'whois', title: 'Query Port 43 WHOIS', desc: 'Inspect IANA / ICANN domain registrar', shortcut: 'WHOIS', action: () => { switchSection('osint'); document.getElementById('osintWhoisInput')?.focus(); } },
+    { group: 'ACTIONS', id: 'breach', title: 'Audit Account Breach (HIBP)', desc: 'Scan corporate email against HaveIBeenPwned', shortcut: 'HIBP', action: () => { switchSection('osint'); document.getElementById('osintHibpInput')?.focus(); } },
+    { group: 'ACTIONS', id: 'updater', title: 'Check Git Repo Updates', desc: 'Query git repository and tracking branch', shortcut: 'GIT', action: () => { checkRepoUpdates(); } },
+
+    // Theme & Preferences
+    { group: 'THEME', id: 'theme_gold', title: 'Theme: Classic Dark Gold (#E9B44C)', desc: 'Default industrial signature aesthetic', shortcut: 'GOLD', action: () => setThemeAccent('#E9B44C') },
+    { group: 'THEME', id: 'theme_amber', title: 'Theme: Amber Flare (#F59E0B)', desc: 'High-visibility warm illumination', shortcut: 'AMBER', action: () => setThemeAccent('#F59E0B') },
+    { group: 'THEME', id: 'theme_bronze', title: 'Theme: Deep Bronze (#D97706)', desc: 'Subdued copper executive aesthetic', shortcut: 'BRONZE', action: () => setThemeAccent('#D97706') },
+    { group: 'THEME', id: 'theme_emerald', title: 'Theme: Cyber Emerald (#10B981)', desc: 'Terminal matrix contrast aesthetic', shortcut: 'EMERALD', action: () => setThemeAccent('#10B981') },
+    { group: 'THEME', id: 'theme_motion', title: 'Toggle Reduced Motion', desc: 'Instant UI states vs smooth 60fps animations', shortcut: 'MOTION', action: () => toggleReducedMotion(!document.body.classList.contains('reduced-motion')) }
+  ];
+
+  function setupCommandPalette() {
+    const input = document.getElementById('paletteSearchInput');
+    const overlay = document.getElementById('commandPalette');
+    if (!input || !overlay) return;
+
+    input.addEventListener('input', (e) => {
+      filterPalette(e.target.value);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (currentFilteredCommands.length > 0) {
+          paletteSelectedIndex = (paletteSelectedIndex + 1) % currentFilteredCommands.length;
+          renderPaletteResults();
+          scrollActivePaletteItemIntoView();
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentFilteredCommands.length > 0) {
+          paletteSelectedIndex = (paletteSelectedIndex - 1 + currentFilteredCommands.length) % currentFilteredCommands.length;
+          renderPaletteResults();
+          scrollActivePaletteItemIntoView();
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        executePaletteItem(paletteSelectedIndex);
+      }
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closePalette();
+      }
+    });
+  }
+
+  function setupKeyboardShortcuts() {
+    window.addEventListener('keydown', (e) => {
+      const activeEl = document.activeElement;
+      const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+
+      // Cmd+K or Ctrl+K opens palette anywhere
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openPalette();
+        return;
+      }
+
+      // '/' opens palette if not typing in an input
+      if (e.key === '/' && !isInput) {
+        e.preventDefault();
+        openPalette();
+        return;
+      }
+
+      // Esc closes open modals or palette
+      if (e.key === 'Escape') {
+        const palette = document.getElementById('commandPalette');
+        if (palette && palette.classList.contains('open')) {
+          closePalette();
+          return;
+        }
+        if (els.confirmModal && els.confirmModal.classList.contains('open')) {
+          els.confirmModal.classList.remove('open');
+          pendingConfirmCallback = null;
+          return;
+        }
+      }
+
+      // 1-9 Jump to sections if not typing
+      if (!isInput && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const num = parseInt(e.key, 10);
+        if (num >= 1 && num <= 9) {
+          const secKeys = ['home', 'comms', 'finance', 'studio', 'ai', 'deploy', 'gaming', 'osint', 'settings'];
+          const targetSec = secKeys[num - 1];
+          if (targetSec) {
+            e.preventDefault();
+            switchSection(targetSec);
+          }
+        }
+      }
+    });
+  }
+
+  function openPalette() {
+    AudioFeedback.click();
+    const palette = document.getElementById('commandPalette');
+    const input = document.getElementById('paletteSearchInput');
+    if (!palette) return;
+
+    palette.classList.add('open');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    paletteSelectedIndex = 0;
+    filterPalette('');
+  }
+
+  function closePalette() {
+    const palette = document.getElementById('commandPalette');
+    if (palette) palette.classList.remove('open');
+  }
+
+  function filterPalette(query) {
+    const q = (query || '').toLowerCase().trim();
+    if (!q) {
+      currentFilteredCommands = commandCatalog;
+    } else {
+      currentFilteredCommands = commandCatalog.filter(c => 
+        c.title.toLowerCase().includes(q) || 
+        c.desc.toLowerCase().includes(q) || 
+        c.shortcut.toLowerCase().includes(q) ||
+        c.group.toLowerCase().includes(q)
+      );
+    }
+
+    if (paletteSelectedIndex >= currentFilteredCommands.length) {
+      paletteSelectedIndex = Math.max(0, currentFilteredCommands.length - 1);
+    }
+    renderPaletteResults();
+  }
+
+  function renderPaletteResults() {
+    const container = document.getElementById('paletteResults');
+    if (!container) return;
+
+    if (currentFilteredCommands.length === 0) {
+      container.innerHTML = `
+        <div style="padding:24px; text-align:center; color:var(--text-muted); font-family:var(--font-mono); font-size:11.5px;">
+          // Zero commands matching query. Press Esc to exit.
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    let lastGroup = null;
+
+    currentFilteredCommands.forEach((cmd, idx) => {
+      if (cmd.group !== lastGroup) {
+        lastGroup = cmd.group;
+        html += `<div class="palette-group-title">${escapeHtml(cmd.group)}</div>`;
+      }
+      const isActive = idx === paletteSelectedIndex;
+      html += `
+        <div class="palette-item ${isActive ? 'active' : ''}" data-idx="${idx}" onclick="CommandCenter.executePaletteItem(${idx})">
+          <div class="palette-item-main">
+            <span class="palette-item-title">${escapeHtml(cmd.title)}</span>
+            <span class="palette-item-desc">${escapeHtml(cmd.desc)}</span>
+          </div>
+          <span class="palette-item-badge mono">${escapeHtml(cmd.shortcut)}</span>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  function scrollActivePaletteItemIntoView() {
+    const container = document.getElementById('paletteResults');
+    const activeItem = container?.querySelector('.palette-item.active');
+    if (activeItem && container) {
+      activeItem.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function executePaletteItem(idx) {
+    const cmd = currentFilteredCommands[idx];
+    if (cmd && typeof cmd.action === 'function') {
+      AudioFeedback.click();
+      closePalette();
+      cmd.action();
+    }
+  }
+
+  /* ========================================================
      SETTINGS & SYSTEM ACTIONS
      ======================================================== */
   function onSettingKeyInput(serviceId, keyName, value) {
@@ -4440,7 +4734,11 @@ STATUS: RESOLVED // NOMINAL
     setThemeAccent,
     toggleReducedMotion,
     setPollingInterval,
-    copyReferencePath
+    copyReferencePath,
+    openPalette,
+    closePalette,
+    executePaletteItem,
+    toggleAudioFeedback
   };
 })();
 

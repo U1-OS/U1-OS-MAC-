@@ -8,6 +8,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800;900&family=Archivo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#08090B">
 </head>
 <body class="booting">
   <!-- Ambient background glow layer -->
@@ -66,6 +71,20 @@
           <span class="clock-time mono" id="sysClock">00:00:00</span>
           <span class="clock-tz mono" id="sysDate">---</span>
         </div>
+
+        <!-- Command Palette Trigger Button -->
+        <button class="bezel-widget btn-palette-trigger mono" id="btnOpenPalette" title="Open Command Palette (Cmd+K or /)" onclick="CommandCenter.openPalette()">
+          <span>⌘K</span>
+        </button>
+
+        <!-- Tactile Audio Feedback Toggle -->
+        <button class="bezel-widget btn-audio-toggle" id="btnToggleAudio" title="Toggle Tactile Audio Feedback" onclick="CommandCenter.toggleAudioFeedback()">
+          <svg class="w-icon" id="audioIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -1043,6 +1062,27 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" id="modalCancelBtn">ABORT</button>
         <button class="btn btn-gold" id="modalConfirmBtn">CONFIRM &amp; EXECUTE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Command Palette Modal (Cmd+K) -->
+  <div class="palette-overlay" id="commandPalette" aria-hidden="true">
+    <div class="palette-card">
+      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+      <div class="palette-input-wrap">
+        <svg class="palette-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="paletteSearchInput" class="mono palette-input" placeholder="Type a command or jump to section... (Press Esc to exit)" autocomplete="off">
+        <span class="mono palette-esc-hint">ESC</span>
+      </div>
+      <div class="palette-results" id="paletteResults"></div>
+      <div class="palette-footer mono">
+        <span><span class="key-cap">&uarr;</span> <span class="key-cap">&darr;</span> NAVIGATE</span>
+        <span><span class="key-cap">&crarr;</span> EXECUTE</span>
+        <span><span class="key-cap">1-9</span> JUMP SECTIONS</span>
       </div>
     </div>
   </div>
