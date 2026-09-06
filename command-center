@@ -108,8 +108,11 @@ cmd_open() {
 }
 
 cmd_test() {
-  echo -e "\033[33m[TEST]\033[0m Running Command Center automated verification suite..."
-  python3 -c "
+  if [ -f "tests/test_full_suite.py" ]; then
+    python3 tests/test_full_suite.py
+  else
+    echo -e "\033[33m[TEST]\033[0m Running Command Center automated verification suite..."
+    python3 -c "
 import urllib.request, json
 try:
     with urllib.request.urlopen('http://$HOST:$PORT/api/state', timeout=5) as r:
@@ -123,6 +126,7 @@ try:
 except Exception as e:
     print(f'\033[31m  [FAIL] Error connecting to feeder: {e}\033[0m')
 "
+  fi
 }
 
 case "$1" in
