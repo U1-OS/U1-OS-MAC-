@@ -511,6 +511,84 @@ elif sub == 'swap':
 " "$2" "$3" "$4" "$5" "$6"
 }
 
+cmd_bot() {
+  SUB="$2"
+  python3 -c "
+import sys, json, urllib.request
+
+sub = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else 'status'
+host = '$HOST'
+port = $PORT
+
+def call_api(path, data=None):
+    url = f'http://{host}:{port}{path}'
+    if data is not None:
+        req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
+    else:
+        req = urllib.request.Request(url)
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        print(f'Error connecting to feeder: {e}')
+        sys.exit(1)
+
+if sub == 'status':
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'get_bot_status', 'payload': {}})
+    st = res.get('bot_state', {})
+    print('========================================================================================')
+    print(' COMMAND CENTER // Autonomous AI Strategy Bot Status')
+    print('========================================================================================')
+    print(f' Status:             {st.get(\"status\")}')
+    print(f' Active Strategies:  {\", \".join(st.get(\"active_strategies\", []))}')
+    print(f' Paper Balance:      {st.get(\"paper_balance_sol\", 0):.2f} SOL')
+    print(f' Realized Bot PnL:   {st.get(\"realized_pnl_sol\", 0):+.3f} SOL (\${st.get(\"realized_pnl_usd\", 0):+,.2f} USD)')
+    print(f' Stop-Loss / TP:     SL: {st.get(\"stop_loss_pct\")}%, TP: +{st.get(\"take_profit_pct\")}%')
+    print(f' Executed Trades:    {st.get(\"total_bot_trades\", 0)}')
+    print('========================================================================================')
+
+elif sub == 'start':
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'start_trading_bot', 'payload': {}})
+    print(f'Bot Started: {res.get(\"status\")} - {res.get(\"message\")}')
+
+elif sub == 'stop':
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'stop_trading_bot', 'payload': {}})
+    print(f'Bot Stopped: {res.get(\"status\")} - {res.get(\"message\")}')
+
+elif sub == 'backtest':
+    epochs = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 100
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'run_strategy_backtest', 'payload': {'epochs': epochs}})
+    bt = res.get('backtest', {})
+    print('========================================================================================')
+    print(f' COMMAND CENTER // Quantitative Strategy Backtester ({bt.get(\"epochs\", epochs)} Epochs)')
+    print('========================================================================================')
+    print(f' Win Rate:           {bt.get(\"win_rate_pct\", 0):.1f}% ({bt.get(\"winning_trades\")}/{bt.get(\"trades_executed\")})')
+    print(f' Profit Factor:      {bt.get(\"profit_factor\", 0):.2f}')
+    print(f' Net Realized PnL:   {bt.get(\"net_pnl_sol\", 0):+.2f} SOL (\${bt.get(\"net_pnl_usd\", 0):+,.2f} USD)')
+    print(f' Sharpe Ratio:       {bt.get(\"sharpe_ratio\", 0):.2f}')
+    print(f' Max Drawdown:       -{bt.get(\"max_drawdown_pct\", 0):.1f}%')
+    print('========================================================================================')
+
+elif sub == 'log':
+    state = call_api('/api/state')
+    logs = state.get('services', {}).get('crypto', {}).get('data', {}).get('bot_log', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Autonomous Bot Event Journal')
+    print('========================================================================================')
+    for l in logs[-15:]:
+        print(f'[{l.get(\"type\", \"INFO\")}] {l.get(\"message\")}')
+    print('========================================================================================')
+
+elif sub == 'exec':
+    cmd_str = ' '.join(sys.argv[2:])
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'execute_terminal_command', 'payload': {'command': cmd_str}})
+    print(res.get('output', ''))
+
+else:
+    print('Usage: ./command-center bot [status|start|stop|backtest|log|exec <cmd>]')
+" "$2" "$3" "$4" "$5"
+}
+
 case "$1" in
   start)
     cmd_start
@@ -584,8 +662,12 @@ case "$1" in
   crypto)
     cmd_crypto "$@"
     ;;
+  bot)
+    cmd_bot "$@"
+    ;;
   *)
-    echo "Usage: ./command-center {start|stop|restart|status|open|test|crypto|top|kill|lockdown|ledger|...}"
+    echo "Usage: ./command-center {start|stop|restart|status|open|test|crypto|bot|top|kill|lockdown|ledger|...}"
+    echo "       ./command-center bot [status|start|stop|backtest|log|exec <cmd>] # Autonomous AI Strategy Bot & Terminal"
     echo "       ./command-center crypto [tokens|alpha|copy|alert|positions|swap] # Dedicated Crypto Desk"
     echo "       ./command-center top [--cpu|--mem]               # macOS Process Resource Watchdog"
     echo "       ./command-center kill <pid>                      # Terminate rogue process with guard"

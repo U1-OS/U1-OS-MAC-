@@ -385,6 +385,43 @@ def main():
     s, sched_res = action("settings", "trigger_scheduled_task", {"job_id": "crypto_alert_watchdog"})
     log_test("Automated Crypto Alert Watchdog Cron", sched_res.get("success") and sched_res.get("job", {}).get("status") == "COMPLETED", f"Duration: {sched_res.get('result', {}).get('duration_ms', 0)}ms")
 
+    # 31. Autonomous AI Trading Bot Lifecycle & Strategy Engine
+    print(f"\n{INFO} 31. Subsystem: Autonomous AI Trading Bot Lifecycle & Strategy Signals:")
+    s, bot_status = action("crypto", "get_bot_status")
+    bst = bot_status.get("bot_state", {})
+    log_test("Autonomous Bot Initial Standby State", bot_status.get("success") and bst.get("paper_balance_sol", 0) > 0 and bst.get("initial_balance_sol") == 50.0, f"Balance: {bst.get('paper_balance_sol')} SOL, Strategies: {len(bst.get('active_strategies', []))}")
+
+    s, bot_start = action("crypto", "start_trading_bot")
+    log_test("Autonomous Bot Engagement (START)", bot_start.get("success") and bot_start.get("status") == "RUNNING", "AI Bot engaged in simulated paper trading mode")
+
+    s, bot_cfg = action("crypto", "configure_bot_strategy", {"strategies": ["alpha_sniper", "whale_shadow", "mean_reversion"]})
+    log_test("Autonomous Strategy Parameter Configuration", bot_cfg.get("success") and "mean_reversion" in bot_cfg.get("bot_state", {}).get("active_strategies", []), "Added mean_reversion to active strategies")
+
+    # Trigger a poll/tick with active bot to evaluate signals
+    s, state_eval = action("crypto", "get_bot_status")
+    log_test("Autonomous Execution Journal Ingestion", len(state_eval.get("bot_log", [])) > 0, f"{len(state_eval.get('bot_log', []))} journal entries recorded in state")
+
+    s, bot_stop = action("crypto", "stop_trading_bot")
+    log_test("Autonomous Bot Disengagement (STOP)", bot_stop.get("success") and bot_stop.get("status") == "STANDBY", "AI Bot disengaged to standby state")
+
+    # 32. Quantitative Strategy Backtester & Interactive Cyber Terminal Drawer
+    print(f"\n{INFO} 32. Subsystem: Quantitative Strategy Backtester & Cyber Terminal Drawer:")
+    s, bt_res = action("crypto", "run_strategy_backtest", {"epochs": 100})
+    bt_data = bt_res.get("backtest", {})
+    log_test("Quantitative 100-Epoch Simulation Execution", bt_res.get("success") and bt_data.get("trades_executed") == 100, f"Win Rate: {bt_data.get('win_rate_pct')}%, Net PnL: {bt_data.get('net_pnl_sol')} SOL")
+
+    log_test("Backtest Metrics Validation", (0.0 <= bt_data.get("win_rate_pct", -1) <= 100.0) and "sharpe_ratio" in bt_data and "max_drawdown_pct" in bt_data, f"Sharpe: {bt_data.get('sharpe_ratio')}, MaxDD: -{bt_data.get('max_drawdown_pct')}%")
+
+    s, term_help = action("crypto", "execute_terminal_command", {"command": "help"})
+    log_test("Cyber Terminal Command Interpreter (help)", term_help.get("success") and "CYBER TERMINAL" in term_help.get("output", ""), "Help index returned with valid command list")
+
+    s, term_bot = action("crypto", "execute_terminal_command", {"command": "bot status"})
+    log_test("Cyber Terminal Command Interpreter (bot status)", term_bot.get("success") and ("AI Strategy Bot" in term_bot.get("output", "") or "Autonomous" in term_bot.get("output", "")), "Bot telemetry formatted for cyber console")
+
+    s, term_tokens = action("crypto", "execute_terminal_command", {"command": "tokens"})
+    log_test("Cyber Terminal Command Interpreter (tokens screener)", term_tokens.get("success") and "PRICE" in term_tokens.get("output", ""), "Screener matrix formatted for cyber console")
+
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

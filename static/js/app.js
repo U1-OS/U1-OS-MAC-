@@ -77,6 +77,7 @@ const CommandCenter = (() => {
     setupModal();
     setupCommandPalette();
     setupKeyboardShortcuts();
+    setupCyberTerminalInputs();
     
     // Remove booting class after initial cascade completes
     setTimeout(() => {
@@ -2094,6 +2095,118 @@ const CommandCenter = (() => {
           </div>
         `;
     }
+
+    // 7. Autonomous AI Bot & Backtesting Center
+    const botPanelEl = document.getElementById('cryptoBotContainer');
+    const botStatusBadge = document.getElementById('cryptoBotStatusBadge');
+    const btnToggleBot = document.getElementById('btnToggleBot');
+    const botState = d.bot_state || {
+      status: 'STANDBY',
+      active_strategies: ['alpha_sniper', 'whale_shadow'],
+      paper_balance_sol: 50.0,
+      initial_balance_sol: 50.0,
+      realized_pnl_sol: 0.0,
+      realized_pnl_usd: 0.0,
+      stop_loss_pct: -12.0,
+      take_profit_pct: 45.0,
+      total_bot_trades: 0,
+      bot_positions: []
+    };
+    const botLog = d.bot_log || [];
+    const isRunning = botState.status === 'RUNNING';
+
+    if (botStatusBadge) {
+      botStatusBadge.textContent = botState.status;
+      botStatusBadge.style.borderColor = isRunning ? 'var(--neon-emerald)' : 'var(--border-subtle)';
+      botStatusBadge.style.color = isRunning ? 'var(--neon-emerald)' : 'var(--text-muted)';
+      botStatusBadge.style.boxShadow = isRunning ? '0 0 10px rgba(16, 185, 129, 0.25)' : 'none';
+    }
+
+    if (btnToggleBot) {
+      btnToggleBot.textContent = isRunning ? 'STOP BOT' : 'START BOT';
+      btnToggleBot.className = isRunning ? 'btn btn-sm btn-secondary mono' : 'btn btn-sm btn-emerald mono';
+      btnToggleBot.style.color = isRunning ? 'var(--neon-crimson)' : '';
+      btnToggleBot.style.borderColor = isRunning ? 'rgba(239, 68, 68, 0.4)' : '';
+    }
+
+    if (botPanelEl) {
+      const activeStrategies = botState.active_strategies || [];
+      const solToken = tokens.find(t => t.symbol === 'SOL') || { price_usd: 180 };
+      const solPrice = solToken.price_usd || 180;
+      const paperSol = botState.paper_balance_sol || 50.0;
+      const paperUsd = paperSol * solPrice;
+      const pnlSol = botState.realized_pnl_sol || 0.0;
+      const pnlUsd = botState.realized_pnl_usd || 0.0;
+      const isProfitable = pnlSol >= 0;
+
+      botPanelEl.innerHTML = `
+        <div class="crypto-bot-grid">
+          <div class="bot-metric-tile">
+            <div class="bot-metric-kicker">ENGINE STATUS</div>
+            <div class="bot-metric-val ${isRunning ? 'emerald' : 'cyan'}">${escapeHtml(botState.status)}</div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">EXEC: SIMULATED PAPER DESK</div>
+          </div>
+          <div class="bot-metric-tile">
+            <div class="bot-metric-kicker">PAPER PORTFOLIO (SOL)</div>
+            <div class="bot-metric-val gold">${paperSol.toFixed(2)} SOL</div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">≈ $${formatNumber(paperUsd)} USD</div>
+          </div>
+          <div class="bot-metric-tile">
+            <div class="bot-metric-kicker">REALIZED BOT PNL</div>
+            <div class="bot-metric-val ${isProfitable ? 'emerald' : 'crimson'}">
+              ${isProfitable ? '+' : ''}${pnlSol.toFixed(3)} SOL
+            </div>
+            <div style="font-size:10px; color:${isProfitable ? 'var(--neon-emerald)' : 'var(--neon-crimson)'}; margin-top:2px;">
+              ${isProfitable ? '+' : ''}$${formatNumber(pnlUsd)} USD
+            </div>
+          </div>
+          <div class="bot-metric-tile">
+            <div class="bot-metric-kicker">BOT EXECUTIONS</div>
+            <div class="bot-metric-val purple">${botState.total_bot_trades || 0} TRADES</div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${(botState.bot_positions || []).length} ACTIVE BOT ORDERS</div>
+          </div>
+        </div>
+
+        <div class="bot-strategies-row">
+          <span class="mono" style="font-size:10px; color:var(--gold); font-weight:700; margin-right:4px;">ACTIVE STRATEGIES:</span>
+          <div class="strategy-chip ${activeStrategies.includes('alpha_sniper') ? 'active' : ''}" onclick="CommandCenter.toggleCryptoBotStrategy('alpha_sniper')">
+            <span>⚡ ALPHA SNIPER (>150 RT/m)</span>
+          </div>
+          <div class="strategy-chip ${activeStrategies.includes('whale_shadow') ? 'active' : ''}" onclick="CommandCenter.toggleCryptoBotStrategy('whale_shadow')">
+            <span>🐋 WHALE SHADOW (>85% Win)</span>
+          </div>
+          <div class="strategy-chip ${activeStrategies.includes('mean_reversion') ? 'active' : ''}" onclick="CommandCenter.toggleCryptoBotStrategy('mean_reversion')">
+            <span>📉 MEAN REVERSION (-4% Dip)</span>
+          </div>
+          <div style="margin-left:auto; display:flex; gap:10px; font-family:var(--font-mono); font-size:10px; color:var(--text-muted); align-items:center;">
+            <span>TRAILING SL: ${botState.stop_loss_pct || -12}%</span>
+            <span>TP: +${botState.take_profit_pct || 45}%</span>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span class="mono" style="font-size:10px; color:var(--text-muted); letter-spacing:0.06em;">LIVE AUTONOMOUS LOG FEED</span>
+            <span class="mono" style="font-size:9.5px; color:var(--neon-cyan);">AUTO-SCROLLING REAL-TIME JOURNAL</span>
+          </div>
+          <div class="bot-event-feed" id="botEventFeed">
+            ${botLog.length === 0 ? '<div style="color:var(--text-muted); font-size:11px;">No bot actions logged yet. Start bot to begin autonomous execution.</div>' :
+              botLog.slice(-12).reverse().map(l => {
+                const dateStr = l.timestamp ? new Date(l.timestamp * 1000).toLocaleTimeString() : '--:--:--';
+                const tagClass = l.type || 'SYSTEM';
+                return `
+                  <div class="bot-event-item">
+                    <span class="bot-event-time">${escapeHtml(dateStr)}</span>
+                    <span class="bot-event-tag ${escapeHtml(tagClass)}">${escapeHtml(l.type || 'INFO')}</span>
+                    <span style="color:var(--text-secondary);">${escapeHtml(l.message || '')}</span>
+                  </div>
+                `;
+              }).join('')
+            }
+          </div>
+        </div>
+      `;
+    }
   }
 
   function selectCryptoToken(symbol) {
@@ -2264,6 +2377,291 @@ const CommandCenter = (() => {
       showNotification(`Contract address copied: ${ca.slice(0, 8)}...${ca.slice(-6)}`);
     }).catch(() => {
       showNotification(`CA: ${ca}`);
+    });
+  }
+
+  // Autonomous AI Trading Bot Controls
+  function toggleCryptoBot() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const botState = (currentState && currentState.services && currentState.services.crypto && currentState.services.crypto.data && currentState.services.crypto.data.bot_state) || {};
+    if (botState.status === 'RUNNING') {
+      stopCryptoBot();
+    } else {
+      startCryptoBot();
+    }
+  }
+
+  function startCryptoBot() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    apiAction('crypto', 'start_trading_bot', {}, (res) => {
+      if (res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.signal();
+        showNotification('Autonomous AI Trading Bot ENGAGED in simulated paper mode.');
+        fetchState();
+      } else {
+        showNotification(`Bot start error: ${res.error || res.message}`);
+      }
+    });
+  }
+
+  function stopCryptoBot() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    apiAction('crypto', 'stop_trading_bot', {}, (res) => {
+      if (res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+        showNotification('Autonomous AI Trading Bot STOPPED (Standby mode).');
+        fetchState();
+      } else {
+        showNotification(`Bot stop error: ${res.error || res.message}`);
+      }
+    });
+  }
+
+  function toggleCryptoBotStrategy(stratName) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const botState = (currentState && currentState.services && currentState.services.crypto && currentState.services.crypto.data && currentState.services.crypto.data.bot_state) || {};
+    let strategies = [...(botState.active_strategies || ['alpha_sniper', 'whale_shadow'])];
+    if (strategies.includes(stratName)) {
+      if (strategies.length <= 1) {
+        showNotification('At least one autonomous strategy must remain active.');
+        return;
+      }
+      strategies = strategies.filter(s => s !== stratName);
+    } else {
+      strategies.push(stratName);
+    }
+    apiAction('crypto', 'configure_bot_strategy', { strategies }, (res) => {
+      if (res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.haptic();
+        showNotification(`Updated bot strategies: ${strategies.join(', ')}`);
+        fetchState();
+      }
+    });
+  }
+
+  function runCryptoBacktest() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    showNotification('Executing quantitative backtest simulation (100 epochs)...');
+    apiAction('crypto', 'run_strategy_backtest', { epochs: 100 }, (res) => {
+      if (res.success && res.backtest) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        renderBacktestModal(res.backtest);
+      } else {
+        showNotification(`Backtest error: ${res.error || res.message}`);
+      }
+    });
+  }
+
+  function renderBacktestModal(bt) {
+    const modal = document.getElementById('backtestModal');
+    const body = document.getElementById('backtestModalBody');
+    if (!modal || !body) return;
+
+    const winRate = bt.win_rate_pct || 0;
+    const profitFactor = bt.profit_factor || 0;
+    const pnlSol = bt.net_pnl_sol || 0;
+    const pnlUsd = bt.net_pnl_usd || 0;
+    const sharpe = bt.sharpe_ratio || 0;
+    const maxDd = bt.max_drawdown_pct || 0;
+    const trades = bt.trades_executed || 0;
+    const wins = bt.winning_trades || 0;
+    const losses = bt.losing_trades || 0;
+
+    body.innerHTML = `
+      <div class="backtest-summary-grid">
+        <div class="backtest-metric-card">
+          <div class="backtest-metric-title">WIN RATE</div>
+          <div class="backtest-metric-val ${winRate >= 50 ? 'emerald' : 'gold'}">${winRate.toFixed(1)}%</div>
+          <div style="font-size:9.5px; color:var(--text-muted); margin-top:2px;">${wins}W / ${losses}L (${trades} total)</div>
+        </div>
+        <div class="backtest-metric-card">
+          <div class="backtest-metric-title">PROFIT FACTOR</div>
+          <div class="backtest-metric-val cyan">${profitFactor.toFixed(2)}</div>
+          <div style="font-size:9.5px; color:var(--text-muted); margin-top:2px;">GROSS GAINS / LOSSES</div>
+        </div>
+        <div class="backtest-metric-card">
+          <div class="backtest-metric-title">NET PNL (100 EPOCHS)</div>
+          <div class="backtest-metric-val ${pnlSol >= 0 ? 'emerald' : 'crimson'}">${pnlSol >= 0 ? '+' : ''}${pnlSol.toFixed(2)} SOL</div>
+          <div style="font-size:9.5px; color:var(--text-muted); margin-top:2px;">≈ ${pnlUsd >= 0 ? '+' : ''}$${formatNumber(pnlUsd)} USD</div>
+        </div>
+        <div class="backtest-metric-card">
+          <div class="backtest-metric-title">SHARPE RATIO</div>
+          <div class="backtest-metric-val purple">${sharpe.toFixed(2)}</div>
+          <div style="font-size:9.5px; color:var(--text-muted); margin-top:2px;">RISK-ADJUSTED ALPHA</div>
+        </div>
+        <div class="backtest-metric-card">
+          <div class="backtest-metric-title">MAX DRAWDOWN</div>
+          <div class="backtest-metric-val crimson">-${maxDd.toFixed(1)}%</div>
+          <div style="font-size:9.5px; color:var(--text-muted); margin-top:2px;">PEAK-TO-TROUGH DROP</div>
+        </div>
+        <div class="backtest-metric-card">
+          <div class="backtest-metric-title">TEST PARAMETERS</div>
+          <div class="backtest-metric-val gold">100 EPOCHS</div>
+          <div style="font-size:9.5px; color:var(--text-muted); margin-top:2px;">SL: -12% | TP: +45%</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span class="mono" style="font-size:10px; color:var(--gold); font-weight:700;">SIMULATED TRADE LOG SAMPLE</span>
+          <span class="mono" style="font-size:9.5px; color:var(--text-muted);">SHOWING RECENT EPOCHS</span>
+        </div>
+        <div class="backtest-epoch-list">
+          ${(bt.trade_sample || []).map(t => {
+            const isWin = t.outcome === 'WIN';
+            const sign = t.pnl_pct >= 0 ? '+' : '';
+            return `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 6px; border-bottom:1px solid rgba(255,255,255,0.03);">
+                <div>
+                  <span class="mono" style="color:var(--text-muted);">EPOCH ${t.epoch} &bull;</span>
+                  <span class="mono" style="font-weight:700; color:var(--text-primary); margin-left:4px;">$${escapeHtml(t.token)}</span>
+                  <span class="mono" style="font-size:9.5px; color:var(--text-muted); margin-left:6px;">[${escapeHtml(t.strategy)}]</span>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <span class="mono" style="font-size:10px; color:${isWin ? 'var(--neon-emerald)' : 'var(--neon-crimson)'}; font-weight:700;">
+                    ${sign}${t.pnl_pct}%
+                  </span>
+                  <span class="badge mono" style="font-size:9px; background:${isWin ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color:${isWin ? 'var(--neon-emerald)' : 'var(--neon-crimson)'};">
+                    ${t.outcome}
+                  </span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeBacktestModal() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const modal = document.getElementById('backtestModal');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  // Interactive Cyber Terminal Drawer
+  const terminalHistory = [];
+  let terminalHistoryIndex = -1;
+
+  function toggleCyberTerminal() {
+    const drawer = document.getElementById('cyberTerminalDrawer');
+    if (!drawer) return;
+    const isCollapsed = drawer.classList.contains('collapsed');
+    if (isCollapsed) {
+      drawer.classList.remove('collapsed');
+      drawer.setAttribute('aria-hidden', 'false');
+      const input = document.getElementById('cyberTerminalInput');
+      if (input) setTimeout(() => input.focus(), 50);
+      if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    } else {
+      drawer.classList.add('collapsed');
+      drawer.setAttribute('aria-hidden', 'true');
+      if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    }
+  }
+
+  function clearCyberTerminal() {
+    const output = document.getElementById('cyberTerminalOutput');
+    if (output) {
+      output.innerHTML = `
+        <div class="term-line info">COMMAND CENTER INTERACTIVE CYBER TERMINAL INITIALIZED.</div>
+        <div class="term-line info">Type 'help' or 'status' for commands. Supports tokens, swap, alpha, copy, bot, top, ports, ssl, lockdown, ledger.</div>
+      `;
+    }
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.haptic();
+  }
+
+  function submitCyberTerminalCommand() {
+    const input = document.getElementById('cyberTerminalInput');
+    const output = document.getElementById('cyberTerminalOutput');
+    if (!input || !output) return;
+
+    const rawCmd = input.value.trim();
+    if (!rawCmd) return;
+
+    // Push to history
+    terminalHistory.push(rawCmd);
+    terminalHistoryIndex = -1;
+    input.value = '';
+
+    // Render user command line
+    const cmdLine = document.createElement('div');
+    cmdLine.className = 'term-line cmd';
+    cmdLine.innerHTML = `<span class="term-prompt-prefix mono">⚡ [CMD-CENTER ~]$</span> ${escapeHtml(rawCmd)}`;
+    output.appendChild(cmdLine);
+
+    if (rawCmd.toLowerCase() === 'clear') {
+      clearCyberTerminal();
+      return;
+    }
+
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.execute();
+
+    // Call crypto execute_terminal_command
+    apiAction('crypto', 'execute_terminal_command', { command: rawCmd }, (res) => {
+      const respLine = document.createElement('div');
+      const textOut = (res && res.output) ? res.output : (res && res.error ? `Error: ${res.error}` : 'Command executed.');
+      const isSuccess = res && res.success;
+      respLine.className = `term-line ${isSuccess ? 'info' : 'error'}`;
+      respLine.textContent = textOut;
+      output.appendChild(respLine);
+      output.scrollTop = output.scrollHeight;
+
+      if (isSuccess && typeof AudioFeedback !== 'undefined') {
+        AudioFeedback.tick();
+      }
+      // If the command altered bot state, swap, etc., refresh global state
+      if (rawCmd.startsWith('bot') || rawCmd.startsWith('swap') || rawCmd.startsWith('copy') || rawCmd.startsWith('lockdown')) {
+        fetchState();
+      }
+    });
+
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function setupCyberTerminalInputs() {
+    const input = document.getElementById('cyberTerminalInput');
+    if (!input) return;
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitCyberTerminalCommand();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (terminalHistory.length === 0) return;
+        if (terminalHistoryIndex === -1) {
+          terminalHistoryIndex = terminalHistory.length - 1;
+        } else if (terminalHistoryIndex > 0) {
+          terminalHistoryIndex--;
+        }
+        input.value = terminalHistory[terminalHistoryIndex] || '';
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (terminalHistoryIndex !== -1) {
+          if (terminalHistoryIndex < terminalHistory.length - 1) {
+            terminalHistoryIndex++;
+            input.value = terminalHistory[terminalHistoryIndex] || '';
+          } else {
+            terminalHistoryIndex = -1;
+            input.value = '';
+          }
+        }
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        const val = input.value.trim();
+        const completions = ['help', 'status', 'tokens', 'swap', 'alpha', 'copy', 'bot', 'top', 'ports', 'ssl', 'lockdown', 'ledger', 'briefing', 'speak', 'clear'];
+        const match = completions.find(c => c.startsWith(val.toLowerCase()));
+        if (match) {
+          input.value = match + ' ';
+        }
+      }
     });
   }
 
@@ -4971,8 +5369,27 @@ const CommandCenter = (() => {
         return;
       }
 
+      // Backtick (`) toggles Cyber Terminal
+      if (e.key === '`' || e.code === 'Backquote') {
+        if (!isInput || (activeEl && activeEl.id === 'cyberTerminalInput')) {
+          e.preventDefault();
+          toggleCyberTerminal();
+          return;
+        }
+      }
+
       // Esc closes open modals or palette
       if (e.key === 'Escape') {
+        const terminalDrawer = document.getElementById('cyberTerminalDrawer');
+        if (terminalDrawer && !terminalDrawer.classList.contains('collapsed')) {
+          toggleCyberTerminal();
+          return;
+        }
+        const backtestModal = document.getElementById('backtestModal');
+        if (backtestModal && backtestModal.style.display === 'flex') {
+          closeBacktestModal();
+          return;
+        }
         const palette = document.getElementById('commandPalette');
         if (palette && palette.classList.contains('open')) {
           closePalette();
@@ -6254,7 +6671,16 @@ STATUS: RESOLVED // NOMINAL
     createCryptoAlert,
     deleteCryptoAlert,
     confirmCloseCryptoPosition,
-    copyCaToClipboard
+    copyCaToClipboard,
+    toggleCyberTerminal,
+    clearCyberTerminal,
+    submitCyberTerminalCommand,
+    toggleCryptoBot,
+    startCryptoBot,
+    stopCryptoBot,
+    toggleCryptoBotStrategy,
+    runCryptoBacktest,
+    closeBacktestModal
   };
 })();
 
