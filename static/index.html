@@ -33,6 +33,10 @@
           <span class="pulse-dot"></span>
           <span class="heartbeat-label">FEEDER 8787</span>
         </div>
+        <div class="sys-heartbeat" id="bezelSseWrap" title="Real-Time Event Stream (Server-Sent Events)">
+          <span class="pulse-dot active" id="ssePulseDot"></span>
+          <span class="heartbeat-label mono" id="sseStatusLabel">SSE STREAM</span>
+        </div>
       </div>
 
       <!-- Live News & Intelligence Ticker Strip -->
@@ -1040,10 +1044,48 @@
             </header>
             <div class="slab-body" id="settingsGuideContainer"></div>
           </article>
+
+          <!-- Widget 5: macOS Native Integrations & LaunchAgent [Span 6] -->
+          <article class="slab-panel span-6">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 05</span>
+                <h2 class="slab-title">macOS NATIVE INTEGRATIONS &amp; DAEMON</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="agent-badge active" id="macosAgentBadge">CHECKING</span>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsMacosContainer"></div>
+          </article>
+
+          <!-- Widget 6: Security Vault & Encrypted Backups [Span 6] -->
+          <article class="slab-panel span-6">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 06</span>
+                <h2 class="slab-title">SECURITY VAULT &amp; ENCRYPTED BACKUPS</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="mono" id="settingsVaultCount" style="font-size:10px; color:var(--gold);">0 BACKUPS</span>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsVaultArchiveContainer"></div>
+          </article>
         </section>
 
       </main>
     </div>
+  </div>
+
+  <!-- Live Event Toast Container -->
+  <div id="liveEventToast" class="live-event-toast" style="display:none;" role="alert">
+    <span class="toast-kicker mono" id="toastKicker">[EVENT]</span>
+    <span class="toast-message mono" id="toastMsg">Telemetry update received</span>
   </div>
 
   <!-- Safety Confirmation Modal -->

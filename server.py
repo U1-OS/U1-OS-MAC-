@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import time
+import queue
 import threading
 import mimetypes
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -19,6 +20,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
+from utils import macos
 from services.intelligence import IntelligenceService
 from services.finance import FinanceService
 from services.comms import CommsService
@@ -32,6 +34,40 @@ from services.settings import SettingsService
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
+class SSEEventBroker:
+    """Thread-safe publish/subscribe broker for real-time Server-Sent Events."""
+    def __init__(self):
+        self.subscribers = []
+        self.lock = threading.Lock()
+
+    def subscribe(self):
+        q = queue.Queue(maxsize=100)
+        with self.lock:
+            self.subscribers.append(q)
+        return q
+
+    def unsubscribe(self, q):
+        with self.lock:
+            if q in self.subscribers:
+                self.subscribers.remove(q)
+
+    def publish(self, event_type, payload):
+        data = {
+            "type": event_type,
+            "timestamp": time.time(),
+            "payload": payload
+        }
+        with self.lock:
+            dead = []
+            for q in self.subscribers:
+                try:
+                    q.put_nowait(data)
+                except queue.Full:
+                    dead.append(q)
+            for d in dead:
+                if d in self.subscribers:
+                    self.subscribers.remove(d)
+
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
@@ -41,6 +77,7 @@ class CommandCenterFeeder:
         self.config = self.load_config()
         self.lock = threading.RLock()
         self.running = True
+        self.sse_broker = SSEEventBroker()
 
         # Initialize all modular services
         self.services = {}
@@ -53,6 +90,38 @@ class CommandCenterFeeder:
         self.services["gaming"] = GamingService(self.config)
         self.services["osint"] = OSINTService(self.config)
         self.services["settings"] = SettingsService(self.config, self.config_path, self.services)
+
+        # Wire real-time event callbacks for streaming & notifications
+        for svc_name, svc in self.services.items():
+            svc.on_event = self._handle_service_event
+
+    def _handle_service_event(self, service_name, event):
+        # Broadcast immediately to all connected SSE clients
+        self.sse_broker.publish("service_event", {
+            "service": service_name,
+            "event": event
+        })
+
+        # Check native notifications preference
+        notify_enabled = self.config.get("system", {}).get("native_notifications", True)
+        evt_type = event.get("type", "")
+        summary = event.get("summary", "System event triggered")
+
+        if notify_enabled and evt_type in [
+            "trade_executed", "bill_settled", "sms_sent", 
+            "video_render_completed", "video_render_enqueued",
+            "playtest_started", "playtest_stopped",
+            "vault_exported", "vault_imported", "launchagent_installed"
+        ]:
+            title = f"COMMAND CENTER // {service_name.upper()}"
+            macos.notify(title, summary, sound="Hero")
+
+    def broadcast_action(self, service_name, action, result):
+        self.sse_broker.publish("action_dispatched", {
+            "service": service_name,
+            "action": action,
+            "result": result
+        })
 
     def load_config(self):
         if os.path.exists(self.config_path):
@@ -144,6 +213,38 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.send_json(state)
             return
 
+        if path == "/api/events":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache, no-transform")
+            self.send_header("Connection", "keep-alive")
+            self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8787")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+
+            q = feeder.sse_broker.subscribe()
+            try:
+                # Send initial handshake frame
+                handshake = f"data: {json.dumps({'type': 'connected', 'timestamp': time.time(), 'message': 'Command Center SSE Stream Active'})}\n\n"
+                self.wfile.write(handshake.encode("utf-8"))
+                self.wfile.flush()
+
+                while feeder.running:
+                    try:
+                        evt = q.get(timeout=10)
+                        msg = f"data: {json.dumps(evt)}\n\n"
+                        self.wfile.write(msg.encode("utf-8"))
+                        self.wfile.flush()
+                    except queue.Empty:
+                        # Keep-alive comment heartbeat
+                        self.wfile.write(b": ping\n\n")
+                        self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, Exception):
+                pass
+            finally:
+                feeder.sse_broker.unsubscribe(q)
+            return
+
         if path == "/api/config":
             # Mask secret keys for security
             cfg = json.loads(json.dumps(feeder.config))
@@ -210,6 +311,7 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
 
             svc = feeder.services[service_name]
             result = svc.dispatch_action(action, action_payload)
+            feeder.broadcast_action(service_name, action, result)
             self.send_json(result)
             return
 

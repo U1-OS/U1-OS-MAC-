@@ -85,10 +85,76 @@ const CommandCenter = (() => {
 
     // Initial state fetch & polling loop
     fetchState();
-    pollInterval = setInterval(fetchState, 2500);
+    pollInterval = setInterval(fetchState, 3500);
+
+    // Real-Time Server-Sent Events (SSE) Stream
+    setupSSE();
 
     // Initial spine position
     updateSpinePosition();
+  }
+
+  let eventSource = null;
+  let toastTimer = null;
+
+  function showLiveToast(kicker, message) {
+    const toastEl = document.getElementById('liveEventToast');
+    const kickerEl = document.getElementById('toastKicker');
+    const msgEl = document.getElementById('toastMsg');
+    if (!toastEl || !kickerEl || !msgEl) return;
+
+    kickerEl.textContent = `[${(kicker || 'EVENT').toUpperCase()}]`;
+    msgEl.textContent = message || 'Real-time telemetry event received';
+    toastEl.style.display = 'flex';
+
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastEl.style.display = 'none';
+    }, 4500);
+  }
+
+  function setupSSE() {
+    const dot = document.getElementById('ssePulseDot');
+    const label = document.getElementById('sseStatusLabel');
+
+    if (!window.EventSource) {
+      if (label) label.textContent = 'SSE N/A';
+      return;
+    }
+
+    try {
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource('/api/events');
+
+      eventSource.onopen = function() {
+        if (dot) dot.className = 'pulse-dot active';
+        if (label) label.textContent = 'SSE LIVE';
+      };
+
+      eventSource.onmessage = function(e) {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'service_event') {
+            const svc = data.payload?.service || 'system';
+            const evt = data.payload?.event || {};
+            showLiveToast(svc, evt.summary);
+            if (typeof AudioFeedback !== 'undefined') AudioFeedback.tick();
+            fetchState();
+          } else if (data.type === 'action_dispatched') {
+            fetchState();
+          }
+        } catch (err) {
+          // Heartbeat comment or non-json message
+        }
+      };
+
+      eventSource.onerror = function() {
+        if (dot) dot.className = 'pulse-dot unconfigured';
+        if (label) label.textContent = 'SSE RETRY';
+      };
+    } catch (err) {
+      console.warn('SSE initialization failed:', err);
+    }
   }
 
   function setupNavigation() {
@@ -941,6 +1007,122 @@ const CommandCenter = (() => {
               </div>
             </div>
           `).join('')}
+        </div>
+      `;
+    }
+
+    // 5. Render Widget 5: macOS Native Integrations & LaunchAgent Daemon
+    const macosContainer = document.getElementById('settingsMacosContainer');
+    const macosAgentBadge = document.getElementById('macosAgentBadge');
+    const macosInfo = d.macos_native || {};
+    const isAgentInstalled = Boolean(macosInfo.launchagent_installed);
+    const isAgentRunning = Boolean(macosInfo.launchagent_running);
+
+    if (macosAgentBadge) {
+      if (isAgentRunning) {
+        macosAgentBadge.className = 'agent-badge active';
+        macosAgentBadge.textContent = 'DAEMON RUNNING';
+      } else if (isAgentInstalled) {
+        macosAgentBadge.className = 'agent-badge active';
+        macosAgentBadge.textContent = 'PLIST LOADED';
+      } else {
+        macosAgentBadge.className = 'agent-badge inactive';
+        macosAgentBadge.textContent = 'STANDALONE ONLY';
+      }
+    }
+
+    if (macosContainer) {
+      macosContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="vault-meta-row">
+            <span style="color:var(--text-secondary);">HOST ENVIRONMENT</span>
+            <span class="mono" style="color:var(--text-primary); font-weight:700;">macOS Darwin (arm64 Apple Silicon)</span>
+          </div>
+
+          <div class="vault-meta-row">
+            <span style="color:var(--text-secondary);">LAUNCHAGENT SPEC</span>
+            <span class="mono" style="color:var(--gold); font-size:10px;">${escapeHtml(macosInfo.plist_path || '~/Library/LaunchAgents/com.commandcenter.feeder.plist')}</span>
+          </div>
+
+          <div class="vault-meta-row">
+            <span style="color:var(--text-secondary);">BOOT DAEMON STATUS</span>
+            <span class="mono" style="color:${isAgentInstalled ? 'var(--gold)' : 'var(--text-muted)'}; font-weight:700;">
+              ${isAgentInstalled ? (isAgentRunning ? 'ACTIVE // KEEP-ALIVE' : 'INSTALLED // STOPPED') : 'NOT INSTALLED'}
+            </span>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+            ${!isAgentInstalled ? `
+              <button class="btn btn-gold mono" style="font-size:11px; padding:6px 14px;" onclick="CommandCenter.installLaunchAgent()">
+                INSTALL AUTO-START AGENT
+              </button>
+            ` : `
+              <button class="btn btn-secondary mono" style="font-size:11px; padding:6px 14px; border-color:#882222; color:#ff7777;" onclick="CommandCenter.uninstallLaunchAgent()">
+                UNINSTALL AGENT
+              </button>
+            `}
+            <button class="btn btn-secondary mono" style="font-size:11px; padding:6px 14px;" onclick="CommandCenter.testMacosNotification()">
+              TEST DESKTOP NOTIFICATION
+            </button>
+          </div>
+          <span class="mono" style="font-size:9.5px; color:var(--text-muted);">
+            Registers user launchd daemon to automatically spin up the Command Center feeder on macOS login.
+          </span>
+        </div>
+      `;
+    }
+
+    // 6. Render Widget 6: Security Vault & Encrypted Backups
+    const vaultArchiveContainer = document.getElementById('settingsVaultArchiveContainer');
+    const vaultCountBadge = document.getElementById('settingsVaultCount');
+    const vaultInfo = d.vault || {};
+    const recentBackups = vaultInfo.recent || [];
+
+    if (vaultCountBadge) {
+      vaultCountBadge.textContent = `${vaultInfo.count || 0} ARCHIVES`;
+    }
+
+    if (vaultArchiveContainer) {
+      vaultArchiveContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <!-- Export Form -->
+          <div style="background:var(--bg-slab-elevated); border:1px solid var(--border-subtle); padding:10px 12px; border-radius:2px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="mono" style="font-size:10.5px; font-weight:700; color:var(--gold);">EXPORT ENCRYPTED VAULT (.ccvault)</span>
+              <span class="mono" style="font-size:9.5px; color:var(--text-muted);">PBKDF2-HMAC-SHA256 + CTR CIPHER</span>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+              <input type="password" id="vaultExportPassword" class="mono settings-key-input" placeholder="Encryption password (required)..." style="font-size:11px;">
+              <input type="text" id="vaultExportNote" class="mono settings-key-input" placeholder="Optional backup note / tag..." style="font-size:11px;">
+            </div>
+            <button class="btn btn-gold mono" style="font-size:11px; align-self:flex-start; padding:5px 14px;" onclick="CommandCenter.exportSecurityVault()">
+              ENCRYPT &amp; EXPORT TO BACKUPS/
+            </button>
+          </div>
+
+          <!-- Existing Backups List -->
+          <div>
+            <span class="mono" style="font-size:10px; color:var(--text-muted); display:block; margin-bottom:6px;">STORED ARCHIVES (backups/*.ccvault):</span>
+            ${recentBackups.length > 0 ? `
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                ${recentBackups.map(b => `
+                  <div class="vault-meta-row">
+                    <div>
+                      <span class="mono" style="font-weight:700; color:var(--text-primary); font-size:11px;">${escapeHtml(b.filename)}</span>
+                      <span class="mono" style="display:block; font-size:9.5px; color:var(--text-muted);">${escapeHtml(b.created_at || '')} &bull; ${(b.size_bytes / 1024).toFixed(1)} KB &bull; ${escapeHtml(b.cipher || 'CTR-SHA256')}</span>
+                    </div>
+                    <button class="mini-btn mono" onclick="CommandCenter.prepareVaultRestore('${escapeHtml(b.path)}')">
+                      RESTORE &rarr;
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `
+              <div class="mono" style="font-size:10.5px; color:var(--text-muted); padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle);">
+                No encrypted .ccvault archives found in backups/ directory. Export one above to create an encrypted snapshot.
+              </div>
+            `}
+          </div>
         </div>
       `;
     }
@@ -4640,6 +4822,153 @@ STATUS: RESOLVED // NOMINAL
   }
 
   /* ========================================================
+     macOS NATIVE & SECURITY VAULT HANDLERS
+     ======================================================== */
+  function installLaunchAgent() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'install_agent',
+        payload: {}
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showNotification(res.message || 'macOS LaunchAgent installed successfully');
+        fetchState();
+      } else {
+        showNotification('Install failed: ' + (res.error || 'Unknown error'), 'error');
+      }
+    });
+  }
+
+  function uninstallLaunchAgent() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'uninstall_agent',
+        payload: {}
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showNotification(res.message || 'macOS LaunchAgent uninstalled');
+        fetchState();
+      } else {
+        showNotification('Uninstall failed: ' + (res.error || 'Unknown error'), 'error');
+      }
+    });
+  }
+
+  function testMacosNotification() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'test_notification',
+        payload: {
+          title: 'COMMAND CENTER // macOS Bridge',
+          message: 'Native desktop telemetry bridge verified operational.',
+          subtitle: 'Feeder: 127.0.0.1:8787'
+        }
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showNotification('Notification dispatched to macOS Notification Center');
+      } else {
+        showNotification(res.message || 'Notification dispatch failed', 'error');
+      }
+    });
+  }
+
+  function exportSecurityVault() {
+    const pwdInput = document.getElementById('vaultExportPassword');
+    const noteInput = document.getElementById('vaultExportNote');
+    const pwd = pwdInput ? pwdInput.value.trim() : '';
+    const note = noteInput ? noteInput.value.trim() : '';
+
+    if (!pwd || pwd.length < 4) {
+      showNotification('Encryption password must be at least 4 characters', 'error');
+      if (pwdInput) pwdInput.focus();
+      return;
+    }
+
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service: 'settings',
+        action: 'export_vault',
+        payload: { password: pwd, note: note }
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showNotification('Security vault exported: ' + (res.vault_path || 'backups/'));
+        if (pwdInput) pwdInput.value = '';
+        if (noteInput) noteInput.value = '';
+        fetchState();
+      } else {
+        showNotification('Export failed: ' + (res.error || 'Unknown error'), 'error');
+      }
+    });
+  }
+
+  function prepareVaultRestore(vaultPath) {
+    const password = prompt('Enter password to decrypt and restore: ' + vaultPath);
+    if (!password) return;
+
+    showConfirmModal(
+      'RESTORE CREDENTIAL VAULT',
+      'Restoring from archive will overwrite the current configuration in config.json and reload all 9 service integrations.',
+      `Source: ${vaultPath}\nSafety: Credentials will be decrypted and validated before writing.`,
+      () => {
+        fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service: 'settings',
+            action: 'import_vault',
+            payload: {
+              vault_path: vaultPath,
+              password: password,
+              confirmed: true
+            }
+          })
+        })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+            showNotification('Security vault successfully restored and reloaded!');
+            fetchState();
+          } else {
+            showNotification('Restore failed: ' + (res.error || 'Incorrect password or corrupted archive'), 'error');
+          }
+        });
+      }
+    );
+  }
+
+  /* ========================================================
      HELPERS
      ======================================================== */
   function formatNumber(num) {
@@ -4660,6 +4989,11 @@ STATUS: RESOLVED // NOMINAL
   return {
     init,
     switchSection,
+    installLaunchAgent,
+    uninstallLaunchAgent,
+    testMacosNotification,
+    exportSecurityVault,
+    prepareVaultRestore,
     saveApiKeys,
     checkRepoUpdates,
     confirmPullUpdates,

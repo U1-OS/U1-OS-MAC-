@@ -129,6 +129,28 @@ except Exception as e:
   fi
 }
 
+cmd_install_agent() {
+  echo -e "\033[33m[macOS]\033[0m Registering Command Center LaunchAgent daemon..."
+  python3 utils/macos.py install
+}
+
+cmd_uninstall_agent() {
+  echo -e "\033[33m[macOS]\033[0m Deregistering Command Center LaunchAgent daemon..."
+  python3 utils/macos.py uninstall
+}
+
+cmd_notify() {
+  TITLE="${2:-Command Center}"
+  MSG="${3:-macOS Notification Bridge Operational}"
+  python3 utils/macos.py notify --title "$TITLE" --message "$MSG"
+}
+
+cmd_vault() {
+  SUB="$2"
+  shift 2 2>/dev/null || shift 1 2>/dev/null
+  python3 utils/vault.py "$SUB" "$@"
+}
+
 case "$1" in
   start)
     cmd_start
@@ -148,8 +170,24 @@ case "$1" in
   test)
     cmd_test
     ;;
+  install-agent)
+    cmd_install_agent
+    ;;
+  uninstall-agent)
+    cmd_uninstall_agent
+    ;;
+  notify)
+    cmd_notify "$@"
+    ;;
+  vault)
+    cmd_vault "$@"
+    ;;
   *)
-    echo "Usage: ./command-center {start|stop|restart|status|open|test}"
+    echo "Usage: ./command-center {start|stop|restart|status|open|test|install-agent|uninstall-agent|notify|vault}"
+    echo "       ./command-center notify \"Title\" \"Message\""
+    echo "       ./command-center vault export --password <pass> [--out <file>]"
+    echo "       ./command-center vault import --vault <file> --password <pass>"
+    echo "       ./command-center vault inspect --vault <file>"
     exit 1
     ;;
 esac

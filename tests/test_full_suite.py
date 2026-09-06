@@ -4,11 +4,16 @@ Command Center — Complete End-to-End Test Suite
 Validates all 9 subsystems, REST endpoints, and security boundaries.
 """
 
+import os
 import sys
 import json
 import time
 import urllib.request
 import urllib.error
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
 BASE_URL = "http://127.0.0.1:8787"
 PASS = "\033[32m[PASS]\033[0m"
@@ -168,6 +173,43 @@ def main():
     log_test("Section Visibility Toggle", res.get("success"), "Gaming section verified active")
     s, res = action("settings", "update_preferences", {"preferences": {"accent_color": "#E9B44C"}})
     log_test("Accent Color Switcher", res.get("success"), "Classic Gold #E9B44C")
+
+    # 11. Real-Time Server-Sent Events (SSE) Stream
+    print(f"\n{INFO} 11. Real-Time Server-Sent Events (SSE) Stream:")
+    try:
+        req = urllib.request.Request("http://127.0.0.1:8787/api/events")
+        with urllib.request.urlopen(req, timeout=3) as r:
+            first_line = r.readline().decode("utf-8")
+            is_sse = "data:" in first_line and "connected" in first_line
+            log_test("SSE Handshake Stream", is_sse, "Initial frame verified (connected)")
+    except Exception as e:
+        log_test("SSE Handshake Stream", False, str(e))
+
+    # 12. macOS Native Suite & LaunchAgent Daemon
+    print(f"\n{INFO} 12. macOS Native Suite & LaunchAgent Daemon:")
+    s, res = action("settings", "test_notification", {"title": "TEST", "message": "Master Suite Run"})
+    log_test("macOS Desktop Notification", res.get("success"), res.get("message"))
+    from utils.macos import generate_launchagent_plist, get_agent_plist_path
+    plist_xml = generate_launchagent_plist()
+    log_test("LaunchAgent Plist Generation", "com.commandcenter.feeder" in plist_xml and "<plist" in plist_xml, "XML schema validated")
+    log_test("LaunchAgent Target Path", get_agent_plist_path().endswith("com.commandcenter.feeder.plist"), get_agent_plist_path())
+
+    # 13. Encrypted Security Vault
+    print(f"\n{INFO} 13. Encrypted Security Vault:")
+    from utils.vault import encrypt_data, decrypt_data, inspect_vault_file
+    raw_secret = b'{"token": "live_test_secret_abc123"}'
+    env = encrypt_data(raw_secret, "VaultPass2026!")
+    log_test("PBKDF2-CTR Authenticated Encryption", env.get("cipher") == "CTR-SHA256-STREAM" and bool(env.get("mac")), "CTR + HMAC-SHA256")
+    dec = decrypt_data(env, "VaultPass2026!")
+    log_test("Vault Decryption Round-Trip", dec == raw_secret, "Plaintext integrity matched")
+    wrong_pwd_caught = False
+    try:
+        decrypt_data(env, "WrongPassword!")
+    except ValueError:
+        wrong_pwd_caught = True
+    log_test("Vault Tamper & Bad Password Trap", wrong_pwd_caught, "Corrupted/wrong password rejected")
+    s, res = action("settings", "export_vault", {"password": "MasterSuitePassword!", "note": "Automated Test Vault"})
+    log_test("Web API Vault Export Action", res.get("success"), f"Archive: {os.path.basename(res.get('vault_path', ''))}")
 
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")

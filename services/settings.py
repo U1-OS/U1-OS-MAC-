@@ -1,8 +1,11 @@
 import time
 import os
 import json
+import glob
 import subprocess
 from services.base import BaseService
+from utils import macos
+from utils import vault
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -233,13 +236,72 @@ class SettingsService(BaseService):
             "settings": True
         })
 
+    def _get_vault_backups_info(self):
+        backup_dir = os.path.join(self.root_dir, "backups")
+        if not os.path.exists(backup_dir):
+            return {"count": 0, "latest": None, "recent": []}
+        files = sorted(glob.glob(os.path.join(backup_dir, "*.ccvault")), key=os.path.getmtime, reverse=True)
+        backups = []
+        for f in files[:5]:
+            try:
+                hdr = vault.inspect_vault_file(f)
+                backups.append({
+                    "filename": os.path.basename(f),
+                    "path": f,
+                    "size_bytes": os.path.getsize(f),
+                    "timestamp": hdr.get("timestamp"),
+                    "created_at": hdr.get("created_at"),
+                    "cipher": hdr.get("cipher")
+                })
+            except Exception:
+                pass
+        return {
+            "count": len(files),
+            "latest": backups[0] if backups else None,
+            "recent": backups
+        }
+
+    def poll(self):
+        integrations_status = {}
+        for item in self.setup_reference_guide:
+            svc_id = item["id"]
+            svc_instance = self.service_registry.get(svc_id)
+            if svc_instance:
+                integrations_status[svc_id] = {
+                    "configured": svc_instance.configured,
+                    "status": svc_instance.status,
+                    "missing_keys": svc_instance.missing_keys
+                }
+            else:
+                cfg_item = self.config.get("integrations", {}).get(svc_id, {})
+                has_key = any(bool(v) for v in cfg_item.values()) if isinstance(cfg_item, dict) else bool(cfg_item)
+                integrations_status[svc_id] = {
+                    "configured": has_key,
+                    "status": "configured" if has_key else "unconfigured",
+                    "missing_keys": [] if has_key else item["keys"]
+                }
+
+        git_status = self._get_git_info()
+        sections_enabled = dict(self.config.get("sections_enabled", {}))
+        sections_enabled.setdefault("home", True)
+        sections_enabled.setdefault("comms", True)
+        sections_enabled.setdefault("finance", True)
+        sections_enabled.setdefault("deploy", True)
+        sections_enabled.setdefault("ai_workbench", True)
+        sections_enabled.setdefault("studio", True)
+        sections_enabled.setdefault("gaming", True)
+        sections_enabled.setdefault("osint", True)
+        sections_enabled.setdefault("settings", True)
+
         system_prefs = {
             "host": self.config.get("system", {}).get("host", "127.0.0.1"),
             "port": self.config.get("system", {}).get("port", 8787),
             "accent_color": self.config.get("system", {}).get("accent_color", "#E9B44C"),
             "reduced_motion": self.config.get("system", {}).get("reduced_motion", False),
             "refresh_interval_sec": self.config.get("system", {}).get("refresh_interval_sec", 5),
-            "ambient_grid": self.config.get("system", {}).get("ambient_grid", True)
+            "ambient_grid": self.config.get("system", {}).get("ambient_grid", True),
+            "audio_feedback": self.config.get("system", {}).get("audio_feedback", True),
+            "native_notifications": self.config.get("system", {}).get("native_notifications", True)
         }
 
         with self.lock:
@@ -249,6 +311,13 @@ class SettingsService(BaseService):
                 "sections_enabled": sections_enabled,
                 "system_preferences": system_prefs,
                 "setup_reference_guide": self.setup_reference_guide,
+                "macos_native": {
+                    "supported": subprocess.sys.platform == "darwin",
+                    "launchagent_installed": macos.is_agent_installed(),
+                    "launchagent_running": macos.is_agent_running(),
+                    "plist_path": macos.get_agent_plist_path()
+                },
+                "vault": self._get_vault_backups_info(),
                 "server_environment": {
                     "binding": "127.0.0.1:8787 (Strict Local Only)",
                     "config_path": self.config_path,
@@ -393,5 +462,73 @@ class SettingsService(BaseService):
                 return {"success": True, "preferences": cfg["system"]}
             except Exception as e:
                 return {"success": False, "error": f"Failed to update preferences: {e}"}
+
+        # --- macOS Native Integrations ---
+        elif action == "install_agent":
+            res = macos.install_agent(self.root_dir)
+            if res.get("success"):
+                self.add_event("launchagent_installed", "macOS LaunchAgent registered for boot persistence")
+            self.poll()
+            return res
+
+        elif action == "uninstall_agent":
+            res = macos.uninstall_agent()
+            if res.get("success"):
+                self.add_event("launchagent_uninstalled", "macOS LaunchAgent deregistered cleanly")
+            self.poll()
+            return res
+
+        elif action == "test_notification":
+            title = payload.get("title", "COMMAND CENTER // macOS Bridge")
+            msg = payload.get("message", "Telemetry stream and notification bridge active.")
+            sub = payload.get("subtitle", "127.0.0.1:8787")
+            ok = macos.notify(title, msg, sub)
+            if ok:
+                self.add_event("notification_dispatched", f"Test notification sent: {title}")
+            return {"success": ok, "message": "Notification dispatched to macOS Notification Center" if ok else "Notification failed (non-macOS or headless)"}
+
+        # --- Security Vault Actions ---
+        elif action == "export_vault":
+            password = payload.get("password")
+            if not password:
+                return {"success": False, "error": "Password is required to encrypt vault backup"}
+
+            note = payload.get("note", "Command Center Web UI Backup")
+            backup_dir = os.path.join(self.root_dir, "backups")
+            os.makedirs(backup_dir, exist_ok=True)
+            filename = f"vault_backup_{int(time.time())}.ccvault"
+            out_path = os.path.join(backup_dir, filename)
+
+            try:
+                res = vault.export_vault_file(self.config_path, out_path, password, note)
+                self.add_event("vault_exported", f"Security vault encrypted and saved ({filename})")
+                self.poll()
+                return res
+            except Exception as e:
+                return {"success": False, "error": f"Vault export failed: {e}"}
+
+        elif action == "import_vault":
+            if not payload.get("confirmed"):
+                return {"success": False, "error": "Safety Protocol: Restoring credentials requires explicit confirmation"}
+
+            vault_path = payload.get("vault_path")
+            password = payload.get("password")
+            if not vault_path or not password:
+                return {"success": False, "error": "vault_path and password are required"}
+
+            try:
+                res = vault.import_vault_file(vault_path, self.config_path, password)
+                # Hot-reload config across all services
+                with open(self.config_path, "r", encoding="utf-8") as f:
+                    new_cfg = json.load(f)
+                self.config = new_cfg
+                for s in self.service_registry.values():
+                    s.config = new_cfg
+                    s.poll()
+                self.poll()
+                self.add_event("vault_imported", f"Security vault credentials restored from {os.path.basename(vault_path)}")
+                return res
+            except Exception as e:
+                return {"success": False, "error": f"Vault import failed: {e}"}
 
         return super().dispatch_action(action, payload)

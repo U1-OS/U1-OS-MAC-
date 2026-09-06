@@ -13,6 +13,7 @@ class BaseService:
         self.data = {}
         self.recent_events = []
         self._event_counter = 0
+        self.on_event = None
 
     def add_event(self, event_type, summary, payload=None):
         with self.lock:
@@ -28,7 +29,15 @@ class BaseService:
             # Keep only the last 15 events
             if len(self.recent_events) > 15:
                 self.recent_events.pop(0)
-            return event
+
+        # Trigger event callback if registered
+        if self.on_event:
+            try:
+                self.on_event(self.name, event)
+            except Exception:
+                pass
+
+        return event
 
     def poll(self):
         """Called periodically by the feeder daemon."""
