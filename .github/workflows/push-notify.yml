@@ -1,0 +1,105 @@
+name: U1 OS — Push Notification
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  notify:
+    name: Send Email Update
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get commit metadata
+        id: meta
+        run: |
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty='%an')" >> $GITHUB_OUTPUT
+          echo "message=$(git log -1 --pretty='%s')" >> $GITHUB_OUTPUT
+          echo "timestamp=$(git log -1 --pretty='%cd' --date=format:'%Y-%m-%d %H:%M UTC')" >> $GITHUB_OUTPUT
+          echo "files=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -20 | tr '\n' ', ' | sed 's/,$//')" >> $GITHUB_OUTPUT
+          echo "branch=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+
+      - name: Send push notification email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "U1 OS — New Push to ${{ steps.meta.outputs.branch }} [${{ steps.meta.outputs.sha }}]"
+          to: andrewcreative.digital@gmail.com
+          from: "U1 OS GitHub <${{ secrets.MAIL_USERNAME }}>"
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <body style="margin:0;padding:0;background:#08090B;font-family:'JetBrains Mono','Courier New',monospace;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#08090B;padding:32px 0;">
+                <tr><td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background:#0E1117;border:1px solid #1a2030;border-radius:6px;overflow:hidden;">
+                    <tr>
+                      <td style="background:#0a0e18;padding:28px 32px;border-bottom:2px solid #00f0ff;">
+                        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+                          <td>
+                            <div style="font-size:22px;font-weight:900;color:#00f0ff;letter-spacing:-0.03em;">U1 <span style="color:#334155;font-size:14px;">/</span> OS</div>
+                            <div style="color:#64748b;font-size:10px;letter-spacing:0.1em;margin-top:4px;">AUTONOMOUS BUSINESS OPERATING SYSTEM</div>
+                          </td>
+                          <td align="right">
+                            <span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#10b981;padding:4px 12px;border-radius:2px;font-size:10px;font-weight:700;letter-spacing:0.08em;">&#9679; NEW PUSH</span>
+                          </td>
+                        </tr></table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:28px 32px;">
+                        <div style="color:#64748b;font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">COMMIT MESSAGE</div>
+                        <div style="color:#e2e8f0;font-size:15px;font-weight:700;margin-bottom:20px;line-height:1.4;">${{ steps.meta.outputs.message }}</div>
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background:#080a0f;border:1px solid #1a2030;border-radius:3px;margin-bottom:20px;">
+                          <tr style="border-bottom:1px solid #1a2030;">
+                            <td style="padding:10px 16px;color:#64748b;font-size:10px;width:140px;">COMMIT SHA</td>
+                            <td style="padding:10px 16px;color:#00f0ff;font-size:11px;font-weight:700;">${{ steps.meta.outputs.sha }}</td>
+                          </tr>
+                          <tr style="border-bottom:1px solid #1a2030;">
+                            <td style="padding:10px 16px;color:#64748b;font-size:10px;">BRANCH</td>
+                            <td style="padding:10px 16px;color:#e9b44c;font-size:11px;font-weight:700;">${{ steps.meta.outputs.branch }}</td>
+                          </tr>
+                          <tr style="border-bottom:1px solid #1a2030;">
+                            <td style="padding:10px 16px;color:#64748b;font-size:10px;">AUTHOR</td>
+                            <td style="padding:10px 16px;color:#e2e8f0;font-size:11px;">${{ steps.meta.outputs.author }}</td>
+                          </tr>
+                          <tr style="border-bottom:1px solid #1a2030;">
+                            <td style="padding:10px 16px;color:#64748b;font-size:10px;">TIMESTAMP</td>
+                            <td style="padding:10px 16px;color:#e2e8f0;font-size:11px;">${{ steps.meta.outputs.timestamp }}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding:10px 16px;color:#64748b;font-size:10px;">FILES CHANGED</td>
+                            <td style="padding:10px 16px;color:#a78bfa;font-size:10px;word-break:break-all;">${{ steps.meta.outputs.files }}</td>
+                          </tr>
+                        </table>
+                        <table cellpadding="0" cellspacing="0"><tr>
+                          <td style="background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.4);border-radius:3px;padding:10px 22px;">
+                            <a href="https://github.com/U1-OS/U1-OS-MAC-/commit/${{ github.sha }}" style="color:#00f0ff;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:0.08em;">VIEW COMMIT ON GITHUB &rarr;</a>
+                          </td>
+                          <td width="12"></td>
+                          <td style="background:rgba(255,255,255,0.04);border:1px solid #1a2030;border-radius:3px;padding:10px 22px;">
+                            <a href="https://github.com/U1-OS/U1-OS-MAC-" style="color:#94a3b8;text-decoration:none;font-size:11px;letter-spacing:0.08em;">VIEW REPOSITORY &rarr;</a>
+                          </td>
+                        </tr></table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="background:#080a0f;padding:16px 32px;border-top:1px solid #1a2030;">
+                        <div style="color:#334155;font-size:9.5px;letter-spacing:0.06em;">U1 OS // AUTONOMOUS PUSH NOTIFICATION SYSTEM</div>
+                      </td>
+                    </tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>
