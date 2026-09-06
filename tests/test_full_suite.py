@@ -241,6 +241,46 @@ def main():
     log_test("BitBar / SwiftBar Protocol Header", "⚡ CC:" in bar_out and "font=JetBrains Mono" in bar_out, "Menu bar top-level line")
     log_test("Deep Navigation URL Schemes", "href=http://127.0.0.1:8787#finance" in bar_out, "9 panel URL hooks")
 
+    # 17. macOS Hardware & Power Telemetry HUD
+    print(f"\n{INFO} 17. Subsystem: Hardware & Power Telemetry HUD:")
+    st_code, st_data = get("/api/state")
+    hw = st_data.get("services", {}).get("intelligence", {}).get("data", {}).get("hardware", {})
+    log_test("Hardware State Discovery", bool(hw) and "battery" in hw and "disk" in hw, "Hardware telemetry mounted")
+    sys_hw = hw.get("system", {})
+    log_test("Apple Hardware Architecture", sys_hw.get("cpu_cores", 0) > 0 and sys_hw.get("ram_gb", 0) > 0, f"{sys_hw.get('cpu_cores')} Cores // {sys_hw.get('ram_gb')} GB RAM // {sys_hw.get('model')}")
+    disk_hw = hw.get("disk", {})
+    log_test("SSD Storage Diagnostics", disk_hw.get("total_gb", 0) > 0 and disk_hw.get("free_gb", 0) > 0, f"{disk_hw.get('free_gb')} GB Free of {disk_hw.get('total_gb')} GB")
+
+    # 18. Inbound Webhook Ingestion & SSE Gateway
+    print(f"\n{INFO} 18. Subsystem: Inbound Webhook Ingestion Gateway:")
+    whk_payload = json.dumps({"event": "push", "ref": "refs/heads/main", "commits": 1}).encode("utf-8")
+    req = urllib.request.Request(f"{BASE_URL}/api/webhooks/github", data=whk_payload, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req) as r:
+        whk_resp = json.loads(r.read().decode("utf-8"))
+    log_test("Inbound Webhook HTTP Ingestion", whk_resp.get("success") and "whk-" in whk_resp.get("entry", {}).get("id", ""), f"Ingested from {whk_resp.get('entry', {}).get('source')}")
+    w_code, w_data = get("/api/webhooks")
+    recent_sources = [w.get("source") for w in w_data.get("webhooks", [])]
+    log_test("Webhook Circular Log Persistence", "github" in recent_sources, f"{len(w_data.get('webhooks', []))} webhooks retained in buffer")
+
+    # 19. Background Automation Task Scheduler (Cron Engine)
+    print(f"\n{INFO} 19. Subsystem: Background Automation Scheduler:")
+    sc_code, sc_data = get("/api/scheduler")
+    jobs = sc_data.get("jobs", [])
+    log_test("Cron Tasks Discovery", len(jobs) >= 3, f"{len(jobs)} background tasks active")
+    s, res = action("settings", "trigger_scheduled_task", {"job_id": "hourly_dns_audit"})
+    log_test("On-Demand Task Execution", res.get("success") and res.get("job", {}).get("status") == "COMPLETED", f"Duration: {res.get('result', {}).get('duration_ms')}ms")
+
+    # 20. macOS Native Speech Audio Briefing (say Engine)
+    print(f"\n{INFO} 20. Subsystem: macOS Native Speech Audio Briefing:")
+    from utils.briefing import synthesize_briefing_speech_text, speak_briefing
+    speech_txt = synthesize_briefing_speech_text()
+    log_test("Speech Briefing Synthesis", "Command Center executive briefing" in speech_txt and len(speech_txt) > 50, f"{len(speech_txt.split())} words generated")
+    spk_res = speak_briefing(text="Command Center verification probe nominal.", export_audio=True)
+    audio_created = spk_res.get("success") and os.path.exists(spk_res.get("audio_file", ""))
+    if audio_created and os.path.exists(spk_res["audio_file"]):
+        os.remove(spk_res["audio_file"])
+    log_test("macOS Say Engine Speech Output", audio_created, "macOS /usr/bin/say synthesis verified")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

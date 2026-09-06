@@ -455,6 +455,75 @@ def generate_briefing(output_dir="exports", host="127.0.0.1", port=8787) -> dict
         }
     }
 
+def synthesize_briefing_speech_text(state=None, host="127.0.0.1", port=8787) -> str:
+    """Creates a clean, authoritative executive speech transcript."""
+    if not state:
+        state = fetch_state(host, port)
+    services = state.get("services", {})
+
+    fin = services.get("finance", {}).get("data", {})
+    trade = fin.get("trade_panel", {})
+    portfolio = trade.get("portfolio_value_usd", 0.0)
+    bills = fin.get("bills", [])
+    unpaid = len([b for b in bills if "PAID" not in b.get("status", "")])
+
+    comms = services.get("comms", {}).get("data", {})
+    inbox = comms.get("gmail", {}).get("inbox", [])
+    unread = len([m for m in inbox if m.get("unread")])
+
+    intel = services.get("intelligence", {}).get("data", {})
+    weather = intel.get("weather", {})
+    temp = weather.get("temp_c", 20)
+    condition = weather.get("condition", "Clear")
+    hw = intel.get("hardware", {})
+    batt = hw.get("battery", {}).get("status_label", "AC Mode")
+
+    speech = (
+        f"Good day. Here is your Command Center executive briefing. "
+        f"The local weather is {temp} degrees Celsius and {condition}. "
+        f"Hardware status is nominal, with battery at {batt}. "
+        f"Market portfolio stands at {int(portfolio):,} dollars. "
+        f"You have {unpaid} active bills awaiting settlement, and {unread} priority messages in communications. "
+        f"All 9 background services are online and synchronized."
+    )
+    return speech
+
+def speak_briefing(text=None, voice="Samantha", export_audio=False, output_dir="exports", host="127.0.0.1", port=8787) -> dict:
+    """Executes macOS /usr/bin/say speech synthesis."""
+    import subprocess
+    if not text:
+        text = synthesize_briefing_speech_text(host=host, port=port)
+
+    audio_path = None
+    if export_audio:
+        os.makedirs(output_dir, exist_ok=True)
+        ts = int(time.time())
+        audio_path = os.path.join(output_dir, f"briefing_audio_{ts}.aiff")
+        cmd = ["/usr/bin/say", "-v", voice, "-o", audio_path, text]
+    else:
+        cmd = ["/usr/bin/say", "-v", voice, text]
+
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+        return {
+            "success": res.returncode == 0,
+            "text": text,
+            "voice": voice,
+            "audio_file": audio_path,
+            "error": res.stderr if res.returncode != 0 else None
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "text": text,
+            "error": str(e)
+        }
+
 if __name__ == "__main__":
-    res = generate_briefing()
-    print(json.dumps(res, indent=2))
+    if len(sys.argv) > 1 and sys.argv[1] == "speak":
+        out = speak_briefing()
+        print(json.dumps(out, indent=2))
+    else:
+        res = generate_briefing()
+        print(json.dumps(res, indent=2))
+

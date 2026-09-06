@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+"""
+Command Center // Autonomous Task Scheduler (Cron Engine)
+Lightweight, thread-safe recurring task orchestrator for macOS.
+Runs background operational cron tasks without external dependencies.
+"""
+
+import time
+import threading
+import traceback
+from utils import macos
+from utils import briefing
+from utils import vault
+
+class ScheduledJob:
+    def __init__(self, job_id, name, description, interval_sec, handler):
+        self.id = job_id
+        self.name = name
+        self.description = description
+        self.interval_sec = interval_sec
+        self.handler = handler
+        self.last_run = 0
+        self.next_run = time.time() + interval_sec
+        self.runs_count = 0
+        self.status = "SCHEDULED"
+        self.last_result = None
+        self.lock = threading.Lock()
+
+    def to_dict(self):
+        with self.lock:
+            return {
+                "id": self.id,
+                "name": self.name,
+                "description": self.description,
+                "interval_sec": self.interval_sec,
+                "interval_human": self._format_interval(self.interval_sec),
+                "last_run": self.last_run,
+                "last_run_str": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.last_run)) if self.last_run else "Never",
+                "next_run": self.next_run,
+                "next_run_str": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.next_run)) if self.next_run else "--",
+                "runs_count": self.runs_count,
+                "status": self.status,
+                "last_result": self.last_result
+            }
+
+    def _format_interval(self, sec):
+        if sec >= 86400:
+            return f"Every {sec // 86400}d"
+        if sec >= 3600:
+            return f"Every {sec // 3600}h"
+        if sec >= 60:
+            return f"Every {sec // 60}m"
+        return f"Every {sec}s"
+
+    def execute(self, feeder=None):
+        with self.lock:
+            self.status = "RUNNING"
+        start_t = time.time()
+        result = None
+        try:
+            result = self.handler(feeder)
+            status = "COMPLETED"
+        except Exception as e:
+            result = {"error": str(e), "traceback": traceback.format_exc()}
+            status = "ERROR"
+        finally:
+            now = time.time()
+            with self.lock:
+                self.last_run = now
+                self.next_run = now + self.interval_sec
+                self.runs_count += 1
+                self.status = status
+                self.last_result = {
+                    "duration_ms": round((now - start_t) * 1000, 2),
+                    "summary": result.get("summary") if isinstance(result, dict) else str(result),
+                    "data": result
+                }
+        return self.last_result
+
+class AutomationScheduler:
+    def __init__(self, feeder=None):
+        self.feeder = feeder
+        self.jobs = {}
+        self.lock = threading.Lock()
+        self.running = False
+        self._thread = None
+        self.on_job_completed = None
+        self._register_default_jobs()
+
+    def _register_default_jobs(self):
+        # 1. Hourly DNS & Connectivity Audit
+        self.register_job(
+            "hourly_dns_audit",
+            "Hourly DNS & Domain Audit",
+            "Resolves authoritative DNS records and measures network latency",
+            interval_sec=3600,
+            handler=self._job_dns_audit
+        )
+
+        # 2. Daily Executive Business Dossier
+        self.register_job(
+            "daily_dossier",
+            "Daily Executive Dossier Compilation",
+            "Compiles real-time revenue, comms, and system KPIs into Markdown & HTML report",
+            interval_sec=86400,
+            handler=self._job_dossier_compilation
+        )
+
+        # 3. Daily Encrypted Security Vault Snapshot
+        self.register_job(
+            "daily_vault_snapshot",
+            "Automated Security Vault Backup",
+            "Exports encrypted .ccvault archive using PBKDF2-HMAC-SHA256 authenticated encryption",
+            interval_sec=86400,
+            handler=self._job_vault_backup
+        )
+
+    def _job_dns_audit(self, feeder):
+        import socket
+        start = time.time()
+        domain = "apple.com"
+        try:
+            addrs = socket.getaddrinfo(domain, 80, socket.AF_INET)
+            ip = addrs[0][4][0] if addrs else "unknown"
+            latency = round((time.time() - start) * 1000, 1)
+            summary = f"DNS check {domain} resolved to {ip} ({latency}ms)"
+            if feeder and "osint" in feeder.services:
+                feeder.services["osint"].add_event("dns_scheduled_audit", summary)
+            return {"domain": domain, "ip": ip, "latency_ms": latency, "summary": summary}
+        except Exception as e:
+            return {"error": str(e), "summary": f"DNS check failed: {e}"}
+
+    def _job_dossier_compilation(self, feeder):
+        res = briefing.generate_briefing()
+        summary = f"Executive Dossier generated: {res.get('markdown_file', 'unknown')}"
+        if feeder and "settings" in feeder.services:
+            feeder.services["settings"].add_event("dossier_compiled", summary)
+        return {"briefing": res, "summary": summary}
+
+    def _job_vault_backup(self, feeder):
+        import os
+        config_path = feeder.config_path if feeder else "config.json"
+        res = vault.export_vault_file(config_path, password="AutoVaultBackup2026!", output_dir="backups")
+        summary = f"Automated Vault Snapshot: {res.get('filename')}"
+        if feeder and "settings" in feeder.services:
+            feeder.services["settings"].add_event("vault_exported", summary)
+        return {"vault": res, "summary": summary}
+
+    def register_job(self, job_id, name, description, interval_sec, handler):
+        with self.lock:
+            job = ScheduledJob(job_id, name, description, interval_sec, handler)
+            self.jobs[job_id] = job
+
+    def trigger_job(self, job_id):
+        job = self.jobs.get(job_id)
+        if not job:
+            return {"success": False, "error": f"Job '{job_id}' not found"}
+        res = job.execute(self.feeder)
+        if self.on_job_completed:
+            try:
+                self.on_job_completed(job.to_dict())
+            except Exception:
+                pass
+        return {"success": True, "job": job.to_dict(), "result": res}
+
+    def get_status(self):
+        with self.lock:
+            return [job.to_dict() for job in self.jobs.values()]
+
+    def start(self):
+        if self.running:
+            return
+        self.running = True
+        def _loop():
+            while self.running:
+                now = time.time()
+                with self.lock:
+                    jobs_to_run = [j for j in self.jobs.values() if j.next_run and now >= j.next_run]
+                for j in jobs_to_run:
+                    if not self.running:
+                        break
+                    res = j.execute(self.feeder)
+                    if self.on_job_completed:
+                        try:
+                            self.on_job_completed(j.to_dict())
+                        except Exception:
+                            pass
+                time.sleep(2)
+        self._thread = threading.Thread(target=_loop, daemon=True, name="CronScheduler")
+        self._thread.start()
+
+    def stop(self):
+        self.running = False

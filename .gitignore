@@ -5,6 +5,7 @@ exports/*.sh
 exports/*.mp4
 exports/*.md
 exports/*.html
+exports/*.aiff
 sandboxes/
 *.log
 .command-center.pid

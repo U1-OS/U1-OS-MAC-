@@ -21,6 +21,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from utils import macos
+from utils.scheduler import AutomationScheduler
 from services.intelligence import IntelligenceService
 from services.finance import FinanceService
 from services.comms import CommsService
@@ -78,6 +79,8 @@ class CommandCenterFeeder:
         self.lock = threading.RLock()
         self.running = True
         self.sse_broker = SSEEventBroker()
+        self.webhook_log = []
+        self.webhook_lock = threading.Lock()
 
         # Initialize all modular services
         self.services = {}
@@ -90,10 +93,58 @@ class CommandCenterFeeder:
         self.services["gaming"] = GamingService(self.config)
         self.services["osint"] = OSINTService(self.config)
         self.services["settings"] = SettingsService(self.config, self.config_path, self.services)
+        self.services["settings"].feeder = self
+
+        # Initialize Automation Scheduler
+        self.scheduler = AutomationScheduler(feeder=self)
+        self.scheduler.on_job_completed = self._handle_scheduler_job_completed
+        self.services["settings"].scheduler = self.scheduler
+        self.scheduler.start()
 
         # Wire real-time event callbacks for streaming & notifications
         for svc_name, svc in self.services.items():
             svc.on_event = self._handle_service_event
+
+    def record_webhook(self, source, payload, headers):
+        with self.webhook_lock:
+            entry_id = f"whk-{int(time.time() * 1000)}"
+            summary = f"Webhook received from {source.upper()}"
+            if isinstance(payload, dict):
+                if "event" in payload:
+                    summary += f": {payload['event']}"
+                elif "type" in payload:
+                    summary += f": {payload['type']}"
+                elif "action" in payload:
+                    summary += f": {payload['action']}"
+            entry = {
+                "id": entry_id,
+                "timestamp": time.time(),
+                "time_str": time.strftime("%H:%M:%S"),
+                "source": source.lower(),
+                "summary": summary,
+                "payload": payload,
+                "headers": {k: v for k, v in headers.items() if k.lower() in ["content-type", "user-agent", "x-stripe-signature", "x-hub-signature-256"]}
+            }
+            self.webhook_log.append(entry)
+            if len(self.webhook_log) > 30:
+                self.webhook_log.pop(0)
+
+        # Broadcast over SSE
+        self.sse_broker.publish("webhook_received", entry)
+
+        # Native Notification
+        notify_enabled = self.config.get("system", {}).get("native_notifications", True)
+        if notify_enabled:
+            macos.notify(f"WEBHOOK // {source.upper()}", summary, sound="Hero")
+
+        return entry
+
+    def get_webhooks(self):
+        with self.webhook_lock:
+            return list(self.webhook_log)
+
+    def _handle_scheduler_job_completed(self, job_dict):
+        self.sse_broker.publish("scheduler_job_completed", job_dict)
 
     def _handle_service_event(self, service_name, event):
         # Broadcast immediately to all connected SSE clients
@@ -167,6 +218,8 @@ class CommandCenterFeeder:
         }
         for name, service in self.services.items():
             state["services"][name] = service.get_state()
+        state["scheduler"] = self.scheduler.get_status()
+        state["webhooks"] = self.get_webhooks()
         return state
 
     def start_background_loop(self):
@@ -211,6 +264,14 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
         if path == "/api/state":
             state = feeder.get_full_state()
             self.send_json(state)
+            return
+
+        if path == "/api/webhooks":
+            self.send_json({"success": True, "webhooks": feeder.get_webhooks()})
+            return
+
+        if path == "/api/scheduler":
+            self.send_json({"success": True, "jobs": feeder.scheduler.get_status()})
             return
 
         if path == "/api/events":
@@ -298,6 +359,13 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             payload = json.loads(body.decode("utf-8")) if body else {}
         except Exception:
             self.send_json({"success": False, "error": "Invalid JSON"}, 400)
+            return
+
+        if path.startswith("/api/webhooks/"):
+            source = path[len("/api/webhooks/"):].strip("/") or "generic"
+            headers_dict = dict(self.headers)
+            entry = feeder.record_webhook(source, payload, headers_dict)
+            self.send_json({"success": True, "message": f"Webhook received from {source}", "entry": entry})
             return
 
         if path == "/api/action":

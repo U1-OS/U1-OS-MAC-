@@ -174,6 +174,74 @@ with urllib.request.urlopen(req) as r:
 "
 }
 
+cmd_speak() {
+  echo -e "\033[33m[AUDIO BRIEF]\033[0m Speaking Command Center executive business brief..."
+  python3 -c "
+from utils.briefing import speak_briefing
+res = speak_briefing()
+if res.get('success'):
+    print('\033[32m[SPOKEN]\033[0m Briefing completed successfully.')
+else:
+    print('\033[31m[ERR]\033[0m', res.get('error', 'Speech synthesis failed'))
+"
+}
+
+cmd_hardware() {
+  echo "============================================================"
+  echo " COMMAND CENTER // macOS Hardware Telemetry HUD"
+  echo "============================================================"
+  python3 -c "
+import urllib.request, json
+try:
+    with urllib.request.urlopen('http://$HOST:$PORT/api/state', timeout=3) as r:
+        d = json.loads(r.read().decode('utf-8'))
+        hw = d.get('services', {}).get('intelligence', {}).get('data', {}).get('hardware', {})
+        sys_info = hw.get('system', {})
+        batt = hw.get('battery', {})
+        disk = hw.get('disk', {})
+        print(f'Apple Model:  {sys_info.get(\"model\", \"Macintosh\")}')
+        print(f'Compute:      {sys_info.get(\"cpu_cores\", \"--\")} Cores // {sys_info.get(\"ram_gb\", \"--\")} GB RAM')
+        print(f'Power/Batt:   {batt.get(\"status_label\", \"AC Connected\")} (Present: {batt.get(\"present\")})')
+        print(f'SSD Storage:  {disk.get(\"free_gb\", 0)} GB Free of {disk.get(\"total_gb\", 0)} GB ({disk.get(\"used_pct\", 0)}% used)')
+except Exception as e:
+    print(f'Error querying hardware: {e}')
+"
+  echo "============================================================"
+}
+
+cmd_webhook_test() {
+  SOURCE="${2:-stripe}"
+  echo -e "\033[33m[WEBHOOK]\033[0m Transmitting test webhook payload to /api/webhooks/$SOURCE..."
+  curl -s -X POST "http://$HOST:$PORT/api/webhooks/$SOURCE" \
+    -H "Content-Type: application/json" \
+    -d "{\"event\":\"payment_intent.succeeded\",\"customer\":\"cus_vip_998\",\"amount\":125000,\"currency\":\"usd\",\"status\":\"succeeded\"}" | python3 -m json.tool
+}
+
+cmd_scheduler() {
+  ACTION="${2:-status}"
+  JOB_ID="$3"
+  if [ "$ACTION" == "trigger" ] && [ -n "$JOB_ID" ]; then
+    echo -e "\033[33m[SCHEDULER]\033[0m Triggering scheduled task '$JOB_ID'..."
+    curl -s -X POST "http://$HOST:$PORT/api/action" \
+      -H "Content-Type: application/json" \
+      -d "{\"service\":\"settings\",\"action\":\"trigger_scheduled_task\",\"payload\":{\"job_id\":\"$JOB_ID\"}}" | python3 -m json.tool
+  else
+    echo "============================================================"
+    echo " COMMAND CENTER // Background Automation Tasks"
+    echo "============================================================"
+    curl -s "http://$HOST:$PORT/api/scheduler" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for j in data.get('jobs', []):
+    print(f\"• [{j['status']}] {j['name']} ({j['interval_human']})\")
+    print(f\"    ID: {j['id']} | Last Run: {j['last_run_str']} | Next: {j['next_run_str']}\")
+    if j.get('last_result'):
+        print(f\"    Result: {j['last_result'].get('summary', '')}\")
+"
+    echo "============================================================"
+  fi
+}
+
 case "$1" in
   start)
     cmd_start
@@ -214,9 +282,25 @@ case "$1" in
   llm)
     cmd_llm "$@"
     ;;
+  speak)
+    cmd_speak
+    ;;
+  hardware)
+    cmd_hardware
+    ;;
+  webhook-test)
+    cmd_webhook_test "$@"
+    ;;
+  scheduler)
+    cmd_scheduler "$@"
+    ;;
   *)
-    echo "Usage: ./command-center {start|stop|restart|status|open|test|install-agent|uninstall-agent|notify|vault|briefing|menubar|llm}"
+    echo "Usage: ./command-center {start|stop|restart|status|open|test|install-agent|uninstall-agent|notify|vault|briefing|menubar|llm|speak|hardware|webhook-test|scheduler}"
     echo "       ./command-center briefing                        # Generate executive dossier"
+    echo "       ./command-center speak                           # Speak audio executive brief aloud"
+    echo "       ./command-center hardware                        # Display macOS hardware & power HUD"
+    echo "       ./command-center webhook-test [source]           # Test inbound webhook ingestion & SSE"
+    echo "       ./command-center scheduler [trigger <id>]        # Inspect or trigger cron automation jobs"
     echo "       ./command-center menubar                         # Run macOS status bar stream"
     echo "       ./command-center llm \"prompt\" [provider]         # Query AI Workbench"
     echo "       ./command-center notify \"Title\" \"Message\"        # Test macOS notification"
@@ -225,3 +309,4 @@ case "$1" in
     exit 1
     ;;
 esac
+

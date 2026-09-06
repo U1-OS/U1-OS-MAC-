@@ -303,6 +303,25 @@ const CommandCenter = (() => {
     if (d.telemetry && els.loadVal) {
       els.loadVal.textContent = `${d.telemetry.load_1m} / ${d.telemetry.load_5m}`;
     }
+
+    // Hardware & Battery Telemetry
+    if (d.hardware) {
+      const hwBatt = document.getElementById('hwBattVal');
+      const hwDisk = document.getElementById('hwDiskVal');
+      if (hwBatt && d.hardware.battery) {
+        hwBatt.textContent = d.hardware.battery.status_label || (d.hardware.battery.percent ? `BAT: ${d.hardware.battery.percent}%` : 'AC POWER');
+        if (d.hardware.battery.charging) {
+          hwBatt.style.color = 'var(--gold)';
+        } else if (d.hardware.battery.percent && d.hardware.battery.percent <= 20) {
+          hwBatt.style.color = '#EF4444';
+        } else {
+          hwBatt.style.color = 'var(--text-primary)';
+        }
+      }
+      if (hwDisk && d.hardware.disk) {
+        hwDisk.textContent = `SSD: ${d.hardware.disk.free_gb}GB FREE`;
+      }
+    }
   }
 
   /* ========================================================
@@ -1122,6 +1141,65 @@ const CommandCenter = (() => {
                 No encrypted .ccvault archives found in backups/ directory. Export one above to create an encrypted snapshot.
               </div>
             `}
+          </div>
+        </div>
+      `;
+    }
+
+    // 7. Render Widget 7: Autonomous Tasks & Inbound Webhooks
+    const schedulerWebhookContainer = document.getElementById('settingsSchedulerWebhookContainer');
+    if (schedulerWebhookContainer) {
+      const jobs = (currentState && currentState.scheduler) || [];
+      const webhooks = (currentState && currentState.webhooks) || [];
+
+      schedulerWebhookContainer.innerHTML = `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <!-- Column 1: Autonomous Tasks (Scheduler) -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span class="mono" style="font-size:10.5px; font-weight:700; color:var(--gold);">SCHEDULED RECURRING TASKS</span>
+              <span class="mono" style="font-size:9.5px; color:var(--text-muted);">${jobs.length} REGISTERED</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              ${jobs.map(j => `
+                <div style="background:var(--bg-slab-elevated); border:1px solid var(--border-subtle); padding:10px; border-radius:2px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="mono" style="font-weight:700; font-size:11px; color:var(--text-primary);">${escapeHtml(j.name)}</span>
+                    <span class="mono" style="font-size:9.5px; padding:2px 6px; background:rgba(233,180,76,0.12); color:var(--gold); border:1px solid rgba(233,180,76,0.25);">${escapeHtml(j.interval_human)}</span>
+                  </div>
+                  <p class="mono" style="font-size:9.5px; color:var(--text-muted); margin:4px 0 8px 0;">${escapeHtml(j.description)}</p>
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="mono" style="font-size:9.5px; color:var(--text-muted);">Last: ${escapeHtml(j.last_run_str)} &bull; Next: ${escapeHtml(j.next_run_str)}</span>
+                    <button class="mini-btn mono" onclick="CommandCenter.triggerSchedulerJob('${escapeHtml(j.id)}')">RUN NOW &rarr;</button>
+                  </div>
+                  ${j.last_result ? `<div class="mono" style="font-size:9.5px; color:var(--gold); margin-top:4px;">Result: ${escapeHtml(j.last_result.summary || '')}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Column 2: Inbound Webhook Stream -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span class="mono" style="font-size:10.5px; font-weight:700; color:var(--gold);">INBOUND WEBHOOK STREAM</span>
+              <span class="mono" style="font-size:9.5px; color:var(--text-muted);">POST /api/webhooks/{source}</span>
+            </div>
+            <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); padding:8px; border-radius:2px; max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+              ${webhooks.length > 0 ? webhooks.slice(-10).reverse().map(w => `
+                <div style="background:var(--bg-slab-elevated); border:1px solid rgba(255,255,255,0.05); padding:6px 8px; border-radius:2px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="mono" style="font-weight:700; font-size:10px; color:var(--gold);">[${escapeHtml(w.source.toUpperCase())}]</span>
+                    <span class="mono" style="font-size:9.5px; color:var(--text-muted);">${escapeHtml(w.time_str || '')}</span>
+                  </div>
+                  <div class="mono" style="font-size:10px; color:var(--text-primary); margin:2px 0;">${escapeHtml(w.summary || '')}</div>
+                  <div class="mono" style="font-size:9px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Payload: ${escapeHtml(JSON.stringify(w.payload || {}))}</div>
+                </div>
+              `).join('') : `
+                <div class="mono" style="font-size:10px; color:var(--text-muted); padding:16px; text-align:center;">
+                  No inbound webhooks received yet.<br>Click "SIMULATE WEBHOOK" to test the real-time ingestion pipeline.
+                </div>
+              `}
+            </div>
           </div>
         </div>
       `;
@@ -3979,6 +4057,9 @@ const CommandCenter = (() => {
     { group: 'ACTIONS', id: 'breach', title: 'Audit Account Breach (HIBP)', desc: 'Scan corporate email against HaveIBeenPwned', shortcut: 'HIBP', action: () => { switchSection('osint'); document.getElementById('osintHibpInput')?.focus(); } },
     { group: 'ACTIONS', id: 'updater', title: 'Check Git Repo Updates', desc: 'Query git repository and tracking branch', shortcut: 'GIT', action: () => { checkRepoUpdates(); } },
     { group: 'ACTIONS', id: 'briefing', title: 'Generate Executive Business Dossier', desc: 'Compile multi-service report into markdown and print HTML', shortcut: 'BRIEF', action: () => generateExecutiveBriefing() },
+    { group: 'ACTIONS', id: 'speak', title: 'Speak Executive Briefing Aloud', desc: 'Synthesize audio brief using macOS native Samantha speech', shortcut: 'SAY', action: () => speakExecutiveBriefing() },
+    { group: 'ACTIONS', id: 'webhook', title: 'Simulate Inbound Webhook', desc: 'Test webhook ingestion and SSE push notification', shortcut: 'HOOK', action: () => testInboundWebhook() },
+    { group: 'ACTIONS', id: 'cron', title: 'Trigger Hourly DNS Audit Task', desc: 'Execute scheduled automation cron job on-demand', shortcut: 'CRON', action: () => triggerSchedulerJob('hourly_dns_audit') },
     { group: 'ACTIONS', id: 'ollama', title: 'Dispatch Local Offline Model (Ollama)', desc: 'Run air-gapped zero-cost local inference', shortcut: 'LOCAL', action: () => { dispatchOllamaPrompt(); } },
     { group: 'ACTIONS', id: 'menubar', title: 'macOS Menu Bar Extra', desc: 'Query SwiftBar / BitBar feeder stream', shortcut: 'BAR', action: () => showMenuBarInfo() },
 
@@ -5022,6 +5103,64 @@ STATUS: RESOLVED // NOMINAL
     );
   }
 
+  async function speakExecutiveBriefing() {
+    AudioFeedback.execute();
+    showNotification('Synthesizing executive briefing via macOS speech engine...');
+    const btn = document.getElementById('btnSpeakBriefing');
+    if (btn) btn.style.color = 'var(--gold)';
+    try {
+      const res = await apiAction('settings', 'speak_briefing', { voice: 'Samantha' });
+      if (res && res.success) {
+        showNotification('Audio briefing spoken aloud via macOS Samantha');
+      } else {
+        showNotification(res.error || 'Speech synthesis failed', 'error');
+      }
+    } catch (err) {
+      showNotification('Speech synthesis error: ' + err.message, 'error');
+    } finally {
+      if (btn) btn.style.color = 'var(--text)';
+    }
+  }
+
+  async function triggerSchedulerJob(jobId) {
+    AudioFeedback.tick();
+    showNotification(`Triggering automated task '${jobId}'...`);
+    try {
+      const res = await apiAction('settings', 'trigger_scheduled_task', { job_id: jobId });
+      if (res && res.success) {
+        showNotification(`Task '${jobId}' executed successfully`);
+        fetchState();
+      } else {
+        showNotification(res.error || 'Task execution failed', 'error');
+      }
+    } catch (err) {
+      showNotification('Error triggering task: ' + err.message, 'error');
+    }
+  }
+
+  async function testInboundWebhook() {
+    AudioFeedback.tick();
+    showNotification('Simulating inbound webhook payload...');
+    try {
+      const res = await apiAction('settings', 'test_webhook', {
+        source: 'stripe',
+        payload: {
+          event: 'payment_intent.succeeded',
+          customer: 'cus_live_9921',
+          amount: 85000,
+          currency: 'usd',
+          status: 'succeeded'
+        }
+      });
+      if (res && res.success) {
+        showNotification('Inbound webhook captured and logged');
+        fetchState();
+      }
+    } catch (err) {
+      showNotification('Webhook simulation error: ' + err.message, 'error');
+    }
+  }
+
   /* ========================================================
      HELPERS
      ======================================================== */
@@ -5049,6 +5188,9 @@ STATUS: RESOLVED // NOMINAL
     exportSecurityVault,
     prepareVaultRestore,
     generateExecutiveBriefing,
+    speakExecutiveBriefing,
+    triggerSchedulerJob,
+    testInboundWebhook,
     dispatchOllamaPrompt,
     showMenuBarInfo,
     saveApiKeys,

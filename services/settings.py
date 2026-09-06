@@ -541,4 +541,47 @@ class SettingsService(BaseService):
                 self.add_event("briefing_generated", f"Executive Briefing Dossier compiled ({os.path.basename(res['html_file'])})")
             return res
 
+        elif action == "speak_briefing":
+            voice = payload.get("voice", "Samantha")
+            text = payload.get("text")
+            export_audio = payload.get("export_audio", False)
+            port = self.config.get("system", {}).get("port", 8787)
+            res = briefing.speak_briefing(text=text, voice=voice, export_audio=export_audio, port=port)
+            if res.get("success"):
+                self.add_event("briefing_spoken", f"Executive Briefing spoken aloud via macOS {voice}")
+            return res
+
+        # --- Automation Scheduler Actions ---
+        elif action == "trigger_scheduled_task":
+            job_id = payload.get("job_id")
+            if not job_id:
+                return {"success": False, "error": "job_id is required"}
+
+            if hasattr(self, "scheduler") and self.scheduler:
+                res = self.scheduler.trigger_job(job_id)
+            else:
+                from utils.scheduler import AutomationScheduler
+                sched = AutomationScheduler(feeder=getattr(self, "feeder", None))
+                res = sched.trigger_job(job_id)
+
+            if res.get("success"):
+                self.add_event("task_triggered", f"Scheduled automation job '{job_id}' executed manually")
+            return res
+
+        # --- Inbound Webhook Test ---
+        elif action == "test_webhook":
+            source = payload.get("source", "stripe")
+            test_payload = payload.get("payload", {
+                "event": "invoice.payment_succeeded",
+                "customer": "cus_9847123",
+                "amount_paid": 45000,
+                "currency": "usd"
+            })
+            headers = {"Content-Type": "application/json", "User-Agent": "CommandCenterTest/1.0"}
+            if hasattr(self, "feeder") and self.feeder:
+                entry = self.feeder.record_webhook(source, test_payload, headers)
+                return {"success": True, "entry": entry}
+            return {"success": True, "message": "Test webhook dispatched"}
+
         return super().dispatch_action(action, payload)
+

@@ -76,9 +76,24 @@
           <span class="clock-tz mono" id="sysDate">---</span>
         </div>
 
+        <!-- Hardware & Power HUD Pill -->
+        <div class="bezel-widget hw-widget" id="bezelHardware" title="macOS Hardware Telemetry" style="display:inline-flex; align-items:center; gap:6px;">
+          <svg class="w-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="2" y="7" width="16" height="10" rx="2" ry="2"/>
+            <line x1="22" y1="11" x2="22" y2="13"/>
+          </svg>
+          <span class="widget-val mono" id="hwBattVal" style="font-size:10.5px;">BAT: --%</span>
+          <span class="widget-sub mono" id="hwDiskVal" style="font-size:9.5px; color:var(--muted);">SSD: --GB</span>
+        </div>
+
         <!-- Executive Briefing Dossier Generator -->
         <button class="bezel-widget btn-palette-trigger mono" id="btnGenBriefing" title="Generate Executive Business Dossier" onclick="CommandCenter.generateExecutiveBriefing()" style="padding:0 10px; font-size:10.5px; font-weight:700; color:var(--gold);">
           <span>DOSSIER</span>
+        </button>
+
+        <!-- Executive Spoken Audio Briefing -->
+        <button class="bezel-widget btn-palette-trigger mono" id="btnSpeakBriefing" title="Listen to Executive Briefing Aloud (macOS Say)" onclick="CommandCenter.speakExecutiveBriefing()" style="padding:0 10px; font-size:10.5px; font-weight:700; color:var(--text);">
+          <span>AUDIO BRIEF</span>
         </button>
 
         <!-- Command Palette Trigger Button -->
@@ -1080,6 +1095,22 @@
               </div>
             </header>
             <div class="slab-body" id="settingsVaultArchiveContainer"></div>
+          </article>
+
+          <!-- Widget 7: Autonomous Tasks & Inbound Webhooks [Span 12] -->
+          <article class="slab-panel span-12">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SETTINGS // 07</span>
+                <h2 class="slab-title">AUTONOMOUS TASKS &amp; INBOUND WEBHOOKS</h2>
+              </div>
+              <div class="slab-actions">
+                <button class="btn btn-secondary btn-sm mono" onclick="CommandCenter.testInboundWebhook()">SIMULATE WEBHOOK</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsSchedulerWebhookContainer"></div>
           </article>
         </section>
 

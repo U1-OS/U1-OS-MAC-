@@ -174,18 +174,105 @@ class IntelligenceService(BaseService):
                 "notice": "Sensor offline or timeout"
             }
 
+    def _get_hardware_telemetry(self):
+        import re
+        # Battery
+        battery_info = {
+            "present": False,
+            "percent": None,
+            "is_ac": True,
+            "charging": False,
+            "discharging": False,
+            "remaining": "AC Connected",
+            "status_label": "AC Power"
+        }
+        try:
+            res = subprocess.run(["pmset", "-g", "batt"], capture_output=True, text=True, timeout=2)
+            out = res.stdout
+            if out:
+                pct = re.search(r'(\d+)%', out)
+                if pct:
+                    battery_info["present"] = True
+                    battery_info["percent"] = int(pct.group(1))
+                battery_info["is_ac"] = "AC Power" in out
+                battery_info["discharging"] = bool(re.search(r'\bdischarging\b', out.lower()))
+                battery_info["charging"] = bool(re.search(r'\bcharging\b', out.lower())) and not battery_info["discharging"]
+                rem = re.search(r'(\d+:\d+)\s+remaining', out)
+                if rem:
+                    battery_info["remaining"] = f"{rem.group(1)} left"
+                elif "charged" in out.lower():
+                    battery_info["remaining"] = "Fully Charged"
+                elif battery_info["is_ac"]:
+                    battery_info["remaining"] = "AC Connected"
+
+                if battery_info["charging"]:
+                    battery_info["status_label"] = f"{battery_info['percent']}% ⚡ Charging"
+                elif battery_info["discharging"]:
+                    battery_info["status_label"] = f"{battery_info['percent']}% ({battery_info['remaining']})"
+                elif battery_info["percent"] is not None:
+                    battery_info["status_label"] = f"{battery_info['percent']}% AC"
+        except Exception:
+            pass
+
+        # Disk
+        disk_info = {
+            "total_gb": 0,
+            "free_gb": 0,
+            "used_gb": 0,
+            "used_pct": 0,
+            "mount": "/"
+        }
+        try:
+            s = os.statvfs('/')
+            t = (s.f_blocks * s.f_frsize) / (1024**3)
+            f = (s.f_bavail * s.f_frsize) / (1024**3)
+            u = t - f
+            disk_info = {
+                "total_gb": round(t, 1),
+                "free_gb": round(f, 1),
+                "used_gb": round(u, 1),
+                "used_pct": round((u / t) * 100, 1) if t > 0 else 0,
+                "mount": "/"
+            }
+        except Exception:
+            pass
+
+        # CPU & RAM
+        hw_info = {
+            "model": "Macintosh",
+            "cpu_cores": os.cpu_count() or 8,
+            "ram_gb": 16.0
+        }
+        try:
+            m = subprocess.run(["sysctl", "-n", "hw.model"], capture_output=True, text=True, timeout=2)
+            if m.returncode == 0 and m.stdout.strip():
+                hw_info["model"] = m.stdout.strip()
+            r = subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True, text=True, timeout=2)
+            if r.returncode == 0 and r.stdout.strip():
+                hw_info["ram_gb"] = round(int(r.stdout.strip()) / (1024**3), 1)
+        except Exception:
+            pass
+
+        return {
+            "battery": battery_info,
+            "disk": disk_info,
+            "system": hw_info
+        }
+
     def poll(self):
         weather = self._fetch_weather()
         news = self._fetch_news()
         telemetry = self._get_system_telemetry()
         pool = self._check_pool_sensor()
+        hardware = self._get_hardware_telemetry()
 
         with self.lock:
             self.data = {
                 "weather": weather,
                 "news": news,
                 "telemetry": telemetry,
-                "pool": pool
+                "pool": pool,
+                "hardware": hardware
             }
             self.last_updated = time.time()
             self.configured = True
