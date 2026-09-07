@@ -96,11 +96,10 @@ class CommandCenterFeeder:
         self.services["gaming"] = GamingService(self.config)
         self.services["osint"] = OSINTService(self.config)
         self.services["crypto"] = CryptoService(self.config)
-        self.services["crypto"].feeder = self
         self.services["telegram"] = TelegramService(self.config)
-        self.services["telegram"].feeder = self
         self.services["settings"] = SettingsService(self.config, self.config_path, self.services)
-        self.services["settings"].feeder = self
+        for svc in self.services.values():
+            svc.feeder = self
 
         # Initialize Automation Scheduler
         self.scheduler = AutomationScheduler(feeder=self)
@@ -414,6 +413,9 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", mime_type)
                 self.send_header("Content-Length", str(len(content)))
+                if path == "/sw.js":
+                    self.send_header("Service-Worker-Allowed", "/")
+                    self.send_header("Cache-Control", "no-cache")
                 self.end_headers()
                 self.wfile.write(content)
                 return

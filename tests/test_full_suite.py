@@ -459,6 +459,69 @@ def main():
     log_test("Headless Chrome JavaScript DOM Crawl", crawl_res.get("success") and crawler.get("engine") in ["chrome_headless", "http_urllib"], f"Engine: {crawler.get('engine')} ({crawler.get('latency_ms', 0)}ms)")
     log_test("On-Page Contract Address (CA) Extraction", len(crawler.get("detected_solana_cas", [])) > 0, f"{len(crawler.get('detected_solana_cas', []))} Solana CAs extracted from live rendered DOM")
 
+    # 36. Autonomous AI Trading Agent Scheduler Job & Multi-Strategy Loop
+    print(f"\n{INFO} 36. Subsystem: Autonomous AI Trading Agent Scheduler & Continuous Engine:")
+    s, cron_res = action("settings", "trigger_scheduler_job", {"job_id": "autonomous_trading_agent"})
+    cron_job = cron_res.get("job", {})
+    cron_result = cron_res.get("result", {})
+    cron_data = cron_result.get("data", {})
+    log_test("Autonomous Trading Agent Cron Execution", cron_res.get("success") and cron_job.get("id") == "autonomous_trading_agent", f"Status: {cron_data.get('status')}, Runs: {cron_job.get('runs_count')}")
+    log_test("Autonomous Trading Agent Telemetry Digest", "open_positions" in cron_data and "paper_balance_sol" in cron_data, f"Positions: {cron_data.get('open_positions')}, PnL: {cron_data.get('realized_pnl_sol')} SOL")
+
+    # 37. Progressive Web App (PWA) & Mobile Touch Architecture
+    print(f"\n{INFO} 37. Subsystem: Progressive Web App (PWA) & Mobile Touch Architecture:")
+    sw_req = urllib.request.Request(f"{BASE_URL}/sw.js", headers={"User-Agent": "CC-TestRunner/1.0"})
+    with urllib.request.urlopen(sw_req, timeout=5) as sw_resp:
+        sw_code = sw_resp.status
+        sw_body = sw_resp.read().decode("utf-8")
+        sw_header = sw_resp.getheader("Service-Worker-Allowed", "")
+    log_test("Service Worker Static Endpoint (/sw.js)", sw_code == 200 and "CACHE_NAME" in sw_body, f"HTTP {sw_code} - Cache strategy verified")
+    log_test("Service-Worker-Allowed Root Scope Header", sw_header == "/", f"Scope: {sw_header}")
+
+    s, manifest_data = get("/manifest.json")
+    log_test("PWA Web App Manifest (/manifest.json)", s == 200 and manifest_data.get("display") == "standalone" and len(manifest_data.get("icons", [])) > 0, f"App: {manifest_data.get('name')}, Theme: {manifest_data.get('theme_color')}")
+
+    idx_req = urllib.request.Request(f"{BASE_URL}/", headers={"User-Agent": "CC-TestRunner/1.0"})
+    with urllib.request.urlopen(idx_req, timeout=5) as idx_resp:
+        idx_html = idx_resp.read().decode("utf-8")
+    log_test("PWA Mobile HTML Tags & SW Registration", "apple-touch-icon" in idx_html and "serviceWorker.register('/sw.js')" in idx_html, "Apple touch icons & registration script present")
+
+    # 38. Multi-Wallet Solana Treasury & Cold Storage Tracker
+    print(f"\n{INFO} 38. Subsystem: Multi-Wallet Solana Desk & Cold Storage Tracker:")
+    s, mw_data = action("crypto", "get_multi_wallet_portfolio")
+    log_test("Multi-Wallet Solana Aggregator Fetch", mw_data.get("success") and mw_data.get("total_wallets", 0) >= 3, f"{mw_data.get('total_wallets')} wallets tracked, {mw_data.get('total_sol')} SOL total")
+    log_test("Multi-Wallet RPC Account Balance Ingestion", any(w.get("sol_balance", 0) > 0 for w in mw_data.get("wallets", [])), f"First wallet balance: {mw_data.get('wallets', [{}])[0].get('sol_balance')} SOL")
+
+    s, add_w_res = action("crypto", "add_tracked_wallet", {
+        "name": "Audit Test Ledger Vault",
+        "address": "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
+        "category": "Cold Storage"
+    })
+    log_test("Add Tracked Solana Wallet", add_w_res.get("success"), f"Added {add_w_res.get('wallet', {}).get('name')}")
+
+    s, term_w = action("crypto", "execute_terminal_command", {"command": "wallets"})
+    log_test("Cyber Terminal Multi-Wallet Output (wallets)", term_w.get("success") and "MULTI-WALLET SOLANA TREASURY" in term_w.get("output", ""), "Treasury breakdown printed in cyber terminal")
+
+    s, rm_w_res = action("crypto", "remove_tracked_wallet", {"address": "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"})
+    log_test("Remove Tracked Solana Wallet", rm_w_res.get("success"), f"Wallet removed, remaining: {rm_w_res.get('remaining_count')}")
+
+    # 39. AI Workbench Multi-Tool Orchestrator & Natural Language Desk
+    print(f"\n{INFO} 39. Subsystem: AI Workbench Multi-Tool Orchestrator & Natural Language Desk:")
+    s, ai_d1 = action("ai_workbench", "execute_agent_action", {"prompt": "get multi wallet portfolio and solana balances"})
+    log_test("AI Orchestrator Directive (Solana Treasury)", ai_d1.get("success") and ai_d1.get("action_type") == "SOLANA_TREASURY", f"Action: {ai_d1.get('action_type')} - {ai_d1.get('summary')}")
+
+    s, ai_d2 = action("ai_workbench", "execute_agent_action", {"prompt": "swap 0.1 SOL for BONK"})
+    log_test("AI Orchestrator Directive (Crypto Swap Tool)", ai_d2.get("success") and ai_d2.get("action_type") in ["CRYPTO_SWAP", "CRYPTO_BUY"], f"Action: {ai_d2.get('action_type')} - {ai_d2.get('summary')}")
+
+    s, ai_d3 = action("ai_workbench", "execute_agent_action", {"prompt": "dns apple.com"})
+    log_test("AI Orchestrator Directive (OSINT Radar Tool)", ai_d3.get("success") and ai_d3.get("action_type") == "OSINT_RADAR", f"Action: {ai_d3.get('action_type')} - {ai_d3.get('summary')}")
+
+    s, ai_d4 = action("ai_workbench", "execute_agent_action", {"prompt": "telegram send U1 OS Engine Heartbeat Active"})
+    log_test("AI Orchestrator Directive (Telegram Broadcast Tool)", ai_d4.get("success") and ai_d4.get("action_type") == "TELEGRAM_BROADCAST", f"Action: {ai_d4.get('action_type')} - {ai_d4.get('summary')}")
+
+    s, term_ai = action("crypto", "execute_terminal_command", {"command": "ai check domain apple.com"})
+    log_test("Cyber Terminal Bridge to AI Copilot (ai check domain)", term_ai.get("success") and "AI WORKBENCH COPILOT" in term_ai.get("output", ""), "AI copilot executed directive via terminal")
+
 
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")

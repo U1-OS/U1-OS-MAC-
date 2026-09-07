@@ -164,3 +164,50 @@ def get_account_info(address: str, rpc_url=None) -> dict:
     if "error" in result or result.get("result", {}).get("value") is None:
         return {"exists": False, "ok": False}
     return {"exists": True, "ok": True, "data": result["result"]["value"]}
+
+
+def get_multi_wallet_summary(wallets: list, sol_price_usd: float = 180.0, rpc_url=None) -> dict:
+    """Aggregates balances and token holdings across multiple Solana wallets.
+    
+    wallets: [{"address": str, "label": str, "type": str}]
+    Returns: {"total_sol": float, "total_usd": float, "wallets": [...], "ok": bool}
+    """
+    total_sol = 0.0
+    wallet_results = []
+    
+    for w in wallets:
+        addr = w.get("address", "").strip()
+        label = w.get("label", "Wallet")
+        w_type = w.get("type", "TRADING")
+        if not addr:
+            continue
+            
+        bal = get_sol_balance(addr, rpc_url)
+        toks = get_token_accounts(addr, rpc_url)
+        sol_amt = bal.get("sol", 0.0)
+        total_sol += sol_amt
+        
+        wallet_results.append({
+            "address": addr,
+            "name": w.get("name") or label,
+            "label": label,
+            "category": w.get("category") or w_type,
+            "type": w_type,
+            "sol_balance": sol_amt,
+            "usd_value": round(sol_amt * sol_price_usd, 2),
+            "tokens_count": len(toks.get("accounts", [])),
+            "tokens": toks.get("accounts", []),
+            "spl_tokens": toks.get("accounts", []),
+            "explorer_url": f"https://solscan.io/account/{addr}",
+            "rpc_online": bal.get("ok", False)
+        })
+        
+    return {
+        "ok": True,
+        "total_sol": round(total_sol, 6),
+        "total_usd": round(total_sol * sol_price_usd, 2),
+        "total_value_usd": round(total_sol * sol_price_usd, 2),
+        "total_wallets": len(wallet_results),
+        "wallets_count": len(wallet_results),
+        "wallets": wallet_results
+    }

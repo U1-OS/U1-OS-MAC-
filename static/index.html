@@ -12,6 +12,8 @@
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="U1 OS">
+  <link rel="apple-touch-icon" href="/favicon.svg">
   <meta name="theme-color" content="#08090B">
 </head>
 <body class="booting">
@@ -757,6 +759,9 @@
             <div class="slab-body" id="cryptoBotContainer"></div>
             <footer class="slab-footer">
               <span class="footer-meta mono">STRATEGIES: ALPHA SNIPER (SOCIAL VELOCITY) &bull; WHALE SHADOW &bull; MEAN REVERSION</span>
+            </footer>
+          </article>
+
           <!-- Widget 8: Telegram Alpha Bot Station & Remote Control [Span 6] -->
           <article class="slab-panel span-6" id="cryptoTelegramPanel" data-service="telegram">
             <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
@@ -793,6 +798,28 @@
             <footer class="slab-footer">
               <span class="footer-meta mono">ENGINE: GOOGLE CHROME HEADLESS 152 (MACOS NATIVE)</span>
               <span class="footer-meta mono" id="chromeCrawlerLatency">LATENCY: READY</span>
+            </footer>
+          </article>
+
+          <!-- Widget 10: Multi-Wallet Solana Treasury & Cold Storage Tracker [Span 12] -->
+          <article class="slab-panel span-12" id="cryptoMultiWalletPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--gold);">SOLANA // 10 &bull; TREASURY DESK</span>
+                <h2 class="slab-title">MULTI-WALLET SOLANA AGGREGATOR &bull; COLD STORAGE VAULT</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="multiWalletTotalBadge" style="background:rgba(212,175,55,0.12); color:var(--gold); border:1px solid rgba(212,175,55,0.3); padding:3px 10px; font-size:11px;">-- SOL TOTAL</span>
+                <button class="btn btn-sm btn-secondary mono" onclick="CommandCenter.syncMultiWallets()">SYNC ALL RPC</button>
+                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.openAddWalletModal()">+ TRACK WALLET</button>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoMultiWalletContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">RPC PROTOCOL: DIRECT SOLANA JSON-RPC (MAINNET-BETA) &bull; REAL ON-CHAIN ACCOUNT FETCH</span>
+              <span class="footer-meta mono" id="multiWalletCountMeta">3 WALLETS TRACKED</span>
             </footer>
           </article>
         </section>
@@ -974,6 +1001,48 @@
             <div class="slab-body" id="aiLedgerContainer"></div>
             <footer class="slab-footer">
               <span class="footer-meta mono">REAL-TIME COST ACCRUAL PER CALL</span>
+            </footer>
+          </article>
+
+          <!-- Widget 6: Multi-Tool Autonomous Copilot & Subsystem Orchestrator [Span 12] -->
+          <article class="slab-panel span-12" id="aiCopilotPanel" data-service="ai_workbench">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-magenta);">COPILOT // 06 &bull; MULTI-TOOL AGENT</span>
+                <h2 class="slab-title">AUTONOMOUS SUBSYSTEM ORCHESTRATOR &bull; NATURAL LANGUAGE DESK</h2>
+              </div>
+              <div class="status-indicator">
+                <span class="status-dot active" style="background:var(--neon-magenta);"></span>
+                <span class="status-text mono" id="aiCopilotStatus">ORCHESTRATOR ONLINE</span>
+              </div>
+            </header>
+            <div class="slab-body" id="aiCopilotContainer">
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                <div style="display:flex; gap:10px; align-items:center;">
+                  <input type="text" id="aiAgentPromptInput" class="mono" style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-subtle); color:var(--text-main); padding:10px 14px; border-radius:4px; font-size:13px;" placeholder="Execute directive: 'swap 0.1 SOL to BONK', 'multi wallet', 'crawl dexscreener', 'telegram send Alert', 'dns apple.com', 'lockdown'..." onkeydown="if(event.key==='Enter') CommandCenter.executeAgentAction()">
+                  <select id="aiAgentProviderSelect" class="mono" style="background:rgba(0,0,0,0.5); border:1px solid var(--border-subtle); color:var(--text-main); padding:9px 12px; border-radius:4px; font-size:12px;">
+                    <option value="auto">Auto Orchestrator</option>
+                    <option value="claude">Claude 3.5 Sonnet</option>
+                    <option value="openai">OpenAI GPT-4o</option>
+                  </select>
+                  <button class="btn btn-magenta mono" onclick="CommandCenter.executeAgentAction()" id="btnExecuteAgentAction">DISPATCH DIRECTIVE</button>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('get multi wallet portfolio and solana balances')">💼 Multi-Wallet Balances</button>
+                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('swap 0.05 SOL to BONK')">⚡ Swap SOL -> BONK</button>
+                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('crawl https://dexscreener.com/solana/bonk')">🕷 Chrome Crawl DEX</button>
+                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('telegram send U1 OS Automated Heartbeat Active')">📡 Telegram Broadcast</button>
+                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('dns apple.com')">🌐 OSINT DNS Audit</button>
+                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('generate briefing dossier')">📑 Compile Dossier</button>
+                </div>
+                <div id="aiAgentOutputArea" class="mono" style="display:none; background:#040507; border:1px solid var(--border-subtle); border-radius:4px; padding:12px; font-size:12px; max-height:260px; overflow-y:auto; white-space:pre-wrap;"></div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">NATURAL LANGUAGE ENGINE: MULTI-TOOL ROUTER &bull; DIRECT OS EXECUTION &bull; ZERO MOCK</span>
+              <span class="footer-meta mono" id="aiAgentLastAction">LAST ACTION: READY</span>
             </footer>
           </article>
         </section>
@@ -1634,6 +1703,52 @@
     </div>
   </div>
 
+  <!-- Add Tracked Solana Wallet Modal -->
+  <div class="modal-overlay" id="addWalletModal" aria-hidden="true" style="display:none;">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+      <div class="modal-header">
+        <span class="modal-kicker mono" style="color:var(--gold);">SOLANA DESK // ON-CHAIN TREASURY</span>
+        <h3 class="modal-title">TRACK SOLANA WALLET</h3>
+      </div>
+      <div class="modal-body" style="margin: 16px 0; display:flex; flex-direction:column; gap:12px;">
+        <div>
+          <label class="mono" style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">WALLET LABEL</label>
+          <input type="text" id="newWalletLabel" class="mono" placeholder="e.g. Ledger Cold Vault 02" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border-subtle); color:var(--text-main); padding:8px 12px; border-radius:4px; font-size:13px;">
+        </div>
+        <div>
+          <label class="mono" style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">SOLANA BASE58 PUBLIC KEY</label>
+          <input type="text" id="newWalletAddress" class="mono" placeholder="e.g. 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border-subtle); color:var(--text-main); padding:8px 12px; border-radius:4px; font-size:12px;">
+        </div>
+        <div>
+          <label class="mono" style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">CATEGORY</label>
+          <select id="newWalletCategory" class="mono" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--border-subtle); color:var(--text-main); padding:8px 12px; border-radius:4px; font-size:12px;">
+            <option value="Cold Storage">Cold Storage Vault (Hardware)</option>
+            <option value="Trading">Active Trading Desk</option>
+            <option value="Staking">Liquid Staking / Yield</option>
+            <option value="Whale Shadow">Whale Shadow Tracker</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center;">
+        <button class="btn btn-secondary mono" onclick="CommandCenter.closeAddWalletModal()">CANCEL</button>
+        <button class="btn btn-gold mono" onclick="CommandCenter.submitAddWallet()">ADD &amp; FETCH RPC</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+          console.log('[U1-OS PWA] Service Worker registered:', reg.scope);
+        }).catch((err) => {
+          console.warn('[U1-OS PWA] Service Worker failed:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>

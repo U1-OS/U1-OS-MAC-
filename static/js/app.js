@@ -2301,6 +2301,84 @@ const CommandCenter = (() => {
         </div>
       `;
     }
+
+    // 10. Multi-Wallet Solana Aggregator & Cold Storage Vault
+    const mwEl = document.getElementById('cryptoMultiWalletContainer');
+    if (mwEl) {
+      const trackedWallets = d.tracked_wallets || [];
+      const solToken = tokens.find(t => t.symbol === 'SOL');
+      const solPrice = solToken ? solToken.price_usd : 180.0;
+      const totalSol = trackedWallets.reduce((acc, w) => acc + (w.sol_balance || 0), 0);
+      const totalUsd = totalSol * solPrice;
+
+      const mwBadge = document.getElementById('multiWalletTotalBadge');
+      if (mwBadge) {
+        mwBadge.textContent = `${totalSol.toFixed(4)} SOL ($${formatNumber(totalUsd)})`;
+      }
+      const mwMeta = document.getElementById('multiWalletCountMeta');
+      if (mwMeta) {
+        mwMeta.textContent = `${trackedWallets.length} WALLETS TRACKED | RPC SYNCED`;
+      }
+
+      if (trackedWallets.length === 0) {
+        mwEl.innerHTML = `
+          <div style="padding:28px 16px; text-align:center; color:var(--text-muted); font-family:var(--font-mono); font-size:12px;">
+            // No Solana wallets tracked.<br>
+            Click <b>+ TRACK WALLET</b> above to monitor hardware cold storage, active trading desks, and staking vaults.
+          </div>
+        `;
+      } else {
+        mwEl.innerHTML = `
+          <div class="multi-wallet-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:14px;">
+            ${trackedWallets.map(w => {
+              const solBal = w.sol_balance !== undefined ? w.sol_balance : 0.0;
+              const valUsd = solBal * solPrice;
+              const splTokens = w.spl_tokens || [];
+              const categoryColor = w.category === 'Cold Storage' ? 'var(--gold)' : (w.category === 'Trading' ? 'var(--neon-cyan)' : 'var(--neon-purple)');
+              const shortAddr = w.address.slice(0, 4) + '...' + w.address.slice(-4);
+              return `
+                <div class="wallet-desk-card" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                      <div style="font-weight:700; font-size:13px; color:var(--text-main); font-family:var(--font-sans);">${escapeHtml(w.name || 'Solana Wallet')}</div>
+                      <span class="badge mono" style="font-size:9.5px; border:1px solid ${categoryColor}; color:${categoryColor}; background:rgba(0,0,0,0.3); padding:1px 6px; border-radius:3px; margin-top:3px; display:inline-block;">${escapeHtml(w.category || 'General')}</span>
+                    </div>
+                    <div style="text-align:right;">
+                      <div class="mono" style="font-size:14px; font-weight:700; color:var(--text-main);">${solBal.toFixed(4)} SOL</div>
+                      <div class="mono" style="font-size:11px; color:var(--text-muted);">$${formatNumber(valUsd)}</div>
+                    </div>
+                  </div>
+
+                  <div class="mono" style="display:flex; align-items:center; justify-content:space-between; font-size:11px; background:rgba(0,0,0,0.4); padding:6px 10px; border-radius:4px; border:1px solid rgba(255,255,255,0.04);">
+                    <span style="color:var(--neon-cyan);">${shortAddr}</span>
+                    <div style="display:flex; gap:6px;">
+                      <button class="mini-btn mono" onclick="CommandCenter.copyCaToClipboard('${escapeHtml(w.address)}')" title="Copy Base58 Address">COPY</button>
+                      <a href="https://solscan.io/account/${encodeURIComponent(w.address)}" target="_blank" rel="noopener" class="mini-btn mono" style="text-decoration:none;" title="View on Solscan">SCAN &nearr;</a>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div class="mono" style="font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">SPL TOKEN ACCOUNTS (${splTokens.length})</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px;">
+                      ${splTokens.length > 0 ? splTokens.map(tk => `
+                        <span class="badge mono" style="font-size:10px; background:rgba(255,255,255,0.05); padding:2px 7px; border-radius:3px; border:1px solid rgba(255,255,255,0.08);">
+                          <b>${escapeHtml(tk.symbol)}:</b> ${formatNumber(tk.amount)}
+                        </span>
+                      `).join('') : '<span class="mono" style="font-size:10px; color:var(--text-muted);">No SPL tokens detected</span>'}
+                    </div>
+                  </div>
+
+                  <div style="margin-top:auto; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center;">
+                    <span class="mono" style="font-size:9.5px; color:var(--text-muted);">LAST RPC SYNC: LIVE</span>
+                    <button class="mini-btn mono" style="color:var(--neon-crimson); border-color:rgba(255,60,60,0.2);" onclick="CommandCenter.removeTrackedWallet('${escapeHtml(w.address)}')">REMOVE</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+    }
   }
 
   function selectCryptoToken(symbol) {
@@ -7134,6 +7212,185 @@ STATUS: RESOLVED // NOMINAL
       .replace(/"/g, '&quot;');
   }
 
+  /* ========================================================
+     MULTI-WALLET SOLANA AGGREGATOR ACTIONS
+     ======================================================== */
+  function openAddWalletModal() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const m = document.getElementById('addWalletModal');
+    if (m) {
+      m.style.display = 'flex';
+      m.setAttribute('aria-hidden', 'false');
+      const inp = document.getElementById('newWalletLabel');
+      if (inp) inp.focus();
+    }
+  }
+
+  function closeAddWalletModal() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const m = document.getElementById('addWalletModal');
+    if (m) {
+      m.style.display = 'none';
+      m.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  async function submitAddWallet() {
+    const labelInput = document.getElementById('newWalletLabel');
+    const addrInput = document.getElementById('newWalletAddress');
+    const catInput = document.getElementById('newWalletCategory');
+    const label = labelInput ? labelInput.value.trim() : '';
+    const address = addrInput ? addrInput.value.trim() : '';
+    const category = catInput ? catInput.value : 'Trading';
+
+    if (!label || !address) {
+      alert('Please enter both a wallet label and a Solana Base58 public key.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/action/crypto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_tracked_wallet',
+          payload: { name: label, address: address, category: category }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeAddWalletModal();
+        if (labelInput) labelInput.value = '';
+        if (addrInput) addrInput.value = '';
+        fetchState();
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.tick();
+      } else {
+        alert(data.error || 'Failed to track wallet');
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  async function removeTrackedWallet(address) {
+    if (!confirm(`Are you sure you want to remove tracked wallet ${address.slice(0, 6)}...?`)) return;
+    try {
+      const res = await fetch('/api/action/crypto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'remove_tracked_wallet',
+          payload: { address: address }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchState();
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+      } else {
+        alert(data.error || 'Failed to remove wallet');
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  async function syncMultiWallets() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    try {
+      const res = await fetch('/api/action/crypto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_multi_wallet_portfolio', payload: {} })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchState();
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.tick();
+      }
+    } catch (e) {
+      console.warn('Sync error:', e);
+    }
+  }
+
+  /* ========================================================
+     AI WORKBENCH MULTI-TOOL COPILOT
+     ======================================================== */
+  function setAgentPrompt(text) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const inp = document.getElementById('aiAgentPromptInput');
+    if (inp) {
+      inp.value = text;
+      inp.focus();
+    }
+  }
+
+  async function executeAgentAction(promptOverride) {
+    const promptInput = document.getElementById('aiAgentPromptInput');
+    const prompt = (promptOverride || (promptInput ? promptInput.value : '')).trim();
+    if (!prompt) return;
+
+    const providerSelect = document.getElementById('aiAgentProviderSelect');
+    const provider = providerSelect ? providerSelect.value : 'auto';
+
+    const btn = document.getElementById('btnExecuteAgentAction');
+    const outputArea = document.getElementById('aiAgentOutputArea');
+    const lastMeta = document.getElementById('aiAgentLastAction');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'EXECUTING...';
+    }
+    if (outputArea) {
+      outputArea.style.display = 'block';
+      outputArea.textContent = `[AUTONOMOUS COPILOT] Parsing directive and dispatching tools...\n> ${prompt}\n`;
+    }
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.execute();
+
+    try {
+      const res = await fetch('/api/action/ai_workbench', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'execute_agent_action',
+          payload: { prompt: prompt, provider: provider }
+        })
+      });
+      const data = await res.json();
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'DISPATCH DIRECTIVE';
+      }
+      if (data.success) {
+        if (lastMeta) lastMeta.textContent = `LAST ACTION: ${data.action_type || 'EXECUTED'} (${new Date().toLocaleTimeString()})`;
+        if (outputArea) {
+          outputArea.innerHTML = `
+<span style="color:var(--neon-cyan); font-weight:700;">[DIRECTIVE SUCCESS // ${data.action_type || 'ORCHESTRATOR'}]</span>
+<span style="color:var(--gold);">${escapeHtml(data.summary || '')}</span>
+
+<span style="color:var(--text-muted);">// Result Details:</span>
+${escapeHtml(JSON.stringify(data.data, null, 2))}
+          `;
+        }
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.tick();
+        fetchState();
+      } else {
+        if (outputArea) {
+          outputArea.innerHTML = `<span style="color:var(--neon-crimson); font-weight:700;">[EXECUTION ERROR]:</span> ${escapeHtml(data.error || 'Execution failed')}`;
+        }
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.error();
+      }
+    } catch (err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'DISPATCH DIRECTIVE';
+      }
+      if (outputArea) {
+        outputArea.innerHTML = `<span style="color:var(--neon-crimson); font-weight:700;">[NETWORK ERROR]:</span> ${escapeHtml(err.message)}`;
+      }
+    }
+  }
+
   // Expose API
   return {
     init,
@@ -7268,7 +7525,14 @@ STATUS: RESOLVED // NOMINAL
     executeTelegramCmdFromUI,
     sendTelegramMessageFromUI,
     runHeadlessChromeInspection,
-    captureHeadlessChromeSnapshot
+    captureHeadlessChromeSnapshot,
+    openAddWalletModal,
+    closeAddWalletModal,
+    submitAddWallet,
+    removeTrackedWallet,
+    syncMultiWallets,
+    setAgentPrompt,
+    executeAgentAction
   };
 })();
 

@@ -622,7 +622,7 @@ class SettingsService(BaseService):
             return res
 
         # --- Automation Scheduler Actions ---
-        elif action == "trigger_scheduled_task":
+        elif action in ["trigger_scheduled_task", "trigger_scheduler_job"]:
             job_id = payload.get("job_id")
             if not job_id:
                 return {"success": False, "error": "job_id is required"}

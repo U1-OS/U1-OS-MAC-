@@ -343,6 +343,29 @@ class CryptoService(BaseService):
                 "message": "Social velocity radar active: scanning Twitter/X memecoin stream."
             }
         ]
+        self.tracked_wallets = [
+            {
+                "address": self.config.get("integrations", {}).get("solana", {}).get("wallet_address") or "So11111111111111111111111111111111111111112",
+                "name": "Primary Trading Bot",
+                "label": "Primary Trading Bot",
+                "category": "Trading",
+                "type": "TRADING"
+            },
+            {
+                "address": "4Nd1mBQtrMJVYVfKf2PJy9NZzqWB8mvG12uv69asffM9",
+                "name": "Cold Storage Vault",
+                "label": "Cold Storage Vault",
+                "category": "Cold Storage",
+                "type": "COLD_VAULT"
+            },
+            {
+                "address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+                "name": "Jupiter Staking & Yield",
+                "label": "Jupiter Staking & Yield",
+                "category": "Staking",
+                "type": "STAKING"
+            }
+        ]
         self.poll()
 
     def poll(self):
@@ -383,12 +406,14 @@ class CryptoService(BaseService):
                 "positions": self.positions,
                 "bot_state": self.bot_state,
                 "bot_log": self.bot_log[-20:],
+                "tracked_wallets": self.tracked_wallets,
                 "portfolio_summary": {
                     "total_value_usd": round(total_portfolio_value, 2),
                     "total_unrealized_pnl_usd": round(total_unrealized_pnl, 2),
                     "open_positions_count": len(self.positions),
                     "active_alerts_count": len([a for a in self.price_alerts if a["status"] == "ACTIVE"]),
-                    "active_copy_traders_count": len([c for c in self.copy_traders if c["active"]])
+                    "active_copy_traders_count": len([c for c in self.copy_traders if c["active"]]),
+                    "tracked_wallets_count": len(self.tracked_wallets)
                 }
             }
             self.last_updated = time.time()
@@ -449,6 +474,15 @@ class CryptoService(BaseService):
                 msg = f"Bot closed ${sym}: {close_reason} | Realized: {pnl_sol:+} SOL"
                 self.bot_log.append({"timestamp": now, "type": "EXIT", "message": msg})
                 self.add_event("bot_position_closed", msg)
+
+                feeder = getattr(self, "feeder", None)
+                if feeder and hasattr(feeder, "services") and "telegram" in feeder.services:
+                    try:
+                        feeder.services["telegram"].broadcast_alert(
+                            f"🤖 <b>AI BOT POSITION CLOSED</b>\n🪙 <b>Token:</b> ${sym}\n📊 <b>Reason:</b> {close_reason}\n💰 <b>Realized:</b> {pnl_sol:+} SOL (${round(pnl_sol * sol_p, 2):+})\n⏱ <b>Time:</b> {time.strftime('%H:%M:%S')}"
+                        )
+                    except Exception:
+                        pass
             else:
                 remaining_positions.append(bpos)
 
@@ -462,29 +496,96 @@ class CryptoService(BaseService):
         if curr_open < max_open and self.bot_state["paper_balance_sol"] >= alloc:
             strats = self.bot_state.get("active_strategies", [])
             open_symbols = {p["symbol"] for p in self.bot_state["bot_positions"]}
+            new_pos = None
+            strat_name = ""
 
-            if "alpha_sniper" in strats:
+            # Strategy 1: Alpha Sniper (Twitter/X Social Spikes)
+            if "alpha_sniper" in strats and not new_pos:
                 for tw in self.alpha_tweets:
                     sym = tw.get("token") or "BONK"
                     if sym in price_map and sym not in open_symbols and tw.get("velocity") in ["HIGH_SPIKE", "VIRAL"]:
                         price = price_map[sym]
-                        pos_id = f"bot-{int(now*1000)}"
+                        strat_name = "Alpha Sniper"
                         new_pos = {
-                            "id": pos_id,
+                            "id": f"bot-{int(now*1000)}",
                             "symbol": sym,
                             "entry_price": price,
                             "current_price": price,
                             "size_sol": alloc,
                             "tokens_qty": round((alloc * price_map.get("SOL", 180.0)) / price, 2),
                             "opened_at": now,
-                            "strategy": "Alpha Sniper"
+                            "strategy": strat_name
                         }
-                        self.bot_state["paper_balance_sol"] = round(self.bot_state["paper_balance_sol"] - alloc, 4)
-                        self.bot_state["bot_positions"].append(new_pos)
-                        msg = f"Alpha Sniper opened ${sym} at ${price} (Size: {alloc} SOL) triggered by {tw.get('handle')}"
-                        self.bot_log.append({"timestamp": now, "type": "ENTRY", "message": msg})
-                        self.add_event("bot_order_filled", msg)
                         break
+
+            # Strategy 2: Whale Shadow (Copy Whitelist Leaders)
+            if "whale_shadow" in strats and not new_pos:
+                for tr in self.copy_traders:
+                    if tr.get("active") and tr.get("last_token") and tr["last_token"] not in open_symbols:
+                        sym = tr["last_token"]
+                        if sym in price_map:
+                            price = price_map[sym]
+                            strat_name = f"Whale Shadow ({tr.get('handle')})"
+                            new_pos = {
+                                "id": f"bot-{int(now*1000)}",
+                                "symbol": sym,
+                                "entry_price": price,
+                                "current_price": price,
+                                "size_sol": alloc,
+                                "tokens_qty": round((alloc * price_map.get("SOL", 180.0)) / price, 2),
+                                "opened_at": now,
+                                "strategy": strat_name
+                            }
+                            break
+
+            # Strategy 3: Mean Reversion (Oversold Dip on Trending Token)
+            if "mean_reversion" in strats and not new_pos:
+                for t in self.tokens:
+                    sym = t["symbol"]
+                    if sym not in open_symbols and t.get("pnl_5m", 0) < -0.8 and t.get("pnl_24h", 0) > 8.0:
+                        price = t["price_usd"]
+                        strat_name = "Mean Reversion Dip"
+                        new_pos = {
+                            "id": f"bot-{int(now*1000)}",
+                            "symbol": sym,
+                            "entry_price": price,
+                            "current_price": price,
+                            "size_sol": alloc,
+                            "tokens_qty": round((alloc * price_map.get("SOL", 180.0)) / price, 2),
+                            "opened_at": now,
+                            "strategy": strat_name
+                        }
+                        break
+
+            if new_pos:
+                # Pre-trade Headless Chrome Verification if enabled
+                if self.bot_state.get("full_browser_execution"):
+                    tok_ca = next((t["ca"] for t in self.tokens if t["symbol"] == new_pos["symbol"]), "")
+                    if tok_ca:
+                        try:
+                            crawl_res = browser_crawler.inspect_token_dex(tok_ca, dex="photon")
+                            self.bot_log.append({
+                                "timestamp": now,
+                                "type": "BROWSER_PREFLIGHT",
+                                "message": f"Verified ${new_pos['symbol']} chart via Headless Chrome ({crawl_res.get('latency_ms', 0)}ms)"
+                            })
+                        except Exception:
+                            pass
+
+                self.bot_state["paper_balance_sol"] = round(self.bot_state["paper_balance_sol"] - alloc, 4)
+                self.bot_state["bot_positions"].append(new_pos)
+                msg = f"{new_pos['strategy']} opened ${new_pos['symbol']} at ${new_pos['entry_price']} (Size: {alloc} SOL)"
+                self.bot_log.append({"timestamp": now, "type": "ENTRY", "message": msg})
+                self.add_event("bot_order_filled", msg)
+
+                feeder = getattr(self, "feeder", None)
+                if feeder and hasattr(feeder, "services") and "telegram" in feeder.services:
+                    try:
+                        feeder.services["telegram"].broadcast_alert(
+                            f"🤖 <b>AI BOT POSITION OPENED</b>\n🪙 <b>Token:</b> ${new_pos['symbol']}\n🎯 <b>Strategy:</b> {new_pos['strategy']}\n💵 <b>Entry:</b> ${new_pos['entry_price']}\n💰 <b>Size:</b> {alloc} SOL\n⏱ <b>Time:</b> {time.strftime('%H:%M:%S')}"
+                        )
+                    except Exception:
+                        pass
 
     def _run_backtest(self, params=None):
         params = params or {}
@@ -715,11 +816,26 @@ class CryptoService(BaseService):
                 lines.append(f"{p['symbol']:<8} {p['amount']:<12,.1f} ${p['entry_price']:<9.4f} ${p['mark_price']:<9.4f} ${p['unrealized_pnl_usd']:+,.2f}")
             return {"success": True, "output": "\n".join(lines), "command": cmd_str}
 
-        elif cmd == "alerts":
-            lines = ["ACTIVE PRICE TARGET ALERTS:"]
-            for a in self.price_alerts:
-                lines.append(f"[{a['id']}] ${a['symbol']} {a['condition']} ${a['target_price']} ({a['status']})")
+        elif cmd in ["wallets", "treasury"]:
+            total_sol = sum(w.get("sol_balance", 0.0) for w in self.tracked_wallets)
+            sol_price = next((t["price_usd"] for t in self.tokens if t["symbol"] == "SOL"), 180.0)
+            lines = [f"=== MULTI-WALLET SOLANA TREASURY ({len(self.tracked_wallets)} Wallets) ==="]
+            for w in self.tracked_wallets:
+                b = w.get("sol_balance", 0.0)
+                w_name = w.get("name") or w.get("label", "Solana Wallet")
+                lines.append(f"• {w_name:<22} [{w.get('category', 'General')}]: {b:.4f} SOL (~${b*sol_price:,.2f}) | {w['address'][:6]}...{w['address'][-4:]}")
+            lines.append(f"TOTAL TREASURY: {total_sol:.4f} SOL (~${total_sol*sol_price:,.2f})")
             return {"success": True, "output": "\n".join(lines), "command": cmd_str}
+
+        elif cmd in ["ai", "copilot", "agent"]:
+            directive = " ".join(args)
+            feeder = getattr(self, "feeder", None)
+            ai_svc = feeder.services.get("ai_workbench") if feeder else None
+            if ai_svc:
+                res = ai_svc.dispatch_action("execute_agent_action", {"prompt": directive})
+                out = f"AI WORKBENCH COPILOT [{res.get('action_type', 'ORCHESTRATOR')}]:\n{res.get('summary', 'Directive executed')}"
+                return {"success": True, "output": out, "command": cmd_str}
+            return {"success": False, "output": "AI Workbench service not available", "command": cmd_str}
 
         return {"success": True, "output": f"Executed command: {cmd_str}", "command": cmd_str}
 
@@ -1009,5 +1125,38 @@ class CryptoService(BaseService):
             url = f"https://photon-sol.tinyastro.io/en/lp/{ca}"
             snap_res = browser_crawler.capture_screenshot(url, shot_file, wait_ms=2500)
             return {"success": snap_res.get("ok", False), "symbol": symbol, "ca": ca, "snapshot": snap_res}
+
+        elif action == "get_multi_wallet_portfolio":
+            sol_price = next((t["price_usd"] for t in self.tokens if t["symbol"] == "SOL"), 180.0)
+            rpc = self.config.get("integrations", {}).get("solana", {}).get("rpc_url")
+            summary = solana.get_multi_wallet_summary(self.tracked_wallets, sol_price_usd=sol_price, rpc_url=rpc)
+            return {"success": True, "portfolio": summary, **summary}
+
+        elif action == "add_tracked_wallet":
+            addr = payload.get("address", "").strip()
+            label = payload.get("name") or payload.get("label", "Custom Wallet").strip()
+            category = payload.get("category") or payload.get("type", "Trading").strip()
+            if not addr:
+                return {"success": False, "error": "Wallet address is required"}
+
+            exists = any(w["address"] == addr for w in self.tracked_wallets)
+            if not exists:
+                new_w = {
+                    "address": addr,
+                    "name": label,
+                    "label": label,
+                    "category": category,
+                    "type": category.upper()
+                }
+                self.tracked_wallets.append(new_w)
+                self.poll()
+                return {"success": True, "wallet": new_w, "tracked_wallets": self.tracked_wallets}
+            return {"success": False, "error": "Wallet address already tracked"}
+
+        elif action == "remove_tracked_wallet":
+            addr = payload.get("address", "").strip()
+            self.tracked_wallets = [w for w in self.tracked_wallets if w["address"] != addr]
+            self.poll()
+            return {"success": True, "address": addr, "remaining_count": len(self.tracked_wallets), "tracked_wallets": self.tracked_wallets}
 
         return super().dispatch_action(action, payload)

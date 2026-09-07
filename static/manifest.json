@@ -1,9 +1,11 @@
 {
   "name": "Command Center OS",
-  "short_name": "Command Center",
-  "description": "macOS Business Operating System with Living Interface",
+  "short_name": "U1-OS",
+  "description": "macOS Business & Crypto Operating System with Living Interface",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#08090B",
   "theme_color": "#08090B",
   "icons": [
@@ -13,5 +15,6 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["business", "finance", "utilities"]
 }

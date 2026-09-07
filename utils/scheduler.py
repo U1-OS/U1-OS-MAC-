@@ -154,6 +154,15 @@ class AutomationScheduler:
             handler=self._job_crypto_alert_watchdog
         )
 
+        # 7. Autonomous AI Crypto Trading Agent
+        self.register_job(
+            "autonomous_trading_agent",
+            "Autonomous AI Crypto Trading Agent",
+            "Scans DexScreener/Twitter signals, validates token metrics via Headless Chrome, and executes multi-strategy orders with instant Telegram alerts",
+            interval_sec=30,
+            handler=self._job_autonomous_trading_agent
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -242,6 +251,26 @@ class AutomationScheduler:
             summary = f"Crypto watchdog scanned {len(alerts)} alerts ({active_count} active, {triggered_count} triggered)"
             return {"active_alerts": active_count, "triggered_alerts": triggered_count, "summary": summary}
         return {"summary": "Crypto service unavailable for alert watchdog"}
+
+    def _job_autonomous_trading_agent(self, feeder):
+        if feeder and hasattr(feeder, "services") and "crypto" in feeder.services:
+            crypto_svc = feeder.services["crypto"]
+            crypto_svc.poll()
+            bot_state = crypto_svc.bot_state
+            status = bot_state.get("status", "STOPPED")
+            positions = bot_state.get("bot_positions", [])
+            pnl_sol = bot_state.get("realized_pnl_sol", 0.0)
+            pnl_usd = bot_state.get("realized_pnl_usd", 0.0)
+            summary = f"Autonomous Trading Agent [{status}]: {len(positions)} active positions | Realized PnL: {pnl_sol:+} SOL (${pnl_usd:+})"
+            return {
+                "status": status,
+                "open_positions": len(positions),
+                "realized_pnl_sol": pnl_sol,
+                "realized_pnl_usd": pnl_usd,
+                "paper_balance_sol": bot_state.get("paper_balance_sol", 10.0),
+                "summary": summary
+            }
+        return {"summary": "Crypto service unavailable for autonomous trading agent"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:
