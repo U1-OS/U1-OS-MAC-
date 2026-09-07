@@ -1378,6 +1378,23 @@
         </section>
 
         <section class="section-grid" id="section-updater" data-section-name="Updater">
+          <!-- Widget 0: Measured health -->
+          <article class="slab-panel span-12">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">UPDATER // 00</span>
+                <h2 class="slab-title">MEASURED HEALTH</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="status-dot" id="updaterHealthDot"></span>
+                <span class="mono" id="updaterHealthBadge" style="font-size:10px; color:var(--text-muted);">NOT MEASURED</span>
+              </div>
+            </header>
+            <div class="slab-body" id="updaterHealthContainer"></div>
+          </article>
+
           <!-- Widget 1: Version, runtime and workspace health -->
           <article class="slab-panel span-5">
             <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>

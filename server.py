@@ -22,6 +22,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from utils import macos
+from utils import metrics
 from utils import integrations_hub
 from utils import workspace_hub
 from utils.scheduler import AutomationScheduler
@@ -298,14 +299,39 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             pass
         return f"http://127.0.0.1:{port}"
 
+    def send_response_only(self, code, message=None):
+        # Both send_response() and send_error() funnel through here, so this
+        # is the one place that sees every status code the server returns.
+        self._u1_status = code
+        super().send_response_only(code, message)
+
     def handle_one_request(self):
         """A browser closing a tab, aborting a fetch or dropping an SSE
         stream is normal traffic, not a fault. Previously each one printed
-        a full traceback and buried real errors in the log."""
+        a full traceback and buried real errors in the log.
+
+        This is also where every request is timed for the measurement floor.
+        """
+        self._u1_status = None
+        self._u1_started = time.monotonic()
         try:
             super().handle_one_request()
         except (ConnectionResetError, BrokenPipeError, TimeoutError):
             self.close_connection = True
+        except Exception as exc:
+            metrics.record_exception(type(exc).__name__, "http.handle_one_request", str(exc))
+            raise
+        finally:
+            try:
+                if getattr(self, "path", None):
+                    metrics.record_request(
+                        self.path,
+                        getattr(self, "command", "?") or "?",
+                        self._u1_status if self._u1_status is not None else 0,
+                        (time.monotonic() - self._u1_started) * 1000.0,
+                    )
+            except Exception:
+                pass
 
     def send_json(self, data, status_code=200):
         body = json.dumps(data, indent=2).encode("utf-8")
@@ -413,6 +439,8 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.end_headers()
 
             q = feeder.sse_broker.subscribe()
+            sse_opened_at = time.monotonic()
+            metrics.sse_opened()
             try:
                 # Send initial handshake frame
                 handshake = f"data: {json.dumps({'type': 'connected', 'timestamp': time.time(), 'message': 'Command Center SSE Stream Active'})}\n\n"
@@ -433,6 +461,7 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
                 pass
             finally:
                 feeder.sse_broker.unsubscribe(q)
+                metrics.sse_closed(time.monotonic() - sse_opened_at)
             return
 
         if path == "/api/config":
@@ -537,6 +566,24 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
                 self.send_json({"success": False, "error": "Could not save local configuration"}, 500)
             return
 
+        if path == "/api/telemetry/client":
+            # The browser reports its own exceptions here so frontend faults
+            # are measured too. Same-origin only, and nothing is echoed back.
+            if not self.integration_request_allowed():
+                self.send_json({"success": False, "error": "Local same-origin request required"}, 403)
+                return
+            try:
+                metrics.record_exception(
+                    str(payload.get("kind", "Error"))[:80],
+                    str(payload.get("where", "frontend"))[:120],
+                    str(payload.get("message", ""))[:300],
+                    origin="frontend",
+                )
+                self.send_json({"success": True, "recorded": True})
+            except Exception as exc:
+                self.send_json({"success": False, "error": type(exc).__name__, "message": str(exc)}, 500)
+            return
+
         # Check if Emergency Lockdown is active
         settings_svc = feeder.services.get("settings")
         lockdown_active = getattr(settings_svc, "lockdown_active", False)
@@ -585,6 +632,8 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             try:
                 result = svc.dispatch_action(action, action_payload)
             except Exception as exc:
+                metrics.record_exception(type(exc).__name__,
+                                         f"{service_name}.{action}", str(exc))
                 traceback.print_exc()
                 self.send_json({
                     "success": False,
@@ -623,10 +672,18 @@ def run_server():
     port = feeder.config.get("system", {}).get("port", 8788)
 
     server = ThreadedHTTPServer((host, port), CommandCenterHandler)
+
+    # Measurement floor: restore what was measured before, note how long
+    # this process took to become ready, and begin resource sampling.
+    metrics.load()
+    startup_ms = metrics.mark_ready()
+    metrics.start_sampler(60)
+
     print(f"============================================================")
     print(f" COMMAND CENTER // macOS Business Operating System")
     print(f" Server active on: http://{host}:{port}")
     print(f" Binding: 127.0.0.1 only (External network access blocked)")
+    print(f" Ready in: {startup_ms} ms")
     print(f"============================================================")
 
     try:

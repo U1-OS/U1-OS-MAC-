@@ -75,6 +75,62 @@
 
   /* ---------------- Renderers ---------------- */
 
+  function metric(label, value, unit, note) {
+    var shown = (value === null || value === undefined) ? 'NOT MEASURED'
+      : (typeof value === 'number' ? value : String(value)) + (unit || '');
+    var muted = (value === null || value === undefined);
+    return '<div style="flex:1 1 130px;min-width:120px;padding:10px 12px;' +
+      'border:1px solid rgba(255,255,255,0.07);border-radius:3px;background:rgba(255,255,255,0.015);">' +
+      '<div class="mono" style="font-size:9px;letter-spacing:0.08em;text-transform:uppercase;' +
+      'color:var(--text-muted,#767e8e);">' + esc(label) + '</div>' +
+      '<div class="mono" style="margin-top:5px;font-size:' + (muted ? '11px' : '18px') + ';' +
+      'color:' + (muted ? 'var(--text-muted,#767e8e)' : 'var(--text-primary,#e6e9ef)') + ';">' +
+      esc(shown) + '</div>' +
+      (note ? '<div class="mono" style="margin-top:3px;font-size:9px;color:var(--text-muted,#767e8e);">' +
+        esc(note) + '</div>' : '') +
+      '</div>';
+  }
+
+  function renderHealth(data) {
+    var box = el('updaterHealthContainer');
+    if (!box) return;
+    var h = (data && data.health) || {};
+    var badge = el('updaterHealthBadge');
+    var dot = el('updaterHealthDot');
+    var score = (h.score === null || h.score === undefined) ? null : h.score;
+
+    if (badge) badge.textContent = score === null ? 'NOT MEASURED' : score + ' / 100';
+    if (dot) dot.className = 'status-dot' + (score !== null && score >= 70 ? ' active' : '');
+
+    var components = h.components || {};
+    var tiles = Object.keys(components).map(function (k) {
+      return metric(k, components[k], '', null);
+    }).join('');
+    var missing = (h.unmeasured || []).map(function (k) {
+      return metric(k, null, '', 'no data yet');
+    }).join('');
+
+    var basis = h.basis || {};
+    box.innerHTML =
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">' +
+        metric('Health score', score, ' / 100', score === null ? 'nothing measured yet' : null) +
+        tiles + missing +
+      '</div>' +
+      '<div class="mono" style="font-size:10px;line-height:1.6;color:var(--text-muted,#767e8e);">' +
+        'From ' + esc(basis.requests_observed === undefined ? '—' : basis.requests_observed) +
+        ' observed request(s) and ' + esc(basis.exceptions_observed === undefined ? '—' : basis.exceptions_observed) +
+        ' recorded exception(s) over ' +
+        esc(basis.uptime_seconds === undefined ? '—' : Math.round(basis.uptime_seconds)) + 's of uptime. ' +
+        'Every figure here is measured on this machine; anything without data reads NOT MEASURED.' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">' +
+        button('capture_baseline', 'CAPTURE BASELINE') +
+        button('reset_metrics', 'CLEAR MEASUREMENTS', {
+          confirm: 'Clear every measurement collected so far? Collection starts again from now.'
+        }) +
+      '</div>';
+  }
+
   function renderRuntime(data) {
     var box = el('updaterRuntimeContainer');
     if (!box) return;
@@ -244,6 +300,7 @@
 
   function renderAll(data) {
     state = data;
+    renderHealth(data);
     renderRuntime(data);
     renderChannel(data);
     renderAgent(data);
@@ -274,7 +331,9 @@
     restart_server: { call: 'restart_server', payload: { confirmed: true } },
     agent_scan: { call: 'agent_configure', payload: { mode: 'scan' } },
     agent_pause: { call: 'agent_configure', payload: { mode: 'pause' } },
-    agent_resume: { call: 'agent_configure', payload: { mode: 'resume' } }
+    agent_resume: { call: 'agent_configure', payload: { mode: 'resume' } },
+    capture_baseline: { call: 'capture_baseline', payload: { label: 'manual' } },
+    reset_metrics: { call: 'reset_metrics', payload: { confirmed: true } }
   };
 
   function run(name, node) {
@@ -320,6 +379,46 @@
     timer = setInterval(tick, POLL_MS);
     if (isActive() || (window.location.hash || '').indexOf(SECTION) > -1) refresh(true);
   }
+
+
+  /* ---------------- Frontend fault reporting ----------------
+   * Browser exceptions are reported to the measurement floor so the health
+   * score reflects what actually breaks in the interface, not just on the
+   * server. Only the error type, a location and a truncated message are
+   * sent — never page content, form values or credentials.
+   */
+  (function reportFrontendFaults() {
+    var sent = 0;
+    var MAX_PER_SESSION = 25;
+
+    function report(kind, where, message) {
+      if (sent >= MAX_PER_SESSION) return;
+      sent++;
+      try {
+        fetch('/api/telemetry/client', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kind: String(kind || 'Error').slice(0, 80),
+            where: String(where || 'frontend').slice(0, 120),
+            message: String(message || '').slice(0, 300)
+          })
+        }).catch(function () { /* never let reporting break the page */ });
+      } catch (e) { /* ignore */ }
+    }
+
+    window.addEventListener('error', function (e) {
+      var where = (e.filename ? String(e.filename).split('/').pop() : 'window');
+      if (e.lineno) where += ':' + e.lineno;
+      report(e.error && e.error.name ? e.error.name : 'Error', where, e.message);
+    });
+
+    window.addEventListener('unhandledrejection', function (e) {
+      var reason = e.reason;
+      report(reason && reason.name ? reason.name : 'UnhandledRejection',
+             'promise', reason && reason.message ? reason.message : String(reason));
+    });
+  })();
 
   window.U1Updater = { refresh: refresh, run: run, state: function () { return state; } };
 

@@ -505,6 +505,49 @@ def main():
     menubar_src = open(os.path.join(BASE_DIR, "utils/menubar.py"), encoding="utf-8").read()
     log_test("Menu Bar Links Follow The Configured Port", "def configured_port" in menubar_src and "href={BASE}" in menubar_src, "Every menu-bar deep link built from the live port")
 
+    # 29. Measurement floor (Improvement Engine stage 1)
+    print(f"\n{INFO} 29. Subsystem: Measurement Floor & Health Scoring:")
+    s, health = action("updater", "get_health", {})
+    log_test("Health Endpoint Reports Only Measured Components", health.get("success") is True and isinstance(health.get("components"), dict), f"Score {health.get('score')} from {len(health.get('components', {}))} measured component(s)")
+    log_test("Unmeasured Components Are Named, Not Defaulted", isinstance(health.get("unmeasured"), list), f"Unmeasured: {', '.join(health.get('unmeasured') or []) or 'none'}")
+    log_test("Health Score Is The Mean Of Measured Components", (health.get("score") is None and not health.get("components")) or abs(health["score"] - sum(health["components"].values()) / max(1, len(health["components"]))) < 0.15, "No component is weighted by an invented factor")
+
+    s, live = action("updater", "get_metrics", {})
+    log_test("Startup Time Measured", live.get("startup_ms") is not None and live["startup_ms"] > 0, f"Process ready in {live.get('startup_ms')} ms")
+    log_test("Per-Endpoint Latency Recorded", live.get("requests", {}).get("total", 0) > 0 and len(live["requests"]["endpoints"]) > 0, f"{live['requests']['total']} requests across {len(live['requests']['endpoints'])} endpoint(s)")
+    slowest = live["requests"]["endpoints"][0] if live["requests"]["endpoints"] else {}
+    log_test("Latency Percentiles Computed From Samples", slowest.get("p95_ms") is not None and slowest.get("p50_ms") is not None, f"Slowest: {slowest.get('endpoint')} p50 {slowest.get('p50_ms')}ms / p95 {slowest.get('p95_ms')}ms")
+    log_test("Request Paths Are Recorded Without Query Strings", all("?" not in row.get("endpoint", "") for row in live["requests"]["endpoints"]), "Query strings dropped before a path is stored")
+    log_test("SSE Stream Lifecycle Counted", isinstance(live.get("sse", {}).get("opened"), int), f"{live['sse']['opened']} opened // {live['sse']['closed']} closed // peak {live['sse']['peak_concurrent']}")
+    resources = live.get("resources", {})
+    log_test("Resource Sampling States Its Availability", resources.get("available") is True or resources.get("note"), (f"CPU {resources.get('cpu_percent')}% // RSS {resources.get('rss_mb')} MB" if resources.get("available") else resources.get("note")))
+
+    try:
+        req = urllib.request.Request(f"{BASE_URL}/api/telemetry/client",
+                                     data=json.dumps({"kind": "TestError", "where": "suite", "message": "verification probe"}).encode("utf-8"),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            client_ack = json.loads(r.read().decode("utf-8"))
+    except Exception as exc:
+        client_ack = {"success": False, "error": str(exc)}
+    log_test("Frontend Fault Intake Accepts Browser Exceptions", client_ack.get("recorded") is True, "Browser exceptions recorded against the measurement floor")
+    s, after = action("updater", "get_metrics", {})
+    log_test("Frontend Faults Kept Separate From Backend Faults", any(e.get("kind") == "TestError" for e in after.get("exceptions", {}).get("recent_frontend", [])), f"{len(after['exceptions']['recent_frontend'])} frontend fault(s) recorded separately")
+
+    s, base = action("updater", "capture_baseline", {"label": "suite"})
+    log_test("Baseline Captured From Live Measurements", base.get("success") is True and base.get("baseline", {}).get("label") == "suite", f"Baseline holds startup {base.get('baseline', {}).get('startup_ms')}ms and health {base.get('baseline', {}).get('health_score')}")
+    s, cmp_res = action("updater", "compare_baseline", {"label": "suite"})
+    log_test("Baseline Comparison Flags Unmeasured Fields", cmp_res.get("available") is True and all(("change_pct" in d and ("measured" in d)) for d in cmp_res.get("deltas", {}).values()), "Every delta declares whether it was actually measured")
+    unmeasured_deltas = [k for k, d in cmp_res.get("deltas", {}).items() if not d.get("measured")]
+    log_test("No Percentage Is Reported For Unmeasured Fields", all(cmp_res["deltas"][k]["change_pct"] is None for k in unmeasured_deltas), f"{len(unmeasured_deltas)} field(s) correctly withheld")
+    s, reset_gate = action("updater", "reset_metrics", {})
+    log_test("Clearing Measurements Requires Confirmation", reset_gate.get("error") == "confirmation_required", "Measurement history cannot be wiped without confirmation")
+
+    shell_has_health = 'id="updaterHealthContainer"' in shell_html
+    log_test("Measured Health Panel Mounted In The Workspace", shell_has_health, "#updaterHealthContainer present in the Updater section")
+    log_test("Client Reports Its Own Exceptions", "reportFrontendFaults" in updater_js and "unhandledrejection" in updater_js, "window.onerror and unhandled promise rejections reported to the measurement floor")
+    log_test("Client Renders NOT MEASURED Rather Than A Number", "NOT MEASURED" in updater_js, "Missing measurements are labelled, never defaulted to zero")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

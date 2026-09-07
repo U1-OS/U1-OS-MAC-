@@ -21,6 +21,7 @@ import threading
 import time
 
 from services.base import BaseService
+from utils import metrics
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSION_FILE = os.path.join(ROOT, "VERSION")
@@ -171,6 +172,7 @@ class UpdaterService(BaseService):
     def poll(self):
         with self.lock:
             self.data = {
+                "health": metrics.health(),
                 "runtime": self.runtime_snapshot(),
                 "git": self.git_snapshot(),
                 "changelog": self.changelog(8),
@@ -317,6 +319,32 @@ class UpdaterService(BaseService):
             self.add_event("restart", "Workspace restart requested")
             return {"success": True, "restarting": True,
                     "message": "Restarting now — this page will reconnect in a few seconds."}
+
+        if action == "get_health":
+            # Derived only from what has actually been measured; the score is
+            # None (NOT MEASURED) until there is something to score.
+            return metrics.health()
+
+        if action == "get_metrics":
+            return metrics.snapshot()
+
+        if action == "capture_baseline":
+            entry = metrics.capture_baseline(payload.get("label") or "manual")
+            self.add_event("baseline", f"Baseline captured: {entry['label']}")
+            return {"success": True, "baseline": entry,
+                    "message": f"Baseline '{entry['label']}' captured from live measurements."}
+
+        if action == "compare_baseline":
+            return metrics.compare_to_baseline(payload.get("label"))
+
+        if action == "reset_metrics":
+            if not payload.get("confirmed"):
+                return {"success": False, "error": "confirmation_required",
+                        "message": "This clears every measurement collected so far. Confirm to continue."}
+            metrics.reset()
+            metrics.save()
+            self.add_event("metrics", "Measurements cleared")
+            return {"success": True, "message": "All measurements cleared. Collection starts again from now."}
 
         if action == "get_changelog":
             return {"success": True, "entries": self.changelog(int(payload.get("limit", 20)))}
