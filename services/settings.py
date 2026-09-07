@@ -10,6 +10,11 @@ from utils import briefing
 from utils import ledger
 from utils import process_watchdog
 from utils import decentralized_storage
+from utils import zk_vault
+from utils import redteam_scanner
+from utils import wireguard_mesh
+from utils import tor_gateway
+from utils import canary_tokens
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -400,6 +405,18 @@ class SettingsService(BaseService):
                     "enforced": self.biometric_enforced,
                     "active_challenges_count": len(self.biometric_challenges),
                     "active_tokens_count": len(self.biometric_tokens)
+                },
+                "zk_vault": zk_vault.get_zk_vault_summary(),
+                "redteam": {
+                    "latest_scan": (redteam_scanner.get_audit_history() or [None])[0],
+                    "history_count": len(redteam_scanner.get_audit_history())
+                },
+                "wireguard_mesh": wireguard_mesh.get_mesh_status(),
+                "tor_gateway": tor_gateway.get_onion_status(),
+                "canary_sentinel": {
+                    "active_tokens": len(canary_tokens.list_canary_tokens()),
+                    "unresolved_alerts": len(canary_tokens.get_intrusion_alerts()),
+                    "latest_alert": (canary_tokens.get_intrusion_alerts() or [None])[0]
                 },
                 "server_environment": {
                     "binding": "127.0.0.1:8787 (Strict Local Only)",
@@ -1062,6 +1079,124 @@ class SettingsService(BaseService):
         elif action == "get_decentralized_backups":
             records = decentralized_storage.get_decentralized_backups()
             return {"success": True, "records": records, "history": records, "total_records": len(records)}
+
+        # Wave 3: Feature 12 - Zero-Knowledge Proof Solvency & Credential Vault
+        elif action == "generate_zk_solvency_proof":
+            balance = float(payload.get("balance", 10000.0))
+            threshold = float(payload.get("threshold", 5000.0))
+            asset = str(payload.get("asset", "USDC"))
+            proof = zk_vault.generate_solvency_proof(balance, threshold, asset)
+            ledger.log_audit("zk_vault", "solvency_proof_generated", f"Generated ZK solvency proof for {threshold} {asset}", actor="zk_engine", status="OK")
+            self.poll()
+            return {"success": True, "proof": proof}
+
+        elif action == "verify_zk_solvency_proof":
+            proof = payload.get("proof") or {}
+            res = zk_vault.verify_solvency_proof(proof)
+            return {"success": res.get("valid", False), "verification": res}
+
+        elif action == "generate_zk_credential_proof":
+            identity_id = str(payload.get("identity_id", "admin_root"))
+            secret_token = str(payload.get("secret_token", "sovereign_enclave_secret"))
+            scope = str(payload.get("scope", "root_terminal"))
+            proof = zk_vault.generate_credential_proof(identity_id, secret_token, scope)
+            ledger.log_audit("zk_vault", "credential_proof_generated", f"Generated ZK credential proof for {identity_id}", actor="zk_engine", status="OK")
+            self.poll()
+            return {"success": True, "proof": proof}
+
+        elif action == "verify_zk_credential_proof":
+            proof = payload.get("proof") or {}
+            expected_token = payload.get("expected_token")
+            res = zk_vault.verify_credential_proof(proof, expected_token)
+            return {"success": res.get("valid", False), "verification": res}
+
+        elif action == "get_zk_vault_summary":
+            return {"success": True, "summary": zk_vault.get_zk_vault_summary()}
+
+        # Wave 3: Feature 13 - Automated Red-Team Defensive Vulnerability Scanner
+        elif action == "run_redteam_scan":
+            host = str(payload.get("target_host", "127.0.0.1"))
+            report = redteam_scanner.run_security_audit(host)
+            ledger.log_audit("redteam", "security_audit_run", f"Executed Red-Team scan (Score: {report.get('hardening_score')}%)", actor="redteam_sentinel", status="OK")
+            self.poll()
+            return {"success": True, "report": report}
+
+        elif action == "get_redteam_history":
+            history = redteam_scanner.get_audit_history()
+            return {"success": True, "history": history, "count": len(history)}
+
+        # Wave 3: Feature 14 - Decentralized VPN & WireGuard Sovereign Mesh
+        elif action == "get_wireguard_mesh_status":
+            return wireguard_mesh.get_mesh_status()
+
+        elif action == "generate_wireguard_peer":
+            peer_name = str(payload.get("peer_name", "Satellite-Node"))
+            peer_ip = payload.get("peer_ip")
+            res = wireguard_mesh.generate_peer_config(peer_name, peer_ip)
+            ledger.log_audit("wireguard", "peer_generated", f"Generated WireGuard mesh peer {peer_name}", actor="mesh_coordinator", status="OK")
+            self.poll()
+            return res
+
+        elif action == "ping_wireguard_peer":
+            peer_id = str(payload.get("peer_id", ""))
+            return wireguard_mesh.ping_mesh_peer(peer_id)
+
+        elif action == "remove_wireguard_peer":
+            peer_id = str(payload.get("peer_id", ""))
+            res = wireguard_mesh.remove_mesh_peer(peer_id)
+            self.poll()
+            return res
+
+        # Wave 3: Feature 15 - Tor Onion Hidden Service Gateway
+        elif action == "get_tor_onion_status":
+            return tor_gateway.get_onion_status()
+
+        elif action == "rotate_tor_onion_address":
+            res = tor_gateway.rotate_onion_address()
+            ledger.log_audit("tor_gateway", "onion_rotated", f"Rotated Tor V3 address to {res.get('new_onion_address')[:16]}...", actor="onion_manager", status="OK")
+            self.poll()
+            return res
+
+        elif action == "test_tor_connectivity":
+            return tor_gateway.test_onion_connectivity()
+
+        # Wave 3: Feature 16 - Canary Token & Honeypot Intrusion Trap Sentinel
+        elif action == "generate_canary_token":
+            token_type = str(payload.get("token_type", "API_KEY"))
+            label = str(payload.get("label", "Production Decoy Trap"))
+            memo = str(payload.get("memo", ""))
+            res = canary_tokens.generate_canary_token(token_type, label, memo)
+            ledger.log_audit("canary", "token_armed", f"Armed canary honeypot trap: {label}", actor="canary_sentinel", status="OK")
+            self.poll()
+            return res
+
+        elif action == "trigger_canary":
+            token_id = str(payload.get("token_id", ""))
+            source_ip = str(payload.get("source_ip", "127.0.0.1"))
+            user_agent = str(payload.get("user_agent", "External-Client"))
+            context = payload.get("context")
+            res = canary_tokens.trigger_canary(token_id, source_ip, user_agent, context)
+            ledger.log_audit("canary", "canary_tripped", f"TRIPWIRE ACTIVATED by {source_ip}", actor="intruder", status="CRITICAL")
+            self.add_event("canary_tripped", f"Perimeter alert: Canary honeypot tripped by {source_ip}!")
+            self.poll()
+            return res
+
+        elif action == "list_canary_tokens":
+            tokens = canary_tokens.list_canary_tokens()
+            return {"success": True, "tokens": tokens, "count": len(tokens)}
+
+        elif action == "get_canary_alerts":
+            alerts = canary_tokens.get_intrusion_alerts()
+            return {"success": True, "alerts": alerts, "count": len(alerts)}
+
+        elif action == "clear_canary_alert":
+            alert_id = str(payload.get("alert_id", ""))
+            res = canary_tokens.clear_canary_alert(alert_id)
+            self.poll()
+            return res
+
+        elif action == "check_canary_honeyfiles":
+            return canary_tokens.check_honeyfile_integrity()
 
         return super().dispatch_action(action, payload)
 

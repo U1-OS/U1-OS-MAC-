@@ -2118,6 +2118,181 @@
               <span class="footer-meta mono" id="ipfsLastPinMeta">GATEWAY: IPFS.IO &bull; ARWEAVE.NET</span>
             </footer>
           </article>
+
+          <!-- Widget 12: Zero-Knowledge Proof Solvency & Credential Vault [Span 6] -->
+          <article class="slab-panel span-6" id="settingsZkVaultPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-purple, #bf5af2);">CRYPTOGRAPHY // 12 &bull; ZERO-KNOWLEDGE</span>
+                <h2 class="slab-title">ZK-PROOF SOLVENCY &amp; CREDENTIAL VAULT</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="zkProofCountBadge" style="background:rgba(191,90,242,0.1); color:#bf5af2; border:1px solid rgba(191,90,242,0.3); padding:2px 8px; font-size:10px;">0 PROOFS</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generateZkSolvencyProof()">GENERATE PROOF</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsZkVaultContainer" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ALGORITHM</div>
+                  <div class="mono" style="color:var(--gold); font-weight:600;">Fiat-Shamir Sigma (SHA-256)</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">PROVEN THRESHOLD</div>
+                  <div class="mono" id="zkProvenThreshold" style="color:var(--neon-green); font-weight:600;">&ge; $5,000.00 USDC</div>
+                </div>
+              </div>
+              <div id="zkProofList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Zero-knowledge cryptographic commitments armed and verified.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROTOCOL: PEDERSEN COMMITMENTS &bull; FIAT-SHAMIR &bull; ZERO BALANCE DISCLOSURE</span>
+            </footer>
+          </article>
+
+          <!-- Widget 13: Automated Red-Team Defensive Vulnerability Scanner [Span 6] -->
+          <article class="slab-panel span-6" id="settingsRedteamPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-red, #ff453a);">CYBER DEFENSE // 13 &bull; RED-TEAM AUDIT</span>
+                <h2 class="slab-title">DEFENSIVE VULNERABILITY &amp; PORT SCANNER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="redteamScoreBadge" style="background:rgba(50,215,75,0.1); color:var(--neon-green); border:1px solid rgba(50,215,75,0.3); padding:2px 8px; font-size:10px;">HARDENING: 92%</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.runRedteamScan()">RUN SCAN</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsRedteamContainer" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">POSTURE RATING</div>
+                  <div class="mono" id="redteamRating" style="color:var(--neon-green); font-weight:600;">SOVEREIGN_A+</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">OPEN LOCAL PORTS</div>
+                  <div class="mono" id="redteamOpenPorts" style="color:var(--gold); font-weight:600;">1 LISTENER (8787)</div>
+                </div>
+              </div>
+              <div id="redteamFindingsList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Loopback socket scanner ready.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">AUDIT: NON-BLOCKING TCP SOCKETS &bull; HTTP SECURITY HEADERS &bull; POSIX CHMOD</span>
+            </footer>
+          </article>
+
+          <!-- Widget 14: Decentralized VPN & WireGuard Sovereign Mesh [Span 6] -->
+          <article class="slab-panel span-6" id="settingsWireguardPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">P2P NETWORK // 14 &bull; MESH TUNNEL</span>
+                <h2 class="slab-title">WIREGUARD SOVEREIGN MESH NODE</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="wgStatusBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:2px 8px; font-size:10px;">IFACE: WG0</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generateWireguardPeer()">ADD PEER</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsWireguardContainer" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">VIP ADDRESS</div>
+                  <div class="mono" id="wgVipAddress" style="color:var(--neon-cyan); font-weight:600;">10.42.0.1/24</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">AVG MESH RTT</div>
+                  <div class="mono" id="wgAvgRtt" style="color:var(--gold); font-weight:600;">53.9 ms</div>
+                </div>
+              </div>
+              <div id="wgPeersList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Encrypted P2P WireGuard mesh active.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">CRYPTO: CURVE25519 &bull; CHACHA20-POLY1305 &bull; STRICT KEEPALIVE 25s</span>
+            </footer>
+          </article>
+
+          <!-- Widget 15: Tor Onion Hidden Service Gateway [Span 6] -->
+          <article class="slab-panel span-6" id="settingsTorGatewayPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-purple, #bf5af2);">DARKNET // 15 &bull; ONION ROUTER</span>
+                <h2 class="slab-title">TOR V3 HIDDEN SERVICE GATEWAY</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="torStatusBadge" style="background:rgba(191,90,242,0.1); color:#bf5af2; border:1px solid rgba(191,90,242,0.3); padding:2px 8px; font-size:10px;">V3 ONION</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.rotateTorOnion()">ROTATE ADDRESS</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsTorGatewayContainer" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ONION HOST</div>
+                  <div class="mono" id="torOnionHost" style="color:var(--neon-green); font-size:9px; word-break:break-all;">u1commandcenter...onion</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">CIRCUIT HOPS</div>
+                  <div class="mono" id="torCircuitHops" style="color:var(--gold); font-weight:600;">3 RELAYS (IS &bull; CH &bull; NO)</div>
+                </div>
+              </div>
+              <div id="torCircuitsList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Tor onion hidden service routed.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROTOCOL: ED25519-V3 &bull; ZERO-LEAK DNS RESOLUTION &bull; ENCLAVE DARKNET MIRROR</span>
+            </footer>
+          </article>
+
+          <!-- Widget 16: Canary Token & Honeypot Intrusion Trap Sentinel [Span 12] -->
+          <article class="slab-panel span-12" id="settingsCanaryPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-red, #ff453a);">TRIPWIRE // 16 &bull; HONEYPOT SENTINEL</span>
+                <h2 class="slab-title">CANARY TOKEN &amp; HONEYPOT INTRUSION TRAP SENTINEL</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="canaryAlertCountBadge" style="background:rgba(50,215,75,0.1); color:var(--neon-green); border:1px solid rgba(50,215,75,0.3); padding:2px 8px; font-size:10px;">PERIMETER SECURE</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.deployCanaryToken()">DEPLOY TRAP</button>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.checkCanaryHoneyfiles()">AUDIT HONEYFILES</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsCanaryContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:10px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ACTIVE TRAPS</div>
+                  <div class="mono" id="canaryActiveTokensCount" style="color:var(--neon-cyan); font-weight:600;">3 ARMED</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">INTRUSION ALERTS</div>
+                  <div class="mono" id="canaryIntrusionAlertsCount" style="color:var(--neon-green); font-weight:600;">0 BREACHES</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">DECOY HONEYFILES</div>
+                  <div class="mono" id="canaryDecoyFilesStatus" style="color:var(--gold); font-weight:600;">UNTOUCHED (SHA-256)</div>
+                </div>
+              </div>
+              <div id="canaryTokensList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Canary tokens active across repository, databases, and decoy credentials.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">TACTIC: DECEPTION TECHNOLOGY &bull; AUTOMATED LEAK ISOLATION &bull; IMMEDIATE REVOCATION</span>
+            </footer>
+          </article>
         </section>
 
       </main>

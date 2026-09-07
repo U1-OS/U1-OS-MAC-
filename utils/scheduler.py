@@ -235,6 +235,15 @@ class AutomationScheduler:
             handler=self._job_arxiv_intelligence_radar
         )
 
+        # 16. Red-Team Defensive Vulnerability & Canary Tripwire Sentinel
+        self.register_job(
+            "redteam_security_sentinel",
+            "Red-Team Security & Honeypot Sentinel",
+            "Audits local endpoint exposure, verifies HTTP security headers, and tests canary honeyfiles for intrusion attempts",
+            interval_sec=900,
+            handler=self._job_redteam_security_sentinel
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -440,6 +449,17 @@ class AutomationScheduler:
             summary = f"ArXiv Research Radar: {papers} high-impact pre-prints distilled into executive intelligence"
             return {"papers_count": papers, "summary": summary}
         return {"summary": "AI Workbench service unavailable for ArXiv radar"}
+
+    def _job_redteam_security_sentinel(self, feeder):
+        if feeder and hasattr(feeder, "services") and "settings" in feeder.services:
+            settings_svc = feeder.services["settings"]
+            res = settings_svc.dispatch_action("run_redteam_scan", {"target_host": "127.0.0.1"})
+            report = res.get("report", {})
+            score = report.get("hardening_score", 100)
+            settings_svc.dispatch_action("check_canary_honeyfiles", {})
+            summary = f"Red-Team Defense Sentinel: Hardening Score {score}% ({report.get('rating')}) | Honeypots armed & verified"
+            return {"hardening_score": score, "summary": summary}
+        return {"summary": "Settings service unavailable for red-team sentinel"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:

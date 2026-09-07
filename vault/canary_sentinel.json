@@ -1,0 +1,63 @@
+{
+  "tokens": [
+    {
+      "token_id": "canary-api-4eaad8d6",
+      "type": "API_KEY",
+      "label": "Decoy Stripe Production Key",
+      "token_value": "u1_live_canary_2961f655f73ce2744e35c56c87c334d9",
+      "created_at": 1788749888,
+      "trigger_count": 1,
+      "memo": "",
+      "active": true
+    },
+    {
+      "token_id": "canary-api-50755879",
+      "type": "API_KEY",
+      "label": "Unit Test Key",
+      "token_value": "u1_live_canary_5925fe4d5c408201b0cfbb86bdcf0304",
+      "created_at": 1788749546,
+      "trigger_count": 1,
+      "memo": "",
+      "active": true
+    },
+    {
+      "token_id": "canary-api-01",
+      "type": "API_KEY",
+      "label": "Fake Production Stripe Secret Key",
+      "token_value": "sk_live_canary_751ba8217ceaa73e65b4ad180a40c806",
+      "created_at": 1788749546,
+      "trigger_count": 0,
+      "memo": "Seeded in faux-config to detect unauthorized repo inspection",
+      "active": true
+    },
+    {
+      "token_id": "canary-webhook-02",
+      "type": "WEBHOOK_URL",
+      "label": "Decoy Internal Ops Webhook",
+      "token_value": "whk_trap_7822495b1f3a6fb22072a2be",
+      "created_at": 1788749546,
+      "trigger_count": 0,
+      "memo": "Decoy webhook in dev documentation",
+      "active": true
+    },
+    {
+      "token_id": "canary-db-03",
+      "type": "DB_CREDENTIAL",
+      "label": "Decoy Read-Only Database Role",
+      "token_value": "postgres://honey_audit:0a78114cc33055af3957@127.0.0.1:5432/main",
+      "created_at": 1788749546,
+      "trigger_count": 0,
+      "memo": "Decoy DB connection string",
+      "active": true
+    }
+  ],
+  "alerts": [],
+  "decoy_files": [
+    {
+      "path": "/Users/u1/.gemini/antigravity-ide/scratch/command-center/vault/.decoy_admin_keys.env",
+      "expected_sha256": "c1904aa94bd83bf61eb2f5ec6d62aee8d844c95f1ad28f7f28beacdc910fae47",
+      "last_checked": 1788749889,
+      "status": "UNTOUCHED"
+    }
+  ]
+}

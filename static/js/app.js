@@ -9079,6 +9079,140 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     `;
   }
 
+  // --- WAVE 3 SOVEREIGN SECURITY, ZERO-KNOWLEDGE & CYBER DEFENSE CLIENT METHODS ---
+  async function generateZkSolvencyProof() {
+    showNotification("Generating Zero-Knowledge Solvency Proof (Fiat-Shamir Sigma)...");
+    const res = await apiAction("settings", "generate_zk_solvency_proof", { balance: 50000.0, threshold: 5000.0, asset: "USDC" });
+    if (res && res.proof) {
+      showNotification(`ZK Proof Generated: ${res.proof.proof_id} (Solvent: ${res.proof.is_solvent})`);
+      renderZkVault(res.proof);
+    }
+  }
+
+  function renderZkVault(proof) {
+    const listEl = document.getElementById("zkProofList");
+    const countBadge = document.getElementById("zkProofCountBadge");
+    if (countBadge) countBadge.textContent = "1 VERIFIED";
+    if (!listEl) return;
+    const p = proof || { proof_id: "zk-solv-alpha", asset: "USDC", threshold: 5000.0, commitment: "0x7f83b165...", verified: true };
+    listEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(191,90,242,0.3); border-radius:4px; padding:8px 10px; margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:11px; color:#bf5af2; font-weight:700;">${p.proof_id} &bull; ${p.asset}</span>
+          <span class="badge mono" style="font-size:9px; background:rgba(50,215,75,0.15); color:var(--neon-green);">VERIFIED &ge; $${p.threshold}</span>
+        </div>
+        <div class="mono" style="font-size:9px; color:var(--text-muted); margin-top:3px; word-break:break-all;">Commitment: ${p.commitment}</div>
+      </div>
+    `;
+  }
+
+  async function runRedteamScan() {
+    showNotification("Executing local Red-Team defensive socket audit...");
+    const res = await apiAction("settings", "run_redteam_scan", { target_host: "127.0.0.1" });
+    if (res && res.report) {
+      showNotification(`Red-Team Audit Complete: Hardening Score ${res.report.hardening_score}%`);
+      renderRedteam(res.report);
+    }
+  }
+
+  function renderRedteam(report) {
+    const scoreBadge = document.getElementById("redteamScoreBadge");
+    const ratingEl = document.getElementById("redteamRating");
+    const portsEl = document.getElementById("redteamOpenPorts");
+    const listEl = document.getElementById("redteamFindingsList");
+    if (!report) return;
+    if (scoreBadge) scoreBadge.textContent = `HARDENING: ${report.hardening_score}%`;
+    if (ratingEl) ratingEl.textContent = report.rating || "SOVEREIGN_A+";
+    if (portsEl) portsEl.textContent = `${report.open_ports_count || 1} LISTENERS`;
+    if (listEl) {
+      listEl.innerHTML = (report.findings || []).slice(0, 4).map(f => `
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding:4px 0;">
+          <span class="mono" style="color:${f.severity === 'PASS' ? 'var(--neon-green)' : (f.severity === 'CRITICAL' ? 'var(--neon-red)' : 'var(--gold)')}; font-weight:600;">[${f.severity}] ${f.check}</span>
+          <span class="mono" style="color:var(--text-muted); font-size:9px;">${f.status}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  async function generateWireguardPeer() {
+    const peerName = prompt("Enter WireGuard Mesh Peer Name:", "MacBook-Air-Satellite") || "MacBook-Air-Satellite";
+    showNotification(`Synthesizing WireGuard peer ${peerName}...`);
+    const res = await apiAction("settings", "generate_wireguard_peer", { peer_name: peerName });
+    if (res && res.success) {
+      showNotification(`Peer created with VIP ${res.assigned_ip}`);
+      renderWireguard(res.peer);
+    }
+  }
+
+  async function pingWireguardPeer(peerId) {
+    const res = await apiAction("settings", "ping_wireguard_peer", { peer_id: peerId });
+    if (res && res.success) {
+      showNotification(`WireGuard RTT to ${res.name}: ${res.latency_ms} ms`);
+    }
+  }
+
+  function renderWireguard(peer) {
+    const listEl = document.getElementById("wgPeersList");
+    if (!listEl) return;
+    const p = peer || { name: "Tokyo-Relay-Sovereign", virtual_ip: "10.42.0.2/32", latency_ms: 118.4, status: "CONNECTED" };
+    listEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(0,255,204,0.2); border-radius:4px; padding:8px 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:11px; color:var(--neon-cyan); font-weight:700;">${p.name} (${p.virtual_ip})</span>
+          <span class="badge mono" style="font-size:9px; background:rgba(0,255,204,0.15); color:var(--neon-cyan);">${p.latency_ms || 12}ms</span>
+        </div>
+        <div class="mono" style="font-size:9px; color:var(--text-muted); margin-top:2px;">Status: ${p.status || 'CONNECTED'} &bull; Keepalive: 25s</div>
+      </div>
+    `;
+  }
+
+  async function rotateTorOnion() {
+    showNotification("Generating new ephemeral Tor V3 hidden service keys...");
+    const res = await apiAction("settings", "rotate_tor_onion_address", {});
+    if (res && res.new_onion_address) {
+      showNotification(`Tor V3 Address Rotated: ${res.new_onion_address.slice(0, 16)}...`);
+      renderTorGateway(res);
+    }
+  }
+
+  function renderTorGateway(data) {
+    const hostEl = document.getElementById("torOnionHost");
+    if (hostEl && data.new_onion_address) hostEl.textContent = data.new_onion_address;
+  }
+
+  async function deployCanaryToken() {
+    const label = prompt("Enter Canary Trap Description:", "Production AWS Root Key Honeytrap") || "Production AWS Root Key Honeytrap";
+    showNotification("Arming canary tripwire...");
+    const res = await apiAction("settings", "generate_canary_token", { token_type: "API_KEY", label });
+    if (res && res.success) {
+      showNotification(`Canary trap armed: ${res.token.label}`);
+      renderCanarySentinel(res.token);
+    }
+  }
+
+  async function checkCanaryHoneyfiles() {
+    showNotification("Auditing honeypot decoy files integrity...");
+    const res = await apiAction("settings", "check_canary_honeyfiles", {});
+    if (res) {
+      showNotification(res.tamper_detected ? "WARNING: Decoy file tampered!" : "All decoy honeyfiles untouched (SHA-256 matches)");
+    }
+  }
+
+  function renderCanarySentinel(token) {
+    const listEl = document.getElementById("canaryTokensList");
+    if (!listEl) return;
+    const t = token || { label: "Production Decoy Trap", token_value: "u1_live_canary_...", type: "API_KEY" };
+    listEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(255,69,58,0.2); border-radius:4px; padding:8px 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:11px; color:var(--neon-red); font-weight:700;">[TRIPWIRE] ${t.label}</span>
+          <span class="badge mono" style="font-size:9px; background:rgba(255,69,58,0.15); color:var(--neon-red);">ARMED</span>
+        </div>
+        <div class="mono" style="font-size:9px; color:var(--text-muted); margin-top:2px;">Decoy Value: ${t.token_value}</div>
+      </div>
+    `;
+  }
+
   // Expose API
   return {
     init,
@@ -9293,7 +9427,19 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     renderMemory,
     refreshTickets,
     resolveTicket,
-    renderTickets
+    renderTickets,
+    generateZkSolvencyProof,
+    renderZkVault,
+    runRedteamScan,
+    renderRedteam,
+    generateWireguardPeer,
+    pingWireguardPeer,
+    renderWireguard,
+    rotateTorOnion,
+    renderTorGateway,
+    deployCanaryToken,
+    checkCanaryHoneyfiles,
+    renderCanarySentinel
   };
 })();
 

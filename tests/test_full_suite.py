@@ -996,6 +996,81 @@ def main():
     log_test("Customer Support Swarm UI Panel Markup", 'id="aiSupportTicketPanel"' in index_html, "#aiSupportTicketPanel active in DOM")
     log_test("Client Application Wave 2 AI Swarm API Hooks", "debateCode" in app_js and "inspectScreen" in app_js and "queryMemory" in app_js, "Wave 2 AI Swarms & Neural methods exposed in CommandCenter API")
 
+    # 71. Zero-Knowledge Proof (zk-SNARK/Sigma) Solvency & Credential Vault
+    print(f"\n{INFO} 71. Subsystem: Zero-Knowledge Proof Solvency & Credential Vault:")
+    s, zk_solv = action("settings", "generate_zk_solvency_proof", {"balance": 75000.0, "threshold": 25000.0, "asset": "USDC"})
+    proof = zk_solv.get("proof", {})
+    log_test("Fiat-Shamir Sigma ZK Solvency Proof Synthesis", zk_solv.get("success") and proof.get("is_solvent") is True, f"Synthesized ZK proof {proof.get('proof_id')} for threshold >= {proof.get('threshold')} {proof.get('asset')}")
+
+    s, zk_verify = action("settings", "verify_zk_solvency_proof", {"proof": proof})
+    log_test("Mathematical ZK Commitment Verification & Challenge Validation", zk_verify.get("success") and zk_verify.get("verification", {}).get("valid") is True, f"Verified Fiat-Shamir transcript invariant (Nullifier: {proof.get('nullifier')[:16]}...)")
+
+    s, zk_cred = action("settings", "generate_zk_credential_proof", {"identity_id": "operator_admin", "secret_token": "master_enclave_key_77"})
+    c_proof = zk_cred.get("proof", {})
+    s, zk_cred_v = action("settings", "verify_zk_credential_proof", {"proof": c_proof, "expected_token": "master_enclave_key_77"})
+    log_test("Zero-Knowledge Credential Possession Authentication", zk_cred_v.get("success") and zk_cred_v.get("verification", {}).get("valid") is True, f"Authenticated {c_proof.get('identity_id')} without revealing secret credentials")
+    log_test("ZK Solvency & Credential Vault UI Panel Markup", 'id="settingsZkVaultPanel"' in index_html, "#settingsZkVaultPanel active in DOM")
+
+    # 72. Automated Red-Team Defensive Vulnerability & Endpoint Hardening Scanner
+    print(f"\n{INFO} 72. Subsystem: Automated Red-Team Defensive Vulnerability Scanner:")
+    s, rt_scan = action("settings", "run_redteam_scan", {"target_host": "127.0.0.1"})
+    report = rt_scan.get("report", {})
+    log_test("Non-Blocking TCP Socket Port & Service Discovery Audit", rt_scan.get("success") and report.get("open_ports_count", 0) >= 1, f"Scanned critical ports: {report.get('open_ports_count')} listeners identified (8787 CommandCenter)")
+
+    log_test("Defensive Security Header & Hardening Posture Scoring", report.get("hardening_score", 0) >= 75 and len(report.get("findings", [])) >= 5, f"Hardening Posture: {report.get('hardening_score')}% ({report.get('rating')}) across {len(report.get('findings', []))} checks")
+
+    s, sched_res6 = get("/api/scheduler")
+    jobs6 = sched_res6.get("jobs", [])
+    has_rt_job = any(j.get("id") == "redteam_security_sentinel" for j in jobs6)
+    log_test("Scheduler Job #16 Red-Team Security & Honeypot Sentinel", has_rt_job, "Scheduled Red-Team defense watchdog registered (900s interval)")
+    log_test("Red-Team Defensive Vulnerability Scanner UI Panel Markup", 'id="settingsRedteamPanel"' in index_html, "#settingsRedteamPanel active in DOM")
+
+    # 73. Decentralized VPN & WireGuard Sovereign Mesh Tunnel Node
+    print(f"\n{INFO} 73. Subsystem: Decentralized VPN & WireGuard Sovereign Mesh Tunnel Node:")
+    s, wg_status = action("settings", "get_wireguard_mesh_status", {})
+    log_test("WireGuard Sovereign Interface & Topology Telemetry", wg_status.get("success") and wg_status.get("interface") == "wg0", f"Interface {wg_status.get('interface')} ({wg_status.get('virtual_ip')}) | {wg_status.get('total_peers')} peers")
+
+    s, wg_gen = action("settings", "generate_wireguard_peer", {"peer_name": "Test-Satellite-Peer", "peer_ip": "10.42.0.77"})
+    new_peer = wg_gen.get("peer", {})
+    log_test("Cryptographic Curve25519 Peer & wg0.conf Configuration Synthesis", wg_gen.get("success") and "PrivateKey" in wg_gen.get("client_config", ""), f"Synthesized peer {new_peer.get('name')} with VIP {wg_gen.get('assigned_ip')}")
+
+    s, wg_ping = action("settings", "ping_wireguard_peer", {"peer_id": new_peer.get("peer_id")})
+    log_test("Sovereign Mesh P2P Tunnel Latency & RTT Probing", wg_ping.get("success") and wg_ping.get("latency_ms", 999) < 200, f"Ping RTT to {wg_ping.get('name')}: {wg_ping.get('latency_ms')}ms")
+
+    # Clean up test peer
+    action("settings", "remove_wireguard_peer", {"peer_id": new_peer.get("peer_id")})
+    log_test("WireGuard Sovereign Mesh UI Panel Markup", 'id="settingsWireguardPanel"' in index_html, "#settingsWireguardPanel active in DOM")
+
+    # 74. Tor Onion Hidden Service Gateway & Deep Web Local Mirror
+    print(f"\n{INFO} 74. Subsystem: Tor Onion Hidden Service Gateway & Deep Web Local Mirror:")
+    s, tor_stat = action("settings", "get_tor_onion_status", {})
+    onion_addr = tor_stat.get("onion_address", "")
+    log_test("Tor V3 Hidden Service Ephemeral Routing Gateway", tor_stat.get("success") and onion_addr.endswith(".onion"), f"Tor V3 Hidden Service active: {onion_addr[:20]}... -> {tor_stat.get('target_service')}")
+
+    log_test("Multi-Hop Circuit Relays & Traffic Isolation Audit", len(tor_stat.get("circuits", [])) >= 1 and tor_stat.get("leak_audit", {}).get("dns_leak_protected") is True, f"Route built across {tor_stat.get('circuits', [{}])[0].get('total_hops', 3)} relays with DNS leak protection")
+
+    s, tor_rot = action("settings", "rotate_tor_onion_address", {})
+    log_test("Ephemeral Ed25519 Onion Address Cryptographic Rotation", tor_rot.get("success") and tor_rot.get("new_onion_address") != onion_addr, f"Rotated onion address to: {tor_rot.get('new_onion_address')[:20]}...")
+    log_test("Tor Onion Gateway UI Panel Markup", 'id="settingsTorGatewayPanel"' in index_html, "#settingsTorGatewayPanel active in DOM")
+
+    # 75. Canary Token & Honeypot Intrusion Trap Sentinel
+    print(f"\n{INFO} 75. Subsystem: Canary Token & Honeypot Intrusion Trap Sentinel:")
+    s, c_gen = action("settings", "generate_canary_token", {"token_type": "API_KEY", "label": "Decoy Stripe Production Key"})
+    tok = c_gen.get("token", {})
+    log_test("Honeypot Trap & Canary Deception Asset Deployment", c_gen.get("success") and tok.get("active") is True, f"Deployed canary trap: {tok.get('label')} ({tok.get('token_id')})")
+
+    s, c_trip = action("settings", "trigger_canary", {"token_id": tok.get("token_id"), "source_ip": "198.51.100.22", "user_agent": "UnauthorizedScanner/1.0"})
+    alert = c_trip.get("alert", {})
+    log_test("Tripwire Intrusion Detection & Perimeter Containment", c_trip.get("success") and alert.get("severity") == "CRITICAL", f"Alert triggered for IP {alert.get('source_ip')}: {alert.get('containment_action')}")
+
+    s, c_audit = action("settings", "check_canary_honeyfiles", {})
+    log_test("Decoy Honeyfile Cryptographic SHA-256 Tamper Audit", c_audit.get("success") and len(c_audit.get("decoys", [])) >= 1, f"Audited {len(c_audit.get('decoys', []))} decoy files (Tamper detected: {c_audit.get('tamper_detected')})")
+
+    # Clean up test alert
+    action("settings", "clear_canary_alert", {"alert_id": alert.get("alert_id")})
+    log_test("Canary Token & Honeypot Sentinel UI Panel Markup", 'id="settingsCanaryPanel"' in index_html, "#settingsCanaryPanel active in DOM")
+    log_test("Client Application Wave 3 Security API Hooks", "generateZkSolvencyProof" in app_js and "runRedteamScan" in app_js and "generateWireguardPeer" in app_js and "rotateTorOnion" in app_js and "deployCanaryToken" in app_js, "Wave 3 Security, ZK & Cyber methods exposed in CommandCenter API")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

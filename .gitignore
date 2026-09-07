@@ -13,3 +13,4 @@ backups/*.ccvault
 data/*.db
 briefings/
 *.aiff
+vault/.decoy_admin_keys.env
