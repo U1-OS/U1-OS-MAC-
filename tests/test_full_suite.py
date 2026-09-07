@@ -7,6 +7,7 @@ Validates all 9 subsystems, REST endpoints, and security boundaries.
 import os
 import sys
 import json
+import re
 import time
 import urllib.request
 import urllib.error
@@ -24,6 +25,132 @@ RESET = "\033[0m"
 
 tests_run = 0
 tests_passed = 0
+
+
+# ============================================================
+#  WAVE 10 — STATIC INTEGRITY ANALYSIS
+#  The HTTP suite exercises the Python server but never loads the
+#  page, so a function called-but-never-defined in app.js used to
+#  ship silently (showNotification, apiAction, sendAction and
+#  AudioFeedback.tick/execute/error all did). These checks read the
+#  source directly so that class of fault fails the build instead.
+# ============================================================
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# CSS/style function names that appear inside template literals; never
+# JavaScript functions in this codebase.
+CSS_FUNCS = {
+    "rgba", "rgb", "hsl", "hsla", "url", "calc", "minmax", "repeat", "var",
+    "translate", "translateX", "translateY", "translateZ", "translate3d",
+    "rotate", "rotateX", "rotateY", "scale", "scaleX", "scaleY", "skew",
+    "blur", "brightness", "saturate", "drop", "linear", "radial", "conic",
+    "cubic", "steps", "clamp", "attr", "counter", "env", "invert", "opacity",
+    "grayscale", "sepia", "contrast", "matrix", "perspective", "path",
+}
+JS_KEYWORDS = set("""if for while switch catch return typeof new delete void await async
+function class super this of in do else try finally throw case default break continue
+yield let const var get set static instanceof""".split())
+JS_GLOBALS = set("""parseInt parseFloat String Number Boolean Array Object JSON Math Date
+Promise Set Map WeakMap WeakSet RegExp Error setTimeout setInterval clearTimeout
+clearInterval requestAnimationFrame cancelAnimationFrame fetch alert confirm prompt
+encodeURIComponent decodeURIComponent encodeURI decodeURI isNaN isFinite Symbol Intl
+AbortController EventSource Notification URL URLSearchParams Blob File FileReader
+FormData Headers Request Response TextEncoder TextDecoder BigInt document window console
+navigator localStorage sessionStorage history location screen performance structuredClone
+showNotification showToast queueMicrotask atob btoa require import""".split())
+
+def _strip_js(s):
+    """Remove comments and string/template contents so CSS text in
+    template literals is not mistaken for JavaScript calls."""
+    out = []
+    i, n = 0, len(s)
+    while i < n:
+        c = s[i]
+        if c == "/" and i + 1 < n and s[i + 1] == "/":
+            j = s.find("\n", i)
+            i = n if j < 0 else j
+        elif c == "/" and i + 1 < n and s[i + 1] == "*":
+            j = s.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+        elif c in "\"'`":
+            q = c
+            i += 1
+            while i < n:
+                if s[i] == "\\":
+                    i += 2
+                    continue
+                if s[i] == q:
+                    i += 1
+                    break
+                i += 1
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+def undefined_functions(path):
+    """Names called as functions in `path` that are declared nowhere in it.
+
+    Declarations are collected from the RAW source and calls from the
+    stripped source, so any parsing drift can only hide a real bug —
+    it can never invent a false failure.
+    """
+    try:
+        src = open(path, encoding="utf-8").read()
+    except OSError:
+        return ["<unreadable: %s>" % path]
+    code = _strip_js(src)
+
+    declared = set(re.findall(r"function\s*\*?\s*([A-Za-z_$][\w$]*)", src))
+    declared |= set(re.findall(r"(?:const|let|var)\s+([A-Za-z_$][\w$]*)", src))
+    declared |= set(re.findall(r"([A-Za-z_$][\w$]*)\s*:\s*(?:function|async|\()", src))
+    declared |= set(re.findall(r"([A-Za-z_$][\w$]*)\s*=\s*(?:function|async|\()", src))
+    declared |= set(re.findall(r"\.([A-Za-z_$][\w$]*)\s*\(", src))
+    for params in re.findall(r"function\s*\*?\s*[\w$]*\s*\(([^)]{0,400})\)", src):
+        declared |= set(re.findall(r"([A-Za-z_$][\w$]*)", params))
+    for params in re.findall(r"\(([^()]{0,300})\)\s*=>", src):
+        declared |= set(re.findall(r"([A-Za-z_$][\w$]*)", params))
+    declared |= set(re.findall(r"([A-Za-z_$][\w$]*)\s*=>", src))
+    declared |= set(re.findall(r"catch\s*\(\s*([A-Za-z_$][\w$]*)", src))
+    declared |= set(re.findall(r"for\s*\(\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)", src))
+
+    called = set(re.findall(r"(?<![\w.$])([A-Za-z_$][\w$]*)\s*\(", code))
+    missing = []
+    for name in sorted(called - declared - JS_KEYWORDS - JS_GLOBALS - CSS_FUNCS):
+        if name[0].isupper():
+            continue
+        if not re.search(r"(?<![\w.$])" + re.escape(name) + r"\s*\(", src):
+            continue
+        missing.append(name)
+    return missing
+
+def orphaned_actions():
+    """Frontend service/action pairs with no handler anywhere on the server."""
+    try:
+        app = open(os.path.join(REPO_ROOT, "static/js/app.js"), encoding="utf-8").read()
+    except OSError:
+        return ["<app.js unreadable>"], 0
+    pairs = set()
+    for pat in (r"apiAction\(\s*'([^']+)'\s*,\s*'([^']+)'",
+                r"sendAction\(\s*'([^']+)'\s*,\s*'([^']+)'",
+                r"service:\s*'([^']+)'[^}]*?action:\s*'([^']+)'"):
+        pairs |= set(re.findall(pat, app, re.S))
+    blob = ""
+    for root, _dirs, files in os.walk(os.path.join(REPO_ROOT, "services")):
+        for f in files:
+            if f.endswith(".py"):
+                try:
+                    blob += open(os.path.join(root, f), encoding="utf-8").read()
+                except OSError:
+                    pass
+    try:
+        blob += open(os.path.join(REPO_ROOT, "server.py"), encoding="utf-8").read()
+    except OSError:
+        pass
+    orphans = [f"{s}.{a}" for s, a in sorted(pairs)
+               if f'"{a}"' not in blob and f"'{a}'" not in blob]
+    return orphans, len(pairs)
+
 
 def log_test(name, success, detail=""):
     global tests_run, tests_passed
@@ -1398,6 +1525,44 @@ def main():
     log_test("Cinematic Section Transition & Staggered Panel Seat", "Wave 9: cinematic section entry" in app_js, "Section switches animate with staggered panel reveal")
     log_test("Accessibility: prefers-reduced-motion Honoured", "prefers-reduced-motion" in fx_css and "prefersReducedMotion" in fx_js, "All motion disabled for users who request reduced motion")
     log_test("Keyboard Access: Notification Centre Hotkey & Escape", "shiftKey" in fx_js and "Escape" in fx_js, "Cmd/Ctrl+Shift+N toggles centre; Escape dismisses")
+
+    # 100. Wave 10: API Dispatch Layer & Static Source Integrity
+    print(f"\n{INFO} 100. Subsystem: API Dispatch Layer & Static Source Integrity:")
+    app_undefined = undefined_functions(os.path.join(REPO_ROOT, "static/js/app.js"))
+    log_test("Application Controller Has No Undefined Function Calls", app_undefined == [], f"app.js: {', '.join(app_undefined) if app_undefined else 'every called function is defined'}")
+    fx_undefined = undefined_functions(os.path.join(REPO_ROOT, "static/js/fx.js"))
+    log_test("Sensory Layer Has No Undefined Function Calls", fx_undefined == [], f"fx.js: {', '.join(fx_undefined) if fx_undefined else 'every called function is defined'}")
+    holo_undefined = undefined_functions(os.path.join(REPO_ROOT, "static/js/three_hologram.js"))
+    log_test("Hologram Renderer Has No Undefined Function Calls", holo_undefined == [], f"three_hologram.js: {', '.join(holo_undefined) if holo_undefined else 'clean'}")
+    orphans, pair_count = orphaned_actions()
+    log_test("Every Frontend Action Has A Server-Side Handler", orphans == [], f"{pair_count} service/action pairs mapped; orphans: {', '.join(orphans) if orphans else 'none'}")
+    log_test("Unified API Dispatch Layer Implemented", "async function sendAction" in app_js and "function apiAction" in app_js, "sendAction() and apiAction() wrap /api/action for 79 previously-broken call sites")
+    log_test("Dispatch Layer Never Rejects On Network Fault", "Network unreachable" in app_js and "success: false" in app_js, "HTTP and network faults resolve as {success:false, error} instead of throwing")
+    log_test("Dispatch Layer Supports Callback And Await Call Styles", "typeof callback === 'function'" in app_js and "return p;" in app_js, "apiAction() returns its promise and fires an optional node-style callback")
+    log_test("Cyber Console Logger Implemented & Bounded", "function logCyberConsole" in app_js and "children.length > 400" in app_js, "Autonomous engine output renders to the terminal drawer with a bounded scrollback")
+    log_test("Cyber Console Logger Is Injection-Safe", "escapeHtml(String(message))" in app_js, "Engine output escaped before insertion into the terminal DOM")
+    log_test("Destructive-Action Confirmation Modal Resolves", "function showConfirmationModal" in app_js, "showConfirmationModal() aliases the confirm modal for destructive call sites")
+    cc_exports = set(re.findall(r"^\s{4}([A-Za-z_$][\w$]*)[,:]", app_js[app_js.rfind("  return {"):], re.M))
+    cc_used = set(re.findall(r"CommandCenter\.([A-Za-z_$][\w$]*)\s*\(", index_html + app_js))
+    log_test("Every CommandCenter Handler In The DOM Is Exported", cc_used <= cc_exports, f"{len(cc_exports)} exports cover {len(cc_used)} referenced handlers; missing: {', '.join(sorted(cc_used - cc_exports)) or 'none'}")
+
+    # 101. Wave 10: Double-Click macOS Launcher
+    print(f"\n{INFO} 101. Subsystem: Double-Click macOS Application Launcher:")
+    launcher_path = os.path.join(REPO_ROOT, "macos_app/launcher.sh")
+    launcher = open(launcher_path, encoding="utf-8").read() if os.path.exists(launcher_path) else ""
+    log_test("Zero-Dependency Launcher Script Present", len(launcher) > 800, f"macos_app/launcher.sh ({len(launcher)} bytes, no compiler required)")
+    log_test("Launcher Boots The Localhost Server", "server.py" in launcher and "nohup" in launcher, "Server started detached with output captured to ~/Library/Logs/U1-OS.log")
+    log_test("Launcher Waits For The Port Before Opening The UI", "curl" in launcher and "127.0.0.1:$PORT" in launcher, "Polls the port and only opens the browser once the server answers")
+    log_test("Launcher Resolves A Live Checkout Or Sealed Payload", "source_path" in launcher and "$BUNDLE_RES/app/server.py" in launcher, "Prefers a live git checkout, falls back to the copy sealed in the bundle")
+    log_test("Launcher Negotiates A Missing Python 3 Toolchain", "xcode-select" in launcher and "osascript" in launcher, "Offers to install the Command Line Tools instead of failing silently")
+    log_test("Launcher Reports Boot Failures To The User", "Launch Failed" in launcher and "tail -n 12" in launcher, "Surfaces the last log lines in a native dialog on a failed boot")
+    builder_path = os.path.join(REPO_ROOT, "build_launcher_app.sh")
+    builder = open(builder_path, encoding="utf-8").read() if os.path.exists(builder_path) else ""
+    log_test("Compiler-Free App Bundle Builder Present", "CFBundleExecutable" in builder and "Resources/app" in builder, "build_launcher_app.sh emits a signed, self-contained U1 OS.app without Xcode")
+    swift = open(os.path.join(REPO_ROOT, "macos_app/main.swift"), encoding="utf-8").read()
+    log_test("Native Swift App Now Boots Its Own Server", "startServerIfNeeded" in swift, "Fixed: the native window previously loaded a URL nothing was serving")
+    log_test("Native Swift App Retries While The Server Warms Up", "loadCommandCentre" in swift and "portIsOpen" in swift, "Retry loop replaces the single cold-start load attempt")
+    log_test("Native Swift App Stops Its Server On Quit", "applicationWillTerminate" in swift and "serverProcess?.terminate()" in swift, "No orphaned Python process left behind after quitting")
 
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")

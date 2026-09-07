@@ -2,7 +2,7 @@
 set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DMG_NAME="CommandCenter-v2.4.0.dmg"
+DMG_NAME="CommandCenter-v2.5.0.dmg"
 DMG_PATH="$DIR/$DMG_NAME"
 STAGING_DIR="$DIR/dist/dmg_staging"
 

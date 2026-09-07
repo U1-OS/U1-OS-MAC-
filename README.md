@@ -14,9 +14,9 @@
 **A futuristic, self-contained macOS command center.**  
 AI trading bots · Crypto desk · OSINT engine · Cyber terminal · Executive dossier — all running locally at `127.0.0.1:8787`.
 
-[![Release](https://img.shields.io/badge/release-v2.4.0%20Apex%20Quantum-ff0055?style=flat-square&logo=apple)](https://github.com/U1-OS/U1-OS-MAC-/releases/tag/v2.4.0)
-[![Tests](https://img.shields.io/badge/tests-371%2F371%20passing-10b981?style=flat-square&logo=checkmarx)](https://github.com/U1-OS/U1-OS-MAC-)
-[![Subsystems](https://img.shields.io/badge/subsystems-37%20active-00f0ff?style=flat-square)](https://github.com/U1-OS/U1-OS-MAC-)
+[![Release](https://img.shields.io/badge/release-v2.5.0%20Sovereign%20Launch-ff0055?style=flat-square&logo=apple)](https://github.com/U1-OS/U1-OS-MAC-/releases/tag/v2.5.0)
+[![Tests](https://img.shields.io/badge/tests-392%2F392%20passing-10b981?style=flat-square&logo=checkmarx)](https://github.com/U1-OS/U1-OS-MAC-)
+[![Subsystems](https://img.shields.io/badge/subsystems-38%20active-00f0ff?style=flat-square)](https://github.com/U1-OS/U1-OS-MAC-)
 [![PQC](https://img.shields.io/badge/crypto-NIST%20FIPS%20203%2F204%20PQC-a855f7?style=flat-square)](WHITEPAPER.md)
 [![Zero-Pip](https://img.shields.io/badge/dependencies-zero%20pip%20packages-00ff88?style=flat-square)](WHITEPAPER.md)
 [![Python](https://img.shields.io/badge/python-3.9%2B%20stdlib-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
@@ -31,7 +31,19 @@ AI trading bots · Crypto desk · OSINT engine · Cyber terminal · Executive do
 
 ## What is U1 OS?
 
-U1 OS is a **fully autonomous, localhost-bound business operating system and sovereign command matrix** built for macOS on Apple Silicon. It unifies 37 mission-critical enterprise and cryptographic subsystems — spanning autonomous AI swarms, algorithmic trading, duplex voice C2, multi-node P2P cluster sync, BCI neural focus HUD, and NIST FIPS 203/204 Post-Quantum Cryptography — running 100% locally with zero external pip packages.
+U1 OS is a **fully autonomous, localhost-bound business operating system and sovereign command matrix** built for macOS on Apple Silicon. It unifies 38 mission-critical enterprise and cryptographic subsystems — spanning autonomous AI swarms, algorithmic trading, duplex voice C2, multi-node P2P cluster sync, BCI neural focus HUD, and NIST FIPS 203/204 Post-Quantum Cryptography — running 100% locally with zero external pip packages.
+
+### 🖱️ Download & Run (no terminal)
+
+Build the double-clickable app once, then launch U1 OS like any other Mac application — it boots the local server for you and opens the command centre:
+
+```bash
+./build_launcher_app.sh          # produces "U1 OS.app" beside the repo
+```
+
+Drag **U1 OS.app** into `/Applications` and double-click it. No Xcode, no Swift, no `pip`. It needs only the Python 3 that ships with the Xcode Command Line Tools — and offers to install those for you if they're missing. The bundle carries a sealed copy of the app, so it still runs if the checkout is moved or deleted, while preferring a live checkout when one is present so `git pull` takes effect without rebuilding.
+
+Logs land in `~/Library/Logs/U1-OS.log`.
 
 ### ⚡ 1-Line Sovereign Install
 ```bash
@@ -175,6 +187,8 @@ Command Center OS (macOS)
 - [ ] VPS 24/7 cloud deploy
 - [ ] PostgreSQL backend
 - [x] Sensory layer — audio synth, notification centre & motion engine
+- [x] Double-click macOS app launcher (no compiler, boots its own server)
+- [x] Static source-integrity gate in CI (no undefined calls, no orphaned actions)
 - [ ] PWA / iPhone home screen app
 - [ ] AI autonomous agent (GPT-4o acts across all sections)
 - [ ] Multi-wallet PnL dashboard
@@ -198,6 +212,10 @@ U1-OS-MAC-/
 │   ├── css/fx.css          # Motion, toast stack & notification centre
 │   ├── js/fx.js            # Sensory layer: audio synth, notify, motion
 │   └── js/app.js           # Frontend engine
+├── macos_app/
+│   ├── launcher.sh         # Double-click .app bundle executable
+│   └── main.swift          # Native WKWebView shell (boots its own server)
+├── build_launcher_app.sh   # Compiler-free "U1 OS.app" builder
 ├── tests/
 │   └── test_full_suite.py  # 106-test master verification suite
 └── docs/
@@ -211,7 +229,7 @@ U1-OS-MAC-/
 ```bash
 ./command-center test
 
-# TOTAL TESTS PASSED:   371 / 371
+# TOTAL TESTS PASSED:   392 / 392
 # [PASS] ALL SUBSYSTEMS 100% OPERATIONAL
 ```
 

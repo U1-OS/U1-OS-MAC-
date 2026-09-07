@@ -126,6 +126,85 @@ const CommandCenter = (() => {
     }
   }
 
+  /* ========================================================
+     API DISPATCH LAYER  (Wave 10)
+     --------------------------------------------------------
+     These four functions are referenced 88 times across this
+     controller but were never implemented — every call site
+     threw at runtime. They are thin, well-behaved wrappers
+     over the /api/action endpoint the server already exposes.
+     ======================================================== */
+
+  /**
+   * Fire an action at a backend service and resolve with the raw
+   * service result. Never rejects — network and HTTP faults come
+   * back as { success: false, error } so call sites can branch
+   * on res.success without a try/catch of their own.
+   */
+  async function sendAction(service, action, payload) {
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service, action, payload: payload || {} })
+      });
+      let data = null;
+      try { data = await res.json(); } catch (e) { data = null; }
+      if (!res.ok) {
+        return {
+          success: false,
+          status: res.status,
+          error: (data && (data.error || data.message)) || `HTTP ${res.status}`,
+          message: data && data.message
+        };
+      }
+      return data || { success: false, error: 'Empty response from service' };
+    } catch (err) {
+      return { success: false, error: err && err.message ? err.message : 'Network unreachable' };
+    }
+  }
+
+  /**
+   * Same dispatch, with an optional node-style callback for the
+   * many legacy call sites written as apiAction(svc, act, {}, res => ...).
+   * Still returns the promise, so `await apiAction(...)` works too.
+   */
+  function apiAction(service, action, payload, callback) {
+    const p = sendAction(service, action, payload);
+    if (typeof callback === 'function') {
+      p.then(res => {
+        try { callback(res); } catch (e) { console.error('[apiAction] callback error:', e); }
+      });
+    }
+    return p;
+  }
+
+  /**
+   * Append a line to the Cyber Terminal drawer. Used by the
+   * autonomous engines (flash arb, funding harvester, sentinels)
+   * to narrate what they are doing.
+   */
+  function logCyberConsole(message, level) {
+    const output = document.getElementById('cyberTerminalOutput');
+    if (!output) return;
+    const line = document.createElement('div');
+    line.className = 'term-line ' + (level || 'info');
+    const stamp = new Date().toLocaleTimeString('en-AU', { hour12: false });
+    line.innerHTML = `<span class="term-prompt-prefix mono">[${stamp}]</span> ${escapeHtml(String(message))}`;
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+    // Keep the drawer from growing without bound across a long session.
+    while (output.children.length > 400) output.removeChild(output.firstChild);
+  }
+
+  /**
+   * Alias kept for the destructive-action call sites that use the
+   * longer name. Same signature as showConfirmModal.
+   */
+  function showConfirmationModal(title, desc, code, onConfirm) {
+    return showConfirmModal(title, desc, code, onConfirm);
+  }
+
   function setupSSE() {
     const dot = document.getElementById('ssePulseDot');
     const label = document.getElementById('sseStatusLabel');
@@ -10154,7 +10233,13 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     initiateAppleHandoff,
     renderContinuityStatus,
     deriveEnclaveKey,
-    renderEnclaveStatus
+    renderEnclaveStatus,
+
+    // Wave 10 dispatch layer
+    sendAction,
+    apiAction,
+    logCyberConsole,
+    showConfirmationModal
   };
 })();
 
