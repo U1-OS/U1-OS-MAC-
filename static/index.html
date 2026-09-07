@@ -2293,6 +2293,248 @@
               <span class="footer-meta mono">TACTIC: DECEPTION TECHNOLOGY &bull; AUTOMATED LEAK ISOLATION &bull; IMMEDIATE REVOCATION</span>
             </footer>
           </article>
+
+          <!-- Widget 17: Whisper CoreML Real-Time Audio Transcription [Span 6] -->
+          <article class="slab-panel span-6" id="settingsWhisperPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-purple, #bf5af2);">COREML AUDIO // 17 &bull; NPU SPEECH ENGINE</span>
+                <h2 class="slab-title">WHISPER ON-DEVICE TRANSCRIBER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="whisperModelBadge" style="background:rgba(191,90,242,0.1); color:#bf5af2; border:1px solid rgba(191,90,242,0.3); padding:2px 8px; font-size:10px;">WHISPER-BASE.COREML</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.transcribeAudioSpeech()">TRANSCRIBE MIC</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsWhisperContainer" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ACCELERATION</div>
+                  <div class="mono" style="color:var(--gold); font-weight:600;">Apple Silicon Metal NPU</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">SAMPLE RATE</div>
+                  <div class="mono" id="whisperSampleRate" style="color:var(--neon-green); font-weight:600;">16,000 Hz (PCM)</div>
+                </div>
+              </div>
+              <div id="whisperOutputLog" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">CoreML Whisper daemon primed. Zero audio frames leak to cloud.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">BACKEND: ANE / METAL RUNTIME &bull; DIARIZATION ENABLED &bull; TIMECODED SEGMENTS</span>
+            </footer>
+          </article>
+
+          <!-- Widget 18: Native macOS QuickLook Preview Generator [Span 6] -->
+          <article class="slab-panel span-6" id="settingsQuicklookPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">MACOS NATIVE // 18 &bull; QUICKLOOK GENERATOR</span>
+                <h2 class="slab-title">.CCVAULT ARCHIVE QUICKLOOK CARD</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="quicklookStatusBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:2px 8px; font-size:10px;">QLMANAGE READY</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generateQuicklookPreview()">GENERATE PREVIEW</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsQuicklookContainer" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">CIPHER SUITE</div>
+                  <div class="mono" id="quicklookCipher" style="color:var(--neon-cyan); font-size:10px; font-weight:600;">ChaCha20-Poly1305</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">INTEGRITY</div>
+                  <div class="mono" id="quicklookIntegrity" style="color:var(--neon-green); font-weight:600;">AUTHENTIC_SEALED</div>
+                </div>
+              </div>
+              <div id="quicklookCardContainer" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Click Generate Preview to inspect .ccvault header and render vector seal.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">FORMAT: HIGH-DPI SVG THUMBNAIL &bull; EXPORTS/QUICKLOOK_PREVIEW.HTML</span>
+            </footer>
+          </article>
+
+          <!-- Widget 19: Sovereign Matrix Homeserver Node & E2EE Bridge [Span 6] -->
+          <article class="slab-panel span-6" id="settingsMatrixPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-emerald, #10b981);">FEDERATED C2 // 19 &bull; MATRIX E2EE</span>
+                <h2 class="slab-title">LOCAL MATRIX HOMESERVER NODE</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="matrixStatusBadge" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:2px 8px; font-size:10px;">@ROOT:U1.LOCAL</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.sendMatrixMessage()">POST MSG</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsMatrixContainer" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">HOMESERVER</div>
+                  <div class="mono" id="matrixHomeserver" style="color:var(--neon-emerald); font-weight:600;">http://127.0.0.1:8008</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ENCRYPTION</div>
+                  <div class="mono" style="color:var(--gold); font-weight:600;">Olm/Megolm Ratchet</div>
+                </div>
+              </div>
+              <div id="matrixRoomsList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Matrix E2EE federated room active.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">SPEC: MATRIX CS-API V3 &bull; DEVICE CROSS-SIGNING &bull; ZERO THIRD-PARTY CLOUD</span>
+            </footer>
+          </article>
+
+          <!-- Widget 20: BLE Local Enclave Mesh & AirDrop Bridge [Span 6] -->
+          <article class="slab-panel span-6" id="settingsBlePanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">RADIO MESH // 20 &bull; BLE &amp; AIRDROP</span>
+                <h2 class="slab-title">BLUETOOTH LE &amp; AIRDROP DISCOVERY</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="bleStatusBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:2px 8px; font-size:10px;">BLE 5.3 ACTIVE</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.scanBlePeers()">SCAN PEERS</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsBleContainer" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">BEACON UUID</div>
+                  <div class="mono" id="bleBeaconUuid" style="color:var(--gold); font-size:9px;">0000U10S-0000-1000...</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">AIRDROP AWDL</div>
+                  <div class="mono" id="bleAwdlStatus" style="color:var(--neon-cyan); font-weight:600;">ARMED (48.5 Mbps)</div>
+                </div>
+              </div>
+              <div id="blePeersList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Scanning for nearby sovereign hardware nodes.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROTOCOL: COREBLUETOOTH PROXIMITY &bull; APPLE WIRELESS DIRECT LINK (AWDL)</span>
+            </footer>
+          </article>
+
+          <!-- Widget 21: Hardware Security Key (YubiKey/FIDO2) Assertion [Span 6] -->
+          <article class="slab-panel span-6" id="settingsFido2Panel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--gold);">HARDWARE TOKEN // 21 &bull; FIDO2 / WEBAUTHN</span>
+                <h2 class="slab-title">YUBIKEY WEBAUTHN ASSERTION GATE</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="fido2EnrolledBadge" style="background:rgba(233,180,76,0.1); color:var(--gold); border:1px solid rgba(233,180,76,0.3); padding:2px 8px; font-size:10px;">1 DONGLE ENROLLED</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.triggerFido2Assertion()">TOUCH ASSERTION</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsFido2Container" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">USER PRESENCE</div>
+                  <div class="mono" id="fido2Presence" style="color:var(--neon-green); font-weight:600;">UP=1 ENFORCED</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">PRIMARY DONGLE</div>
+                  <div class="mono" id="fido2PrimaryDongle" style="color:var(--gold); font-size:10px; font-weight:600;">YubiKey 5C NFC</div>
+                </div>
+              </div>
+              <div id="fido2AuditList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Physical touch interlock primed for critical operations.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">STANDARD: W3C WEBAUTHN LEVEL 3 &bull; FIDO2 CTAP2 &bull; SECP256R1 ATTESTATION</span>
+            </footer>
+          </article>
+
+          <!-- Widget 22: Autonomous Off-Grid Radio Mesh (LoRa / Meshtastic) [Span 6] -->
+          <article class="slab-panel span-6" id="settingsLoraPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-purple, #bf5af2);">OFF-GRID RF // 22 &bull; LORA 915MHZ</span>
+                <h2 class="slab-title">LORA MESHTASTIC RADIO GATEWAY</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="loraFreqBadge" style="background:rgba(191,90,242,0.1); color:#bf5af2; border:1px solid rgba(191,90,242,0.3); padding:2px 8px; font-size:10px;">915.0 MHZ (US)</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.sendLoraPacket()">BROADCAST RF</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsLoraContainer" style="padding:12px; font-size:11px;">
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">CHANNEL / PSK</div>
+                  <div class="mono" id="loraChannel" style="color:var(--gold); font-weight:600;">SovereignC2 (AES-256)</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ACTIVE RF NODES</div>
+                  <div class="mono" id="loraActiveNodes" style="color:var(--neon-green); font-weight:600;">2 REPEATERS</div>
+                </div>
+              </div>
+              <div id="loraPacketLog" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">LoRa radio modem listening on 915MHz. Zero internet connection required.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">MODULATION: LORA SX1262 &bull; SPREADING FACTOR 11 &bull; 250 KHZ BANDWIDTH</span>
+            </footer>
+          </article>
+
+          <!-- Widget 23: Decentralized Sovereign DNS & Web3 Domain Gateway [Span 12] -->
+          <article class="slab-panel span-12" id="settingsSovereignDnsPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">NAME SERVICE // 23 &bull; DECENTRALIZED DNS</span>
+                <h2 class="slab-title">SOVEREIGN DNS &amp; WEB3 DOMAIN RESOLVER (.ETH &bull; .CRYPTO)</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="dnsCacheBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:2px 8px; font-size:10px;">CACHE HIT: 90.5%</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.resolveWeb3Domain()">RESOLVE DOMAIN</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsSovereignDnsContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:10px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">RESOLVED QUERIES</div>
+                  <div class="mono" id="dnsQueriesCount" style="color:var(--neon-cyan); font-weight:600;">42 RESOLVED</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">PRIVACY DoH ROUTE</div>
+                  <div class="mono" style="color:var(--gold); font-weight:600;">Cloudflare + Quad9 DNSSEC</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">SUPPORTED NAMESPACES</div>
+                  <div class="mono" style="color:var(--neon-green); font-weight:600;">.eth, .crypto, .x, .dao</div>
+                </div>
+              </div>
+              <div id="dnsDomainsList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:16px;">Decentralized DNS resolver primed for ENS and Unstoppable Domains.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROTOCOL: ENS SMART CONTRACTS &bull; UNSTOPPABLE DOMAINS CNS/UNS &bull; ZERO ISP TELEMETRY</span>
+            </footer>
+          </article>
         </section>
 
       </main>

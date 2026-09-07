@@ -1,0 +1,51 @@
+{
+  "cache": {
+    "vitalik.eth": {
+      "protocol": "ENS (Ethereum Name Service)",
+      "owner_address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "content_hash": "ipfs://bafybeic67kql6s3uv2g7l5s2f6vdikgvh75k5q3l5v5...",
+      "records": {
+        "email": "vitalik@ethereum.org",
+        "twitter": "@VitalikButerin",
+        "url": "https://vitalik.eth.limo"
+      },
+      "ttl": 3600
+    },
+    "u1os.eth": {
+      "protocol": "ENS (Ethereum Name Service)",
+      "owner_address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+      "content_hash": "ipfs://bafkreic9v48f7d983m49a71029481hdkal1049281...",
+      "records": {
+        "c2_gateway": "https://127.0.0.1:8787",
+        "wireguard_vip": "10.42.0.1"
+      },
+      "ttl": 7200
+    },
+    "sovereign.crypto": {
+      "protocol": "Unstoppable Domains (Polygon)",
+      "owner_address": "0x1928aBc45901F294eE892D0192847aBcDeF12345",
+      "content_hash": "ipfs://QmZtmD2qt8fQgdfmkfdaklfj190248...",
+      "records": {
+        "btc_address": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+        "sol_address": "SoV1111111111111111111111111111111111111111"
+      },
+      "ttl": 3600
+    },
+    "alphaquant.x": {
+      "protocol": "Unstoppable Domains (Polygon)",
+      "owner_address": "0x981248AcDfe29471182A45B9cD871023918aBc44",
+      "content_hash": "ipfs://bafybeid992148102948120481...",
+      "records": {
+        "mempool_endpoint": "https://mempool.alphaquant.internal"
+      },
+      "ttl": 3600
+    }
+  },
+  "queries_resolved": 48,
+  "cache_hits": 44,
+  "cache_misses": 4,
+  "doh_resolvers": [
+    "https://cloudflare-dns.com/dns-query",
+    "https://dns.quad9.net/dns-query"
+  ]
+}

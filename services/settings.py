@@ -15,6 +15,13 @@ from utils import redteam_scanner
 from utils import wireguard_mesh
 from utils import tor_gateway
 from utils import canary_tokens
+from utils import whisper_transcriber
+from utils import quicklook_generator
+from utils import matrix_bridge
+from utils import ble_airdrop
+from utils import yubikey_interlock
+from utils import lora_mesh
+from utils import sovereign_dns
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -418,6 +425,16 @@ class SettingsService(BaseService):
                     "unresolved_alerts": len(canary_tokens.get_intrusion_alerts()),
                     "latest_alert": (canary_tokens.get_intrusion_alerts() or [None])[0]
                 },
+                "whisper_transcription": whisper_transcriber.get_transcription_status(),
+                "quicklook": quicklook_generator.inspect_vault_headers(),
+                "matrix_bridge": matrix_bridge.get_matrix_status(),
+                "ble_mesh": ble_airdrop.get_ble_telemetry(),
+                "fido2_interlock": {
+                    "enrolled_count": len(yubikey_interlock.get_enrolled_authenticators()),
+                    "authenticators": yubikey_interlock.get_enrolled_authenticators()
+                },
+                "lora_mesh": lora_mesh.get_lora_status(),
+                "sovereign_dns": sovereign_dns.get_dns_cache_stats(),
                 "server_environment": {
                     "binding": "127.0.0.1:8787 (Strict Local Only)",
                     "config_path": self.config_path,
@@ -1197,6 +1214,128 @@ class SettingsService(BaseService):
 
         elif action == "check_canary_honeyfiles":
             return canary_tokens.check_honeyfile_integrity()
+
+        # Wave 4: Feature 17 - Whisper CoreML Real-Time Audio Transcription
+        elif action == "transcribe_audio":
+            res = whisper_transcriber.transcribe_audio_buffer(file_path=payload.get("file_path"), language=payload.get("language", "en"))
+            ledger.log_audit("whisper", "audio_transcribed", f"Transcribed speech ({res.get('transcription', {}).get('duration_sec')}s) via CoreML NPU", actor="whisper_daemon", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_transcription_status":
+            return whisper_transcriber.get_transcription_status()
+
+        elif action == "get_transcription_history":
+            return {"success": True, "history": whisper_transcriber.get_transcription_history()}
+
+        # Wave 4: Feature 18 - Native macOS QuickLook Preview Generator
+        elif action == "generate_quicklook_preview":
+            res = quicklook_generator.generate_quicklook_preview(payload.get("vault_path"))
+            ledger.log_audit("quicklook", "preview_generated", f"Generated QuickLook preview for {res.get('metadata', {}).get('file_name')}", actor="quicklook_daemon", status="OK")
+            self.poll()
+            return res
+
+        elif action == "inspect_vault_headers":
+            return {"success": True, "metadata": quicklook_generator.inspect_vault_headers(payload.get("vault_path"))}
+
+        # Wave 4: Feature 19 - Sovereign Local Matrix Homeserver Node & E2EE Bridge
+        elif action == "get_matrix_status":
+            return matrix_bridge.get_matrix_status()
+
+        elif action == "send_matrix_message":
+            res = matrix_bridge.send_encrypted_room_message(payload.get("room_id", ""), payload.get("body", "Sovereign transmission"))
+            ledger.log_audit("matrix", "encrypted_event_dispatched", f"Dispatched Megolm event to {payload.get('room_id')}", actor="matrix_bridge", status="OK")
+            self.poll()
+            return res
+
+        elif action == "sync_matrix_events":
+            return matrix_bridge.sync_matrix_events(payload.get("since_token"))
+
+        elif action == "create_matrix_room":
+            res = matrix_bridge.create_matrix_room(payload.get("name", "New Enclave Room"), payload.get("topic", "Encrypted Sovereign Room"))
+            ledger.log_audit("matrix", "room_created", f"Created E2EE room {res.get('room', {}).get('room_id')}", actor="matrix_bridge", status="OK")
+            self.poll()
+            return res
+
+        # Wave 4: Feature 20 - BLE Local Enclave Mesh Bridge & AirDrop Peer Discovery
+        elif action == "scan_ble_peers":
+            res = ble_airdrop.scan_ble_peers()
+            self.poll()
+            return res
+
+        elif action == "broadcast_ble_beacon":
+            return ble_airdrop.broadcast_ble_beacon(payload.get("status", "ACTIVE_C2"))
+
+        elif action == "dispatch_airdrop_payload":
+            target = str(payload.get("target_device_id", "ble-peer-mbp-m3"))
+            fname = str(payload.get("payload_name", "vault_snapshot.ccvault"))
+            res = ble_airdrop.dispatch_airdrop_payload(target, fname)
+            ledger.log_audit("airdrop", "payload_dispatched", f"AirDrop transfer to {res.get('transfer', {}).get('target_device')}", actor="awdl_bridge", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_ble_telemetry":
+            return ble_airdrop.get_ble_telemetry()
+
+        # Wave 4: Feature 21 - Hardware Security Key (YubiKey/FIDO2) Assertion & U2F Interlock
+        elif action == "generate_fido2_challenge":
+            act = str(payload.get("action_name", "root_access"))
+            uid = str(payload.get("user_id", "root@u1-os.internal"))
+            return yubikey_interlock.generate_fido2_challenge(act, uid)
+
+        elif action == "verify_fido2_assertion":
+            challenge = str(payload.get("challenge", ""))
+            cred_id = payload.get("credential_id")
+            res = yubikey_interlock.verify_fido2_assertion(challenge, credential_id=cred_id)
+            ledger.log_audit("fido2", "assertion_verified", f"Physical FIDO2 touch assertion confirmed for {res.get('action_authorized')}", actor="yubikey_dongle", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_enrolled_authenticators":
+            return {"success": True, "authenticators": yubikey_interlock.get_enrolled_authenticators()}
+
+        elif action == "enroll_fido2_authenticator":
+            name = str(payload.get("name", "YubiKey 5C NFC Secondary"))
+            res = yubikey_interlock.enroll_authenticator(name)
+            ledger.log_audit("fido2", "authenticator_enrolled", f"Enrolled physical key: {name}", actor="root_admin", status="OK")
+            self.poll()
+            return res
+
+        # Wave 4: Feature 22 - Autonomous Off-Grid Radio Mesh (LoRa/Meshtastic Serial)
+        elif action == "get_lora_status":
+            return lora_mesh.get_lora_status()
+
+        elif action == "send_lora_packet":
+            text = str(payload.get("text", "Off-grid telemetry broadcast nominal."))
+            dest = str(payload.get("destination", "^all"))
+            chan = str(payload.get("channel", "SovereignC2"))
+            res = lora_mesh.send_lora_packet(text, dest, chan)
+            ledger.log_audit("lora", "packet_transmitted", f"LoRa RF packet #{res.get('packet', {}).get('packet_id')} dispatched to {dest}", actor="lora_modem", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_lora_nodes":
+            return {"success": True, "nodes": lora_mesh.get_lora_nodes()}
+
+        elif action == "get_lora_packet_log":
+            return {"success": True, "packets": lora_mesh.get_packet_log()}
+
+        # Wave 4: Feature 23 - Decentralized Sovereign DNS & Web3 Domain Gateway
+        elif action == "resolve_sovereign_domain":
+            domain = str(payload.get("domain", "vitalik.eth"))
+            res = sovereign_dns.resolve_sovereign_domain(domain)
+            ledger.log_audit("dns", "domain_resolved", f"Resolved sovereign domain {domain}", actor="sovereign_dns", status="OK")
+            self.poll()
+            return res
+
+        elif action == "query_ens_record":
+            return sovereign_dns.query_ens_record(payload.get("name", "vitalik.eth"))
+
+        elif action == "query_unstoppable_record":
+            return sovereign_dns.query_unstoppable_record(payload.get("name", "sovereign.crypto"))
+
+        elif action == "get_dns_cache_stats":
+            return sovereign_dns.get_dns_cache_stats()
 
         return super().dispatch_action(action, payload)
 

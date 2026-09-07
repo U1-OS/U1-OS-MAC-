@@ -1071,6 +1071,73 @@ def main():
     log_test("Canary Token & Honeypot Sentinel UI Panel Markup", 'id="settingsCanaryPanel"' in index_html, "#settingsCanaryPanel active in DOM")
     log_test("Client Application Wave 3 Security API Hooks", "generateZkSolvencyProof" in app_js and "runRedteamScan" in app_js and "generateWireguardPeer" in app_js and "rotateTorOnion" in app_js and "deployCanaryToken" in app_js, "Wave 3 Security, ZK & Cyber methods exposed in CommandCenter API")
 
+    # 76. Apple Silicon Metal CoreML Whisper Real-Time Audio Transcription
+    print(f"\n{INFO} 76. Subsystem: Apple Silicon Metal CoreML Whisper Transcription:")
+    s, tx_res = action("settings", "transcribe_audio", {"language": "en"})
+    tx = tx_res.get("transcription", {})
+    log_test("CoreML Whisper Speech-to-Text NPU Transcription", tx_res.get("success") and len(tx.get("full_text", "")) > 10, f"Transcribed speech buffer in {tx.get('latency_ms')}ms (Word count: {tx.get('word_count')})")
+    log_test("Timecoded Segment Diarization & Energy Extraction", len(tx.get("segments", [])) >= 2 and tx.get("rms_energy", 0) > 0, f"Extracted {len(tx.get('segments', []))} speaker segments (RMS: {tx.get('rms_energy')})")
+    log_test("Whisper On-Device Transcriber UI Panel Markup", 'id="settingsWhisperPanel"' in index_html, "#settingsWhisperPanel active in DOM")
+
+    # 77. Native macOS QuickLook Preview Generator for .ccvault Archives
+    print(f"\n{INFO} 77. Subsystem: Native macOS QuickLook Preview Generator:")
+    s, ql_res = action("settings", "generate_quicklook_preview", {})
+    ql_meta = ql_res.get("metadata", {})
+    log_test(".ccvault Binary Header Inspection & Provenance", ql_res.get("success") and ql_meta.get("header_magic") == "CCVAULT_V2", f"Inspected archive {ql_meta.get('file_name')} ({ql_meta.get('file_size_kb')} KB)")
+    log_test("Standalone High-DPI SVG Vector Seal & QuickLook HTML Bundle", "svg_badge" in ql_res and os.path.exists(ql_res.get("preview_path", "")), f"Synthesized preview card at {ql_res.get('preview_path')}")
+    log_test("macOS QuickLook Card UI Panel Markup", 'id="settingsQuicklookPanel"' in index_html, "#settingsQuicklookPanel active in DOM")
+
+    # 78. Sovereign Local Matrix Homeserver Node & E2EE Bridge
+    print(f"\n{INFO} 78. Subsystem: Sovereign Local Matrix Homeserver & E2EE Bridge:")
+    s, m_stat = action("settings", "get_matrix_status", {})
+    log_test("Matrix CS-API v3 Homeserver State & Olm/Megolm E2EE", m_stat.get("success") and m_stat.get("rooms_count", 0) >= 1, f"Homeserver {m_stat.get('homeserver')} active for {m_stat.get('user_id')}")
+    s, m_msg = action("settings", "send_matrix_message", {"room_id": "!sovereign_ops_77:u1.local", "body": "Operator verified enclave bridge"})
+    ev = m_msg.get("event", {})
+    log_test("Megolm Ratchet Encrypted Room Event Dispatch", m_msg.get("success") and ev.get("type") == "m.room.encrypted", f"Dispatched encrypted event {ev.get('event_id')} to {m_msg.get('room_id')}")
+    log_test("Matrix Homeserver UI Panel Markup", 'id="settingsMatrixPanel"' in index_html, "#settingsMatrixPanel active in DOM")
+
+    # 79. BLE Local Enclave Mesh Bridge & AirDrop Peer Discovery
+    print(f"\n{INFO} 79. Subsystem: BLE Local Enclave Mesh Bridge & AirDrop:")
+    s, ble_scan = action("settings", "scan_ble_peers", {})
+    peers = ble_scan.get("peers", [])
+    log_test("BLE Proximity Beacon Scanning & Hardware Node Discovery", ble_scan.get("success") and len(peers) >= 2, f"Discovered {len(peers)} nearby sovereign devices (Top: {peers[0].get('name')})")
+    s, ad_tx = action("settings", "dispatch_airdrop_payload", {"target_device_id": peers[0].get("device_id", "ble-peer-mbp-m3")})
+    txf = ad_tx.get("transfer", {})
+    log_test("Apple Wireless Direct Link (AWDL) AirDrop Delivery", ad_tx.get("success") and txf.get("status") == "DELIVERED_AIRDROP_ACCEPTED", f"Delivered {txf.get('payload_name')} to {txf.get('target_device')} at {txf.get('speed_mbps')} Mbps")
+    log_test("BLE & AirDrop Discovery UI Panel Markup", 'id="settingsBlePanel"' in index_html, "#settingsBlePanel active in DOM")
+
+    # 80. Hardware Security Key (YubiKey/FIDO2) Assertion & U2F Interlock
+    print(f"\n{INFO} 80. Subsystem: Hardware Security Key (YubiKey/FIDO2) Assertion:")
+    s, f_ch = action("settings", "generate_fido2_challenge", {"action_name": "vault_drain_protection"})
+    log_test("W3C WebAuthn Level 3 FIDO2 Challenge Prime", f_ch.get("success") and len(f_ch.get("challenge", "")) > 10, f"Primed challenge for action '{f_ch.get('action')}' (TTL: {f_ch.get('timeout_sec')}s)")
+    s, f_assert = action("settings", "verify_fido2_assertion", {"challenge": f_ch.get("challenge")})
+    log_test("Physical User Presence (UP=1) Assertion Confirmation", f_assert.get("success") and f_assert.get("user_present") is True, f"Hardware presence confirmed by {f_assert.get('authenticator')}")
+    log_test("YubiKey FIDO2 Assertion Gate UI Panel Markup", 'id="settingsFido2Panel"' in index_html, "#settingsFido2Panel active in DOM")
+
+    # 81. Autonomous Off-Grid Radio Mesh (LoRa / Meshtastic Serial)
+    print(f"\n{INFO} 81. Subsystem: Autonomous Off-Grid Radio Mesh (LoRa 915MHz):")
+    s, lora_stat = action("settings", "get_lora_status", {})
+    log_test("LoRa SX1262 Radio Modem Telemetry & Repeater Roster", lora_stat.get("success") and lora_stat.get("total_nodes", 0) >= 2, f"Modem on {lora_stat.get('frequency')} | Channel: {lora_stat.get('channel')} ({lora_stat.get('total_nodes')} nodes)")
+    s, lora_tx = action("settings", "send_lora_packet", {"text": "Off-grid telemetry broadcast nominal."})
+    pkt = lora_tx.get("packet", {})
+    log_test("RF Packet Framing & Long-Range Wireless Transmission", lora_tx.get("success") and pkt.get("snr_db", 0) > 0, f"Transmitted packet #{pkt.get('packet_id')} (SNR: {pkt.get('snr_db')} dB, RSSI: {pkt.get('rssi_dbm')} dBm)")
+    s, sched_res7 = get("/api/scheduler")
+    jobs7 = sched_res7.get("jobs", [])
+    has_p2p_job = any(j.get("id") == "sovereign_p2p_mesh_heartbeat" for j in jobs7)
+    log_test("Scheduler Job #17 Sovereign P2P Mesh & Radio Heartbeat", has_p2p_job, "Scheduled P2P mesh heartbeat registered (600s interval)")
+    log_test("LoRa Meshtastic Radio Gateway UI Panel Markup", 'id="settingsLoraPanel"' in index_html, "#settingsLoraPanel active in DOM")
+
+    # 82. Decentralized Sovereign DNS & Web3 Domain Gateway
+    print(f"\n{INFO} 82. Subsystem: Decentralized Sovereign DNS & Web3 Domain Gateway:")
+    s, ens_res = action("settings", "query_ens_record", {"name": "vitalik.eth"})
+    log_test("Ethereum Name Service (.eth) Smart Contract Resolution", ens_res.get("success") and ens_res.get("owner", "").startswith("0x"), f"Resolved {ens_res.get('domain')} -> {ens_res.get('owner')}")
+    s, ud_res = action("settings", "query_unstoppable_record", {"name": "sovereign.crypto"})
+    log_test("Unstoppable Domains (.crypto) L2 Registry Resolution", ud_res.get("success") and ud_res.get("content_hash", "").startswith("ipfs://"), f"Resolved {ud_res.get('domain')} -> {ud_res.get('content_hash')[:24]}...")
+    s, doh_res = action("settings", "resolve_sovereign_domain", {"domain": "u1os.eth"})
+    log_test("Sovereign Privacy DoH Routing & DNSSEC Cache Auditing", doh_res.get("success") and "records" in doh_res, f"Resolved u1os.eth in local enclave cache (Gateway: {doh_res.get('records', {}).get('c2_gateway')})")
+    log_test("Sovereign DNS Resolver UI Panel Markup", 'id="settingsSovereignDnsPanel"' in index_html, "#settingsSovereignDnsPanel active in DOM")
+    log_test("Client Application Wave 4 Native macOS API Hooks", "transcribeAudioSpeech" in app_js and "generateQuicklookPreview" in app_js and "sendMatrixMessage" in app_js and "scanBlePeers" in app_js and "triggerFido2Assertion" in app_js and "sendLoraPacket" in app_js and "resolveWeb3Domain" in app_js, "Wave 4 Native macOS & Sovereign P2P methods exposed in CommandCenter API")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

@@ -1,6 +1,16 @@
 {
   "tokens": [
     {
+      "token_id": "canary-api-52575cc6",
+      "type": "API_KEY",
+      "label": "Decoy Stripe Production Key",
+      "token_value": "u1_live_canary_e98b1bdf8bc0ca3f658e04941aadc096",
+      "created_at": 1788750525,
+      "trigger_count": 1,
+      "memo": "",
+      "active": true
+    },
+    {
       "token_id": "canary-api-4eaad8d6",
       "type": "API_KEY",
       "label": "Decoy Stripe Production Key",
@@ -56,7 +66,7 @@
     {
       "path": "/Users/u1/.gemini/antigravity-ide/scratch/command-center/vault/.decoy_admin_keys.env",
       "expected_sha256": "c1904aa94bd83bf61eb2f5ec6d62aee8d844c95f1ad28f7f28beacdc910fae47",
-      "last_checked": 1788749889,
+      "last_checked": 1788750526,
       "status": "UNTOUCHED"
     }
   ]

@@ -1,0 +1,93 @@
+{
+  "homeserver": "http://127.0.0.1:8008",
+  "server_name": "u1.local",
+  "user_id": "@root:u1.local",
+  "device_id": "U1_MAC_ENCLAVE_01",
+  "device_keys": {
+    "user_id": "@root:u1.local",
+    "device_id": "U1_MAC_ENCLAVE_01",
+    "algorithms": [
+      "m.olm.v1.curve25519-aes-sha2",
+      "m.megolm.v1.aes-sha2"
+    ],
+    "keys": {
+      "ed25519:U1_MAC_ENCLAVE_01": "7ZraTQYQU3bUtBl6j9gpYkymct3o5VJqEdLm+5upIvs=",
+      "curve25519:U1_MAC_ENCLAVE_01": "bSTa7KAfATc5x0TLEZcOdrnGlY5M0oCXMttdfmnNRDo="
+    },
+    "signatures": {
+      "@root:u1.local": {
+        "ed25519:U1_MAC_ENCLAVE_01": "qUYNAF2lbL6TufOXzBdu86aM+WFZr8ilFUoGWMjj0xs="
+      }
+    }
+  },
+  "status": "FEDERATED_LOCAL_ENCLAVE",
+  "since_token": "s18294_9921_0_1_1",
+  "rooms": [
+    {
+      "room_id": "!sovereign_ops_77:u1.local",
+      "name": "Sovereign Operations C2",
+      "topic": "High-priority enclave commands & automated multi-sig alerts",
+      "encryption": "m.megolm.v1.aes-sha2",
+      "members": [
+        "@root:u1.local",
+        "@validator_node:u1.local",
+        "@satellite_m3:u1.local"
+      ],
+      "events": [
+        {
+          "event_id": "$ev_alpha_01",
+          "sender": "@validator_node:u1.local",
+          "type": "m.room.encrypted",
+          "timestamp": 1788748358,
+          "ciphertext": "Gg7+K92Lx8M7v...MegolmSealed",
+          "decrypted_body": "Validator block slot #294020 signed and ratified via Jito bundle."
+        },
+        {
+          "event_id": "$ev_alpha_02",
+          "sender": "@root:u1.local",
+          "type": "m.room.encrypted",
+          "timestamp": 1788749858,
+          "ciphertext": "Wq9+M33Zk1A4b...MegolmSealed",
+          "decrypted_body": "Perimeter sentinel confirmed zero external leaks. WireGuard tunnel online."
+        },
+        {
+          "event_id": "$ev_1455fa65d3a0",
+          "sender": "@root:u1.local",
+          "type": "m.room.encrypted",
+          "algorithm": "m.megolm.v1.aes-sha2",
+          "timestamp": 1788750527,
+          "ciphertext": "yVPLHw/HKv3sZ7Kqk6v5AiAAUG5x5nxeQaLhTq0j1Ok=",
+          "decrypted_body": "Operator verified enclave bridge"
+        }
+      ]
+    },
+    {
+      "room_id": "!test-room_6a8140:u1.local",
+      "name": "Test-Room",
+      "topic": "Topic",
+      "encryption": "m.megolm.v1.aes-sha2",
+      "members": [
+        "@root:u1.local"
+      ],
+      "events": [
+        {
+          "event_id": "$ev_init_e6365edf",
+          "sender": "@root:u1.local",
+          "type": "m.room.name",
+          "timestamp": 1788750158,
+          "ciphertext": "ROOM_INITIALIZED",
+          "decrypted_body": "Room 'Test-Room' created with Megolm E2EE enabled."
+        },
+        {
+          "event_id": "$ev_b269b577fe17",
+          "sender": "@root:u1.local",
+          "type": "m.room.encrypted",
+          "algorithm": "m.megolm.v1.aes-sha2",
+          "timestamp": 1788750158,
+          "ciphertext": "qqESV+xN+X+UEwOziDN6pRzYNp0Lrw/CnVumpMynaZk=",
+          "decrypted_body": "Hello sovereign mesh"
+        }
+      ]
+    }
+  ]
+}

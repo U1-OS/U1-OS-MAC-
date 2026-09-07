@@ -244,6 +244,15 @@ class AutomationScheduler:
             handler=self._job_redteam_security_sentinel
         )
 
+        # 17. Sovereign P2P Mesh & Off-Grid Radio Heartbeat
+        self.register_job(
+            "sovereign_p2p_mesh_heartbeat",
+            "Sovereign P2P Mesh & Off-Grid Radio Heartbeat",
+            "Probes BLE peer proximity, synchronizes Matrix E2EE events, and audits LoRa RF radio gateway connectivity",
+            interval_sec=600,
+            handler=self._job_sovereign_p2p_mesh_heartbeat
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -460,6 +469,18 @@ class AutomationScheduler:
             summary = f"Red-Team Defense Sentinel: Hardening Score {score}% ({report.get('rating')}) | Honeypots armed & verified"
             return {"hardening_score": score, "summary": summary}
         return {"summary": "Settings service unavailable for red-team sentinel"}
+
+    def _job_sovereign_p2p_mesh_heartbeat(self, feeder):
+        if feeder and hasattr(feeder, "services") and "settings" in feeder.services:
+            settings_svc = feeder.services["settings"]
+            ble_res = settings_svc.dispatch_action("scan_ble_peers", {})
+            lora_res = settings_svc.dispatch_action("get_lora_status", {})
+            settings_svc.dispatch_action("sync_matrix_events", {})
+            peers_count = ble_res.get("peers_found_count", 0)
+            nodes_count = lora_res.get("total_nodes", 0)
+            summary = f"Sovereign P2P Mesh: {peers_count} BLE devices in range | LoRa 915MHz online ({nodes_count} nodes) | Matrix E2EE synced"
+            return {"ble_peers": peers_count, "lora_nodes": nodes_count, "summary": summary}
+        return {"summary": "Settings service unavailable for sovereign mesh heartbeat"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:

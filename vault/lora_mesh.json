@@ -1,0 +1,84 @@
+{
+  "modem": {
+    "type": "Meshtastic / LoRa SX1262 Gateway",
+    "frequency_mhz": 915.0,
+    "bandwidth_khz": 250,
+    "spreading_factor": 11,
+    "coding_rate": "4/5",
+    "channel_name": "SovereignC2",
+    "psk_encryption": "AES-256-CTR",
+    "port": "SOVEREIGN_VIRTUAL_RF_PORT",
+    "status": "LISTENING_915MHZ"
+  },
+  "nodes": [
+    {
+      "node_id": "!2a8f9011",
+      "name": "Ridge-Repeater-Apex",
+      "hardware": "Heltec V3 ESP32-S3 (SX1262)",
+      "frequency_mhz": 915.0,
+      "role": "REPEATER_ROUTER",
+      "battery_pct": 94,
+      "snr_db": 9.2,
+      "rssi_dbm": -68,
+      "hops_away": 1,
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "last_heard_sec": 14,
+      "status": "ACTIVE_RADIO_MESH"
+    },
+    {
+      "node_id": "!3c41b820",
+      "name": "Mobile-Tactical-Patrol",
+      "hardware": "LilyGO T-Beam Supreme (SX1262)",
+      "frequency_mhz": 915.0,
+      "role": "CLIENT_MESSENGER",
+      "battery_pct": 78,
+      "snr_db": 6.8,
+      "rssi_dbm": -84,
+      "hops_away": 2,
+      "latitude": 37.785,
+      "longitude": -122.408,
+      "last_heard_sec": 48,
+      "status": "ACTIVE_RADIO_MESH"
+    }
+  ],
+  "packets": [
+    {
+      "packet_id": 689498,
+      "timestamp": 1788750528,
+      "sender": "U1-BaseStation-Gateway",
+      "destination": "^all",
+      "channel": "SovereignC2",
+      "text": "Off-grid telemetry broadcast nominal.",
+      "hop_limit": 3,
+      "hops_taken": 0,
+      "snr_db": 11.5,
+      "rssi_dbm": -48,
+      "status": "TRANSMITTED_ACKNOWLEDGED"
+    },
+    {
+      "packet_id": 614481,
+      "timestamp": 1788750207,
+      "sender": "U1-BaseStation-Gateway",
+      "destination": "^all",
+      "channel": "SovereignC2",
+      "text": "Emergency off-grid ping",
+      "hop_limit": 3,
+      "hops_taken": 0,
+      "snr_db": 11.5,
+      "rssi_dbm": -48,
+      "status": "TRANSMITTED_ACKNOWLEDGED"
+    },
+    {
+      "packet_id": 901248,
+      "timestamp": 1788749907,
+      "sender": "!2a8f9011 (Ridge-Repeater)",
+      "destination": "^all",
+      "channel": "SovereignC2",
+      "text": "Grid frequency nominal. Off-grid RF repeater backbone active.",
+      "hop_limit": 3,
+      "snr_db": 9.2,
+      "rssi_dbm": -68
+    }
+  ]
+}

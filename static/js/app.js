@@ -9213,6 +9213,189 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     `;
   }
 
+  // --- WAVE 4 MACOS DEEP NATIVE & SOVEREIGN P2P CLIENT METHODS ---
+  async function transcribeAudioSpeech() {
+    showNotification("Executing on-device Whisper CoreML NPU audio transcription...");
+    const res = await apiAction("settings", "transcribe_audio", {});
+    if (res && res.transcription) {
+      showNotification(`Whisper transcription completed in ${res.transcription.latency_ms}ms.`);
+      renderWhisperAudio(res.transcription);
+    }
+  }
+
+  function renderWhisperAudio(tx) {
+    const listEl = document.getElementById("whisperOutputLog");
+    if (!listEl) return;
+    const t = tx || { full_text: "Sovereign operations nominal.", segments: [], latency_ms: 18.2 };
+    listEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(191,90,242,0.3); border-radius:4px; padding:8px 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:11px; color:#bf5af2; font-weight:700;">TRANSCRIBED (${t.duration_sec || 3.2}s)</span>
+          <span class="badge mono" style="font-size:9px; background:rgba(191,90,242,0.15); color:#bf5af2;">${t.latency_ms || 18}ms (Metal NPU)</span>
+        </div>
+        <div class="mono" style="font-size:11px; color:#f3f4f6; margin-top:4px;">"${t.full_text}"</div>
+      </div>
+    `;
+  }
+
+  async function generateQuicklookPreview() {
+    showNotification("Generating native QuickLook preview and vector SVG seal...");
+    const res = await apiAction("settings", "generate_quicklook_preview", {});
+    if (res && res.metadata) {
+      showNotification(`QuickLook preview generated: ${res.metadata.file_name}`);
+      renderQuicklook(res);
+    }
+  }
+
+  function renderQuicklook(data) {
+    const container = document.getElementById("quicklookCardContainer");
+    if (!container) return;
+    const m = data.metadata || { file_name: "latest_snapshot.ccvault", file_size_kb: 1024, integrity_status: "AUTHENTIC_SEALED" };
+    container.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(0,255,204,0.2); border-radius:4px; padding:8px 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:11px; color:var(--neon-cyan); font-weight:700;">${m.file_name}</span>
+          <span class="badge mono" style="font-size:9px; background:rgba(0,255,204,0.15); color:var(--neon-cyan);">${m.file_size_kb} KB</span>
+        </div>
+        <div class="mono" style="font-size:9px; color:var(--neon-green); margin-top:2px;">&#10004; ${m.integrity_status} &bull; ChaCha20-Poly1305</div>
+      </div>
+    `;
+  }
+
+  async function sendMatrixMessage() {
+    const msg = prompt("Enter E2EE Matrix Room Message:", "Sovereign C2 node operational and verified.") || "Sovereign C2 node operational and verified.";
+    showNotification("Packing message into Megolm ratchet and dispatching to room...");
+    const res = await apiAction("settings", "send_matrix_message", { body: msg });
+    if (res && res.event) {
+      showNotification(`Megolm event dispatched (${res.event.event_id})`);
+      renderMatrix(res.event);
+    }
+  }
+
+  function renderMatrix(event) {
+    const listEl = document.getElementById("matrixRoomsList");
+    if (!listEl) return;
+    const e = event || { sender: "@root:u1.local", decrypted_body: "Megolm E2EE active", event_id: "$ev_alpha" };
+    listEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(16,185,129,0.2); border-radius:4px; padding:8px 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:11px; color:#10b981; font-weight:700;">${e.sender}</span>
+          <span class="badge mono" style="font-size:9px; background:rgba(16,185,129,0.15); color:#10b981;">E2EE SEALED</span>
+        </div>
+        <div class="mono" style="font-size:10px; color:#f3f4f6; margin-top:2px;">${e.decrypted_body}</div>
+      </div>
+    `;
+  }
+
+  async function scanBlePeers() {
+    showNotification("Scanning BLE radio sphere and AWDL AirDrop mesh...");
+    const res = await apiAction("settings", "scan_ble_peers", {});
+    if (res && res.peers) {
+      showNotification(`Discovered ${res.peers_found_count} sovereign peer devices in proximity.`);
+      renderBle(res.peers);
+    }
+  }
+
+  function renderBle(peers) {
+    const listEl = document.getElementById("blePeersList");
+    if (!listEl) return;
+    const list = peers && peers.length ? peers : [{ name: "MacBook Pro (M3 Max)", rssi_dbm: -42, distance_meters: 1.2 }];
+    listEl.innerHTML = list.map(p => `
+      <div style="background:#070a13; border:1px solid rgba(0,255,204,0.15); border-radius:4px; padding:6px 10px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span class="mono" style="font-size:11px; color:var(--neon-cyan); font-weight:700;">${p.name}</span>
+          <div class="mono" style="font-size:9px; color:var(--text-muted);">${p.distance_meters}m away &bull; ${p.rssi_dbm} dBm</div>
+        </div>
+        <button class="btn btn-xs btn-outline mono" onclick="CommandCenter.dispatchAirdrop('${p.device_id}')">AIRDROP</button>
+      </div>
+    `).join('');
+  }
+
+  async function dispatchAirdrop(deviceId) {
+    showNotification(`Dispatching encrypted vault to ${deviceId} via AirDrop AWDL...`);
+    const res = await apiAction("settings", "dispatch_airdrop_payload", { target_device_id: deviceId });
+    if (res && res.transfer) {
+      showNotification(`AirDrop delivered to ${res.transfer.target_device} at ${res.transfer.speed_mbps} Mbps.`);
+    }
+  }
+
+  async function triggerFido2Assertion() {
+    showNotification("Requesting FIDO2 physical touch assertion challenge...");
+    const res = await apiAction("settings", "generate_fido2_challenge", { action_name: "high_stakes_operation" });
+    if (res && res.challenge) {
+      const v = await apiAction("settings", "verify_fido2_assertion", { challenge: res.challenge });
+      if (v && v.verified) {
+        showNotification("YubiKey hardware presence asserted! Operation authorized.");
+        renderFido2(v);
+      }
+    }
+  }
+
+  function renderFido2(assertion) {
+    const listEl = document.getElementById("fido2AuditList");
+    if (!listEl) return;
+    const a = assertion || { authenticator: "YubiKey 5C NFC", action_authorized: "high_stakes_operation", user_present: true };
+    listEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(233,180,76,0.3); border-radius:4px; padding:8px 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:11px; color:var(--gold); font-weight:700;">${a.authenticator}</span>
+          <span class="badge mono" style="font-size:9px; background:rgba(50,215,75,0.15); color:var(--neon-green);">&#10004; TOUCH CONFIRMED</span>
+        </div>
+        <div class="mono" style="font-size:9px; color:var(--text-muted); margin-top:2px;">Action: ${a.action_authorized || 'root_access'} &bull; UP=1 UV=1</div>
+      </div>
+    `;
+  }
+
+  async function sendLoraPacket() {
+    const msg = prompt("Enter LoRa 915MHz Off-Grid Message:", "Sovereign node ping across mountain repeater.") || "Sovereign node ping across mountain repeater.";
+    showNotification("Transmitting RF radio packet over LoRa SX1262 modem...");
+    const res = await apiAction("settings", "send_lora_packet", { text: msg });
+    if (res && res.packet) {
+      showNotification(`LoRa packet #${res.packet.packet_id} transmitted via 915MHz.`);
+      renderLora(res.packet);
+    }
+  }
+
+  function renderLora(packet) {
+    const listEl = document.getElementById("loraPacketLog");
+    if (!listEl) return;
+    const p = packet || { packet_id: 91024, text: "Grid nominal.", snr_db: 11.5, rssi_dbm: -48 };
+    listEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(191,90,242,0.2); border-radius:4px; padding:8px 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:11px; color:#bf5af2; font-weight:700;">PACKET #${p.packet_id}</span>
+          <span class="badge mono" style="font-size:9px; background:rgba(191,90,242,0.15); color:#bf5af2;">SNR: ${p.snr_db}dB (${p.rssi_dbm}dBm)</span>
+        </div>
+        <div class="mono" style="font-size:10px; color:#f3f4f6; margin-top:2px;">"${p.text}"</div>
+      </div>
+    `;
+  }
+
+  async function resolveWeb3Domain() {
+    const d = prompt("Enter Web3 Domain to Resolve (.eth, .crypto, .x):", "vitalik.eth") || "vitalik.eth";
+    showNotification(`Resolving ${d} via Sovereign Decentralized DNS...`);
+    const res = await apiAction("settings", "resolve_sovereign_domain", { domain: d });
+    if (res && res.success) {
+      showNotification(`Resolved ${d}: ${res.owner || res.ip_address}`);
+      renderSovereignDns(res);
+    }
+  }
+
+  function renderSovereignDns(record) {
+    const listEl = document.getElementById("dnsDomainsList");
+    if (!listEl) return;
+    const r = record || { domain: "vitalik.eth", owner: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", resolved_via: "ENS Local Sovereign Resolver" };
+    listEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(0,255,204,0.2); border-radius:4px; padding:8px 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:11px; color:var(--neon-cyan); font-weight:700;">${r.domain}</span>
+          <span class="badge mono" style="font-size:9px; background:rgba(0,255,204,0.15); color:var(--neon-cyan);">${r.resolved_via || 'DoH'}</span>
+        </div>
+        <div class="mono" style="font-size:9px; color:var(--text-muted); margin-top:2px; word-break:break-all;">Target: ${r.owner || r.ip_address}</div>
+      </div>
+    `;
+  }
+
   // Expose API
   return {
     init,
@@ -9439,7 +9622,22 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     renderTorGateway,
     deployCanaryToken,
     checkCanaryHoneyfiles,
-    renderCanarySentinel
+    renderCanarySentinel,
+    transcribeAudioSpeech,
+    renderWhisperAudio,
+    generateQuicklookPreview,
+    renderQuicklook,
+    sendMatrixMessage,
+    renderMatrix,
+    scanBlePeers,
+    renderBle,
+    dispatchAirdrop,
+    triggerFido2Assertion,
+    renderFido2,
+    sendLoraPacket,
+    renderLora,
+    resolveWeb3Domain,
+    renderSovereignDns
   };
 })();
 

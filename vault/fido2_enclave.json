@@ -1,0 +1,49 @@
+{
+  "enforced": true,
+  "enrolled_authenticators": [
+    {
+      "credential_id": "njvQWkAIhwlxFluFVitAZC6Sbf+RevVbg3CK7OyqJGA=",
+      "device_name": "YubiKey 5C NFC (Primary Hardware Dongle)",
+      "aaguid": "ee88282e-e650-44ec-a05b-80f074d2b271",
+      "public_key_b64": "D5b4pxCLiR/0w9OkPIPuu0nf0ts3QPfcDIJBeG4fENk=",
+      "sign_count": 44,
+      "enrolled_at": 1786158191,
+      "last_assertion_at": 1788750528,
+      "flags": {
+        "user_present": true,
+        "user_verified": true
+      },
+      "status": "ARMED_AND_ACTIVE"
+    }
+  ],
+  "active_challenges": {
+    "t04rOdCnuQ6DnJYPQz4p4mEozsShfyDDD8XkabkGIrA=": {
+      "action": "vault_drain_protection",
+      "user_id": "root@u1-os.internal",
+      "created_at": 1788750528.45986,
+      "expires_at": 1788750708.459859
+    }
+  },
+  "assertion_history": [
+    {
+      "assertion_id": "assert-b43620d6",
+      "action": "vault_drain_protection",
+      "user_id": "root@u1-os.internal",
+      "authenticator": "YubiKey 5C NFC (Primary Hardware Dongle)",
+      "user_present": true,
+      "user_verified": true,
+      "timestamp": 1788750528,
+      "status": "PHYSICAL_TOUCH_VERIFIED"
+    },
+    {
+      "assertion_id": "assert-648483cf",
+      "action": "drain_wallet",
+      "user_id": "root@u1-os.internal",
+      "authenticator": "YubiKey 5C NFC (Primary Hardware Dongle)",
+      "user_present": true,
+      "user_verified": true,
+      "timestamp": 1788750191,
+      "status": "PHYSICAL_TOUCH_VERIFIED"
+    }
+  ]
+}
