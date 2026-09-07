@@ -1,0 +1,51 @@
+/* U1 Orbital Glass: shared chrome, not a replacement for provider content. */
+:root{--u1-ink:#030a16;--u1-panel:rgba(5,17,34,.86);--u1-edge:rgba(102,190,255,.3);--u1-cyan:#67e8ff;--u1-blue:#639cff;--u1-text:#edf5ff;--u1-muted:#a0b5d1;--u1-glass-shadow:inset 0 1px 0 #c5e7ff13,0 16px 44px #0004,0 0 22px #00c8ff05}
+.prism-theme :is(button,input,select,textarea){font-family:Manrope,sans-serif}
+.prism-theme :is(button,a,input,textarea,select,summary):focus-visible{outline:2px solid var(--u1-cyan);outline-offset:4px}
+.prism-theme :is(.prism-page-header,.studio-hero){position:relative;isolation:isolate;padding:28px 30px;margin-bottom:24px;border:1px solid var(--u1-edge);border-radius:20px;background:radial-gradient(ellipse at 85% 10%,#0856a533,transparent 65%),linear-gradient(125deg,#071526eb,#031021dc);box-shadow:var(--u1-glass-shadow);overflow:hidden}
+.prism-theme .prism-page-header:after{content:'';position:absolute;width:230px;height:230px;right:-80px;top:-145px;border:1px solid #6bd6ff44;border-radius:50%;box-shadow:0 0 0 22px #4edaff08,0 0 0 65px #4edaff05;z-index:-1;pointer-events:none}
+.prism-theme .prism-page-header h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,3.2vw,46px);font-weight:500;letter-spacing:-1.7px;color:var(--u1-text);text-shadow:0 0 28px #67caff20}
+.prism-theme .prism-page-header p{color:var(--u1-muted);max-width:700px;line-height:1.75}
+.prism-theme :is(.prism-panel,.prism-project-card,.prism-note-card,.prism-app-card,.slab-panel,.connect-state-card,.ai-provider-card,.template-card,.workbench,.prompt-output-panel,.project-card,.integration-card){border:1px solid var(--u1-edge);background:radial-gradient(ellipse at top left,#16438123,transparent 65%),linear-gradient(145deg,#09192cdd,#030b17ef);box-shadow:var(--u1-glass-shadow);border-radius:16px;color:var(--u1-text)}
+.prism-theme :is(.prism-panel,.slab-panel,.workbench)>header,.prism-theme :is(.slab-header,.workbench-header,.prompt-output-panel header){border-bottom:1px solid #7cc9ff20;background:linear-gradient(90deg,#419cff08,transparent)}
+.prism-theme :is(.prism-project-card,.prism-note-card,.prism-app-card,.template-card,.integration-card):hover{border-color:#72dfff8c;box-shadow:var(--u1-glass-shadow),0 0 24px #23baff15}
+.prism-theme :is(.prism-empty,.connect-state-card){background:radial-gradient(ellipse at center,#165b9b12,transparent 75%);border-color:#88d9ff2a;color:var(--u1-muted)}
+.prism-theme :is(.prism-primary,.button-primary,.connect-btn){border:1px solid #85dcff75;background:linear-gradient(135deg,#176aca,#1240a4);color:#f6fbff;box-shadow:inset 0 1px 0 #b9f4ff42,0 0 19px #1f8cff24}
+.prism-theme :is(.prism-quiet,.button-secondary,.button-quiet){border-color:#7ab9ff2c;background:#10305638;color:#cbe1ff}
+.prism-theme :is(.prism-view,#prism-legacy,.studio-main) :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),textarea,select){background:#040e20c9;border:1px solid #78b4fc38;border-radius:10px;color:#e2f0ff;box-shadow:inset 0 2px 8px #0002}
+.prism-theme :is(input,textarea)::placeholder{color:#819bbb}
+.prism-theme :is(input,textarea,select):focus{border-color:#67dfff;box-shadow:0 0 0 3px #44c9ff13}
+.prism-theme :is(input[type=checkbox],input[type=radio],input[type=range]){accent-color:#57dfff}
+.prism-theme :is(.prism-dialog,.modal-card){border:1px solid #87d5ff6b;border-radius:20px;background:radial-gradient(at top right,#0d5ea131,transparent 65%),#061222;box-shadow:0 32px 100px #0009,inset 0 1px 0 #b4e5ff28}
+.prism-theme dialog::backdrop{background:#010711b0;backdrop-filter:blur(12px)}
+.prism-theme :is(.prism-toast,#prism-toast){border-color:#74e5ff77;background:linear-gradient(130deg,#093653,#081b2e);box-shadow:0 12px 55px #0008,0 0 26px #32beff18;color:#e7f8ff}
+.prism-theme #prism-legacy .section-grid{gap:18px}
+.prism-theme #prism-legacy .slab-panel{padding-top:0;overflow:hidden}
+.prism-theme #prism-legacy :is(.slab-kicker,.modal-kicker,.eyebrow){color:#76dfff;letter-spacing:2px}
+.prism-theme #prism-legacy :is(.slab-title,.modal-title){font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px;color:#eaf5ff}
+.prism-theme #prism-legacy .corner-tick{display:none}
+.prism-theme #prism-legacy :is(.metric-value,.clock-time){color:#99eaff;text-shadow:0 0 24px #53dfff24}
+.prism-theme :is(.prism-view,.studio-main) :is(table){border-collapse:separate;border-spacing:0;border-radius:14px;overflow:hidden}
+.prism-theme :is(th,td){border-color:#78bfff20}
+.prism-theme th{color:#a7c9ee;background:#11335b36;font-weight:500}
+.prism-theme .studio-shell{--mint:#71e3ff;--gold:#ffca86;--text:#edf5ff;--muted:#a0b5d1;--line:#75bcff25;--display:'Space Grotesk',sans-serif;--body:Manrope,sans-serif;background:linear-gradient(#020914ce,#030c1bdc),url('/assets/u1-landscape.png') center bottom/cover fixed}
+.prism-theme .studio-sidebar{background:linear-gradient(155deg,#08182eed,#030a15f2);border-color:#7cc4ff3c}
+.prism-theme .studio-brand .brand-orbit{border:0;box-shadow:none;width:46px;height:46px}
+.prism-theme .studio-brand .brand-orbit:after{display:none}
+.prism-theme .studio-brand .brand-orbit svg{width:46px;height:46px;filter:drop-shadow(0 0 10px #40baff55)}
+.prism-theme .studio-nav .is-active{background:linear-gradient(105deg,#075bdc,#163297);border-color:#80cfff80;box-shadow:0 0 20px #1e75ff22;color:#fff}
+.prism-theme .studio-hero h1 em{background:linear-gradient(105deg,#ddf9ff,#69dcff,#83a9ff);background-clip:text;-webkit-background-clip:text;color:transparent}
+.prism-theme .sheet-front{background:linear-gradient(140deg,#bdedff,#69c5f4);color:#062b50}
+.prism-theme .sheet-back{background:linear-gradient(135deg,#2674c7,#11396b)}
+.prism-theme .document-controls{background:#030c19a8}
+.prism-theme .template-card.is-selected{border-color:#77dfff;background:linear-gradient(135deg,#0f4d746e,#081d39);box-shadow:0 0 20px #42beff13}
+.prism-theme :is(.prompt-output-panel pre,.prompt-output-panel textarea){color:#d2e9ff}
+.prism-theme .studio-page-footer{color:#95b6d8;border-color:#70bfff26}
+.prism-theme :is(.prism-nav,.prism-dock,.studio-nav) svg{filter:drop-shadow(0 0 5px #4fb8ff44)}
+.prism-theme :is(.prism-nav,.prism-dock,.studio-nav) :is(button,a):hover svg{filter:drop-shadow(0 0 9px #74e9ff99)}
+[data-u1-motion=on] .prism-view:not(.prism-view-home)>.prism-page-header{animation:u1-section-arrive .45s cubic-bezier(.2,.7,.2,1) both}
+[data-u1-motion=on] .prism-theme :is(.prism-app-card,.template-card,.integration-card){transition:border-color .2s,box-shadow .2s,transform .2s}
+@keyframes u1-section-arrive{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:650px){.prism-theme :is(.prism-page-header,.studio-hero){padding:22px 18px;border-radius:15px;margin-bottom:18px}.prism-theme .prism-page-header h1{font-size:32px}.prism-theme .prism-page-header p{font-size:12px}.prism-theme #prism-legacy .section-grid{gap:12px}.prism-theme :is(.prism-project-card,.prism-note-card,.slab-panel){min-width:0}}
+@media(prefers-reduced-motion:reduce){.prism-theme *,.prism-theme *:before,.prism-theme *:after{animation:none!important;transition:none!important}}
+@media print{.prism-theme .studio-shell{background:white!important}}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Integrations | U1 OS</title>
+  <link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/css/integrations.css"><link rel="stylesheet" href="/css/integrations-next.css">
+</head>
+<body>
+  <header><a class="brand" href="/">U1<span>OS</span></a><a class="back" href="/">Open command center &rarr;</a></header>
+  <main>
+    <p class="eyebrow">LOCAL INSTALLATION / CONNECTIONS</p>
+    <h1>Your accounts.<br><span>One place.</span></h1>
+    <p class="intro">U1 OS is installed. Add accounts when you are ready. Saving settings does not sign in, verify access, or enable trading.</p>
+    <section class="summary" aria-label="Installation overview"><div><strong id="total">--</strong><span>Integration entries</span></div><div><strong id="saved">0</strong><span>With saved settings</span></div><div><strong>LOCAL</strong><span>127.0.0.1 only</span></div></section>
+    <p class="runtime" id="runtime">Checking local runtime...</p>
+    <div class="controls"><label class="search">Find an integration<input id="search" type="search" placeholder="Search accounts, crypto, media..." autocomplete="off"></label><label>Category<select id="category"><option>All categories</option></select></label></div>
+    <p id="notice" role="status" aria-live="polite"></p>
+    <section class="cards" id="cards" aria-label="Account integrations"></section>
+    <footer>Credentials entered here are stored in an owner-only local configuration file, not encrypted by this form. Secret values are never returned to the browser. Wallet seed phrases and private keys are not requested.</footer>
+  </main>
+  <script src="/js/integrations.js"></script>
+<script type="module" src="/js/prism-os.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {parseMediaLink,playbackTime,playbackFraction} from '../static/js/u1-media-core.mjs';
+test('Spotify URLs normalize without tracking parameters',()=>assert.equal(parseMediaLink('https://open.spotify.com/track/1234567890123456789012?si=tracking').uri,'spotify:track:1234567890123456789012'));
+test('Spotify URI accepts known resource types only',()=>{assert.equal(parseMediaLink('spotify:album:1234567890123456789012').provider,'spotify');assert.throws(()=>parseMediaLink('spotify:bad:1234567890123456789012'));});
+test('YouTube Music links stay visible YouTube videos',()=>assert.deepEqual(parseMediaLink('https://music.youtube.com/watch?v=abcdefghijk'),{provider:'youtube',id:'abcdefghijk',url:'https://www.youtube.com/watch?v=abcdefghijk',title:'YouTube Music'}));
+test('YouTube short links preserve exact ID',()=>assert.equal(parseMediaLink('https://youtu.be/abc_def-123?t=12').id,'abc_def-123'));
+test('SoundCloud requires a track or playlist',()=>{assert.equal(parseMediaLink('https://soundcloud.com/artist/song').provider,'soundcloud');assert.throws(()=>parseMediaLink('https://soundcloud.com/artist'));});
+test('Stremio is an explicit external launcher',()=>assert.equal(parseMediaLink('https://web.stremio.com/').provider,'stremio'));
+test('Direct browser media distinguishes video and audio',()=>{assert.equal(parseMediaLink('https://example.com/owned.mp4').video,true);assert.equal(parseMediaLink('https://example.com/owned.mp3').video,false);});
+test('Reject script, credential, port and impersonation URLs',()=>{for(const url of ['javascript:alert(1)','http://example.com/a.mp3','https://secret@example.com/a.mp3','https://example.com:777/a.mp3','https://open.spotify.com.evil.example/track/1234567890123456789012','https://youtube.com/watch?v=bad','https://example.com/page'])assert.throws(()=>parseMediaLink(url));});
+test('Playback indicators never manufacture duration',()=>{assert.equal(playbackFraction(12,0),0);assert.equal(playbackFraction(12,24),50);assert.equal(playbackFraction(100,24),100);assert.equal(playbackTime(NaN),'0:00');assert.equal(playbackTime(65),'1:05');});

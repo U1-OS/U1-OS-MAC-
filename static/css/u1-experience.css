@@ -1,0 +1,54 @@
+#u1-boot-screen { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; isolation: isolate; overflow: hidden; color: #d9f2ff; background: radial-gradient(ellipse at 50% 42%, #07305b75, transparent 48%), linear-gradient(#010714a8,#01081775), url('/assets/u1-landscape.png') center bottom / cover no-repeat, #010611; font-family: 'Space Grotesk','Avenir Next',sans-serif; transition: opacity .26s, visibility .26s; }
+#u1-boot-screen.complete { opacity: 0; visibility: hidden; pointer-events: none; }
+.u1-boot-content { text-align: center; width: min(600px,90vw); position: relative; }
+.u1-boot-emblem { width: 166px; height: 166px; margin: 0 auto 28px; display: grid; place-items: center; position: relative; }
+.u1-boot-emblem > svg { width: 105px; height: 105px; filter: drop-shadow(0 0 17px #008fffcc); }
+.u1-boot-emblem > i { position: absolute; inset: 0; border: 1px solid #1778c366; border-right: 2px solid #58e5ff; border-radius: 50%; box-shadow: 10px 0 20px -15px #2fc6ff; animation: u1-orbital-load 6s linear infinite; }
+.u1-boot-emblem > i:nth-child(2) { inset: -14px; border: 1px solid #19559744; border-left-color: #598dffb0; animation-direction: reverse; animation-duration: 11s; }
+.u1-boot-kicker { color: #63bce5; font-size: 10px; letter-spacing: 3.5px; margin: 0 0 12px; }
+.u1-boot-content h1 { font-size: clamp(48px,7vw,78px); font-weight: 500; letter-spacing: 13px; margin: 0 0 9px; color: #deefff; text-shadow: 0 0 35px #267fff52; }
+.u1-boot-tagline { font-size: 10px; letter-spacing: 4px; color: #a0c4ef; margin: 0; }
+.u1-boot-line { width: 180px; height: 1px; margin: 29px auto 20px; position: relative; overflow: hidden; background: #1e477167; }
+.u1-boot-line span { display: block; width: 60px; height: 1px; background: #67e8ff; box-shadow: 0 0 10px #14b8ff; animation: u1-load-line 2s ease-in-out infinite alternate; }
+#u1-boot-status { font: 12px/1.7 'Manrope','Avenir Next',sans-serif; color: #b7d5f1; min-height: 22px; margin: 0 0 20px; }
+.u1-boot-checks { display: flex; justify-content: center; gap: 27px; font-size: 9px; text-align: left; color: #668daf; margin-bottom: 24px; }
+.u1-boot-checks > span { display: flex; flex-direction: column; gap: 6px; }
+.u1-boot-checks i { color: #a6bad4; font-style: normal; }
+.u1-boot-checks .ready i { color: #49eec9; }
+#u1-boot-skip { border: 1px solid #4a7a9d5e; background: #0b263a78; border-radius: 9px; padding: 10px 16px; color: #a3c8e8; font-size: 10px; display: inline-flex; align-items: center; gap: 11px; cursor: pointer; }
+#u1-boot-skip svg { width: 14px; height: 14px; }
+#u1-boot-screen footer { position: absolute; bottom: 28px; font-size: 8px; color: #6bcaeb; letter-spacing: 2px; text-align: center; padding: 0 20px; }
+#u1-boot-screen footer b { padding: 0 14px; font-weight: 400; }
+#prism-shell .u1-experience-panel { margin-top: 22px; }
+#prism-shell .u1-experience-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; padding: 8px 0 14px; }
+#prism-shell .u1-experience-options > label { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 16px 0; border-bottom: 1px solid #44769c33; font-size: 12px; color: #d5e7ff; }
+#prism-shell .u1-experience-options > label > span > svg { width: 17px; height: 17px; margin-right: 8px; color: #7bdeff; }
+#prism-shell .u1-experience-options small { display: block; margin-top: 6px; font-size: 10px; color: #98b4d1; }
+#prism-shell .u1-experience-options input[type="checkbox"] { accent-color: #37e0f2; width: 18px; height: 18px; }
+#prism-shell .u1-experience-options .u1-volume { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 12px; }
+#prism-shell .u1-volume output { float: right; font-size: 11px; color: #78e6ff; }
+#prism-shell .u1-volume input[type="range"] { width: 100%; accent-color: #4bddf7; height: 4px; padding: 0; }
+#prism-shell .u1-experience-panel > .prism-inline-actions { padding: 5px 0 14px; }
+#prism-shell .u1-currency-icons { display: inline-flex; gap: 3px; align-items: center; margin-right: 5px; }
+#prism-shell .u1-coin { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 50%; font: normal 700 13px/1 'Space Grotesk',sans-serif; border: 1px solid #b6d8ff48; box-shadow: inset 0 1px #fff3, 0 0 9px #148dff25; }
+#prism-shell .u1-coin.bitcoin { background: linear-gradient(145deg,#ffbb46,#e58406); color: #fff4d8; box-shadow: 0 0 9px #ffae2c38; }
+#prism-shell .u1-coin.ethereum { background: linear-gradient(145deg,#768aca,#293361); color: #e4eeff; }
+#prism-shell .u1-coin.solana { background: linear-gradient(145deg,#052c37,#17234b); color: #67f1dc; }
+#prism-shell .u1-coin svg { width: 13px; height: 13px; }
+[data-u1-motion="on"] #prism-shell .prism-provider-mark { animation: u1-mark-breathe 5.6s ease-in-out infinite; }
+[data-u1-motion="on"] #prism-shell .prism-provider:nth-child(2) .prism-provider-mark { animation-delay: -.8s; }
+[data-u1-motion="on"] #prism-shell .prism-provider:nth-child(3) .prism-provider-mark { animation-delay: -1.7s; }
+[data-u1-motion="on"] #prism-shell .prism-provider:nth-child(4) .prism-provider-mark { animation-delay: -2.5s; }
+[data-u1-motion="on"] #prism-shell .prism-brand > .prism-logo { animation: u1-identity-glow 7s ease-in-out infinite; }
+[data-u1-motion="on"] #prism-shell .prism-dock button:hover > svg { animation: u1-icon-hover .55s ease both; }
+[data-u1-motion="on"] #prism-shell .prism-sidebar nav button:hover svg { transform: translateY(-1px); filter: drop-shadow(0 0 7px #4bc8ff88); }
+[data-u1-motion="on"] #prism-shell .u1-coin.bitcoin { animation: u1-coin-glow 6s ease-in-out infinite; }
+[data-u1-motion="off"] #prism-shell *, [data-prism-effects="reduced"] #prism-shell * { animation: none !important; }
+@keyframes u1-orbital-load { to { transform: rotate(360deg); } }
+@keyframes u1-load-line { from { transform: translateX(-10px); } to { transform: translateX(130px); } }
+@keyframes u1-mark-breathe { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes u1-identity-glow { 0%,100% { filter: drop-shadow(0 0 8px #168cf580); } 50% { filter: drop-shadow(0 0 15px #19baffae); } }
+@keyframes u1-icon-hover { 0% { transform: translateY(0); } 45% { transform: translateY(-3px) rotate(-4deg); } 100% { transform: translateY(-1px); } }
+@keyframes u1-coin-glow { 0%,100% { box-shadow: 0 0 6px #ffae2c20; } 50% { box-shadow: 0 0 11px #ffae2c50; } }
+@media(max-width:600px) { #prism-shell .u1-experience-options { grid-template-columns: 1fr; } .u1-boot-emblem { width: 130px; height: 130px; } .u1-boot-content h1 { font-size: 53px; letter-spacing: 8px; } .u1-boot-tagline { font-size: 8px; letter-spacing: 2.7px; } .u1-boot-kicker { font-size: 8px; letter-spacing: 2px; } }
+@media(prefers-reduced-motion:reduce) { #u1-boot-screen *, #prism-shell .prism-provider-mark, #prism-shell .prism-logo, #prism-shell .u1-coin { animation: none !important; transition: none !important; } }

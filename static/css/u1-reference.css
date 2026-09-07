@@ -1,0 +1,265 @@
+/* U1 OS / Orbital Glass. Reference-led identity over the preserved workspace. */
+:root.prism-theme {
+  --prism-ink: #e8f2ff; --prism-muted: #a3bddd; --prism-line: #548abb60;
+  --prism-cyan: #36e4ff; --prism-blue: #1765ff; --prism-radius: 16px;
+}
+#prism-shell {
+  grid-template-columns: 220px minmax(0, 1fr);
+  background: radial-gradient(ellipse at 51% 19%, #00356d33, transparent 38%),
+    linear-gradient(#02071208, #01061100 55%, #01091408), url('/assets/u1-landscape.png') center bottom / cover no-repeat, #010611;
+}
+#prism-shell::before { opacity: .5; background-size: 183px 229px, 297px 353px; }
+#prism-shell .prism-sidebar { padding: 18px 14px 24px; background: linear-gradient(135deg, #020812f7 70%, #06224bbe); border-right-color: #127bcc8a; box-shadow: 7px 0 28px #0065b411; }
+#prism-shell .prism-sidebar::after { top: 23%; height: 47%; width: 1px; background: linear-gradient(transparent, #53daff, transparent); box-shadow: 0 0 12px #2dc9ff; }
+#prism-shell .prism-brand { padding: 0 1px 23px; gap: 12px; position: relative; border-bottom-color: #298bea78; }
+#prism-shell .prism-brand::after { content: ''; position: absolute; bottom: -1px; right: -14px; width: 45px; height: 1px; transform-origin: right center; transform: rotate(-39deg); background: #47d6ff; box-shadow: 0 0 10px #169fff; }
+#prism-shell .prism-brand > .prism-logo { width: 43px; height: 48px; filter: drop-shadow(0 0 9px #168cf5a6); }
+#prism-shell .prism-brand > .prism-logo > svg { width: 43px; height: 48px; }
+#prism-shell .prism-brand > span:last-child { font-size: 31px; letter-spacing: 2px; font-weight: 500; color: #c5d9ff; line-height: 1.16; }
+#prism-shell .prism-brand small { font-size: 7px !important; line-height: 2; letter-spacing: 1.3px; margin-top: 5px; color: #9dcafd !important; }
+#prism-shell .prism-sidebar nav { gap: 5px; }
+#prism-shell .prism-sidebar nav button { min-height: 43px; border-radius: 10px; color: #a0c0f0 !important; gap: 15px; }
+#prism-shell .prism-sidebar nav button svg { width: 23px !important; height: 23px !important; stroke-width: 1.6; }
+#prism-shell .prism-sidebar nav button.active { color: #f6fbff !important; background: linear-gradient(105deg, #086af6b0, #1244e3db); border: 1px solid #407fff; box-shadow: inset 3px 0 #89f4ff, inset 0 0 19px #0b66ff72, 0 0 24px #006bff40; }
+#prism-shell .prism-sidebar nav button.active::after { content: ''; width: 6px; height: 6px; border-top: 1px solid #7eacff; border-right: 1px solid #7eacff; transform: rotate(45deg); margin-left: auto; }
+#prism-shell .prism-sidebar [data-count]:empty { display: none; }
+#prism-shell .prism-sidebar-quote { border-color: #436aca5c; padding: 19px 17px; background: radial-gradient(ellipse at 100% 100%, #1446ff60, transparent 68%), #070f20a8; box-shadow: 8px 8px 20px #1749ff14; color: #c8d9ff; letter-spacing: .9px; font-size: 11px; }
+#prism-shell .prism-sidebar-quote > span { display: none; }
+#prism-shell .prism-sidebar-quote p { margin: 0; }
+#prism-shell .prism-topbar { min-height: 81px; padding: 13px 24px 22px; border-bottom-color: #12679a33; background: linear-gradient(180deg, #010611c9, #030b1740); }
+#prism-shell .prism-global-search { height: 48px; width: min(685px, 70%); margin-left: clamp(0px, 6vw, 130px); border: 1px solid #bbdfff; box-shadow: inset 0 0 13px #087eff2a, 0 0 18px #005fff18; color: #819ec4 !important; background: #020c1ceb; font-size: 12px !important; }
+#prism-shell .prism-top-actions { gap: 14px; }
+#prism-shell .prism-top-actions > button { color: #ccdeff !important; }
+#prism-shell #prism-focus-caption { color: #85baf2; font-size: 8px; letter-spacing: 1.4px; bottom: 6px; }
+#prism-live-bar { background: #020e1dbc; border-color: #2087c63d; }
+#prism-live-bar [aria-label="Live information bar"] { min-height: 35px !important; height: 35px !important; padding: 3px 13px !important; background: #071724a6 !important; box-shadow: none !important; border: 0 !important; }
+#prism-live-bar [aria-label="Live information bar"] button { min-height: 24px !important; padding-top: 3px !important; padding-bottom: 3px !important; font-size: 9px !important; border-radius: 6px !important; }
+#prism-shell #prism-scroll { padding: 15px 22px 130px; }
+#prism-shell .prism-home-layout { grid-template-columns: minmax(0, 1fr) 302px; gap: 19px; }
+#prism-shell .prism-hero { height: 318px; min-height: 318px; margin-bottom: 15px; overflow: visible; }
+#prism-shell .prism-hero-copy { padding-left: 14px; }
+#prism-shell #prism-date { font-size: 13px; letter-spacing: 1.6px; color: #79d7ff !important; margin-bottom: 6px !important; }
+#prism-shell #prism-time { font-size: 68px; letter-spacing: -2px; color: #9eecff; text-shadow: 0 0 25px #00bfff66; }
+#prism-shell #prism-period { color: #dbe8ff; font-size: 16px !important; }
+#prism-shell .prism-hero h1 { margin-top: 10px !important; font-size: 25px; font-weight: 500; color: #e4edff; max-width: 60%; text-shadow: 0 2px 8px #010611; }
+#prism-shell .prism-hero-subtitle { font-size: 15px; letter-spacing: .15px; color: #92c8f6 !important; }
+#prism-shell .prism-quote { background: linear-gradient(110deg, #020b17ee, #071b33bc); border-color: #4774a460; border-left-color: #49caf99e; font-size: 13px; padding: 15px 18px; width: 225px; color: #e0eaff; box-shadow: 0 7px 23px #0004; backdrop-filter: blur(16px); }
+#prism-shell .prism-planet { width: min(66%, 450px); right: 12%; top: 48%; filter: drop-shadow(0 0 18px #0267bb22); }
+#prism-shell .prism-planet #prism-globe { filter: drop-shadow(0 0 17px #109eff35); }
+#prism-shell .prism-planet .orbit-one { border-right-width: 2px; border-right-color: #4bdeff; transform: translateY(-50%) rotate(-33deg); width: 92%; right: 4%; box-shadow: 8px 0 20px -13px #00c8ff; }
+#prism-shell .prism-planet .orbit-two { border-color: #1971b552; border-left-color: #46baff9e; transform: translateY(-50%) rotate(19deg); opacity: .5; }
+#prism-shell .prism-globe-credit { left: 28%; bottom: 5%; font-size: 6px; color: #68a0cc; }
+#prism-shell .prism-hero-words { right: 0; top: 23%; font-size: 11px; color: #80c9f7; letter-spacing: 1.7px; line-height: 2.05; }
+#prism-shell .prism-horizon { height: 68px; bottom: -2px; left: 0; right: 0; clip-path: none; background: url('/assets/u1-landscape.png') center bottom / 100% auto no-repeat; mask-image: linear-gradient(transparent, #000 45%); border: 0; opacity: .9; }
+#prism-shell .prism-provider-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) 69px; gap: 10px; margin-bottom: 15px; }
+#prism-shell .prism-provider { grid-template-columns: 39px minmax(0, 1fr); grid-template-rows: 39px auto auto; min-height: 132px; padding: 13px 12px 23px; border-radius: 14px; border-color: color-mix(in srgb, var(--provider), #061426 50%); background: radial-gradient(ellipse at 0 0, color-mix(in srgb, var(--provider), transparent 83%), transparent 54%), linear-gradient(135deg, #061624e8, #020d1af5); box-shadow: inset 0 1px 6px #abdcff0a, 0 6px 14px #0004; }
+#prism-shell .prism-provider::before { left: 7%; width: 59%; box-shadow: 0 0 9px 1px color-mix(in srgb, var(--provider), transparent 45%); }
+#prism-shell .prism-provider::after { content: ''; position: absolute; left: -3px; top: -3px; width: 25px; height: 25px; background: linear-gradient(135deg, color-mix(in srgb, var(--provider), white 55%), var(--provider) 20%, transparent 42%); opacity: .85; pointer-events: none; }
+#prism-shell .prism-provider > .prism-provider-mark { width: 38px; height: 38px; border-radius: 11px; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--provider), transparent 77%)); }
+#prism-shell .prism-provider > .prism-provider-mark svg { width: 33px !important; height: 33px !important; }
+#prism-shell .prism-provider > .canva-mark { border-radius: 50%; font-size: 32px; }
+#prism-shell .prism-provider > strong { font-size: 12px; font-weight: 500; }
+#prism-shell .prism-provider > span:not(.prism-provider-mark):not(.prism-status) { font-size: 8px; color: #b8d3f1; }
+#prism-shell .prism-provider > .prism-status { font-size: 8px; padding: 2px 5px; }
+#prism-shell .prism-provider-energy { bottom: 0; height: 30px; opacity: 1; filter: drop-shadow(0 0 4px var(--provider)); }
+#prism-shell .prism-provider-energy::after { clip-path: polygon(0 73%, 9% 72%, 15% 56%, 22% 61%, 30% 34%, 40% 59%, 46% 48%, 53% 4%, 57% 20%, 64% 54%, 71% 64%, 79% 51%, 84% 72%, 92% 51%, 100% 76%, 100% 83%, 92% 58%, 84% 79%, 79% 58%, 71% 71%, 64% 61%, 57% 28%, 53% 13%, 46% 55%, 40% 66%, 30% 41%, 22% 68%, 15% 63%, 9% 79%, 0 80%); }
+#prism-shell .prism-add-tool { background: linear-gradient(135deg, #1360a55e, #061125 65%); border-color: #448dced1; box-shadow: inset 0 1px 10px #509ef230; color: #c4dcff !important; }
+#prism-shell .prism-add-tool svg { width: 34px !important; height: 34px !important; }
+#prism-shell .prism-dashboard-panels { grid-template-columns: 1.05fr 1.15fr .98fr; gap: 12px; }
+#prism-shell .prism-panel { border: 1px solid #4375a85e; border-top-color: #81b5e299; border-left-color: #62b9dc80; border-radius: 16px; background: linear-gradient(125deg, #071626e8, #010c16ee); box-shadow: inset 0 1px 7px #a7dfff08, 0 10px 25px #0004; }
+#prism-shell .prism-panel > header { min-height: 46px; padding: 12px 14px; border-bottom-color: #658caf21; }
+#prism-shell .prism-panel > header h2 { font-size: 14px; font-weight: 500; color: #dbe8ff; }
+#prism-shell .prism-panel > header h2 svg { color: #c4e5ff; filter: drop-shadow(0 0 4px #6cb3ff4d); }
+#prism-shell .prism-panel > header .prism-button { font-size: 10px !important; color: #b4d1f6 !important; }
+#prism-shell .prism-dashboard-panels > .prism-panel { min-height: 248px; }
+#prism-shell .prism-project-row { min-height: 58px; }
+#prism-shell .prism-project-row strong { font-size: 12px; }
+#prism-shell .prism-project-row small { font-size: 10px !important; line-height: 1.6; }
+#prism-shell .prism-row-icon { background: linear-gradient(145deg, #1242709c, #081830); border-color: #205e8b78; color: #52e4ff; }
+#prism-shell .prism-gauges { gap: 10px; padding-top: 19px; }
+#prism-shell .prism-gauge > div { box-shadow: 0 0 14px #18c9ef16, inset 0 0 10px #0008; }
+#prism-shell .prism-gauge strong { font: 500 18px/1.3 var(--prism-title); }
+#prism-shell .prism-gauge > div > span { color: #bddcfa !important; font-size: 10px !important; }
+#prism-shell .prism-metric-history { height: 58px; padding: 6px 0; }
+#prism-shell .prism-source { font-size: 8px; color: #97b6d2; }
+#prism-shell .prism-drive-title { padding-top: 13px; gap: 9px; }
+#prism-shell .prism-drive-title .drive-mark { width: 35px; height: 35px; }
+#prism-shell .prism-drive-title strong { font-size: 12px; }
+#prism-shell .prism-drive-unavailable { margin-top: 10px; padding-top: 10px; }
+#prism-shell .prism-drive-unavailable > strong { font-size: 12px; color: #c7dfff; }
+#prism-shell .prism-drive-unavailable p { margin: 0; font-size: 9px; }
+#prism-shell .prism-folder-shortcuts > p { font-size: 9px; margin-bottom: 0; }
+#prism-shell .u1-local-label { display: block; text-transform: uppercase; letter-spacing: 1px; font-size: 8px !important; color: #80bcda; margin: 3px 0 6px; }
+#prism-shell .prism-weather { min-height: 181px; background: linear-gradient(110deg, #06132cf0, #0719386b), url('/assets/u1-landscape.png') 70% 100% / auto 550px no-repeat; border-color: #4770a58c; }
+#prism-shell .prism-weather-current { margin: 13px 0 8px; gap: 13px; }
+#prism-shell .prism-weather-current > svg { width: 38px; height: 38px; color: #ffc83f; filter: drop-shadow(0 0 12px #ffb40024); }
+#prism-shell .prism-weather-current strong { font-size: 43px; }
+#prism-shell .prism-weather-current strong > span { font-size: 30px; }
+#prism-shell .prism-weather .prism-mountain { display: none; }
+#prism-shell .prism-weather-location { font-size: 13px; color: #dce8ff; }
+#prism-shell .prism-weather-source { font-size: 7px; color: #8bb3d8; }
+#prism-shell .prism-home-rail { gap: 15px; }
+#prism-shell .prism-today-empty { min-height: 153px; padding: 12px 0 8px; gap: 7px; }
+#prism-shell .prism-today-empty > svg { width: 22px; height: 22px; }
+#prism-shell .prism-today-empty > p { font-size: 10px; }
+#prism-shell .prism-integration-rows button { min-height: 34px; padding: 6px 0; gap: 10px; font-size: 11px !important; }
+#prism-shell .prism-integration-rows .prism-status { font-size: 9px; }
+#prism-shell .prism-status.success { color: #45ffe1; background: #005a4566; }
+#prism-shell .prism-button.primary { background: linear-gradient(120deg, #09689f, #174cf0b0); border-color: #519ce39c; box-shadow: inset 0 1px #7ad9fa20, 0 0 14px #127fff16; }
+#prism-shell .prism-home-bottom { gap: 14px; margin-top: 16px; }
+#prism-shell .prism-home-bottom .prism-card-copy { font-size: 12px; }
+#prism-shell .prism-dock { left: calc(50% + 110px); bottom: 26px; min-width: 650px; gap: 17px; padding: 15px 27px 10px; border-radius: 24px; border-color: #2497ccd1; border-top-color: #72d5ffe0; background: linear-gradient(135deg, #09253adb, #010b17ec); box-shadow: 0 14px 45px #000b, inset 0 1px 25px #248ae61a; }
+#prism-shell .prism-dock::after { content: ''; position: absolute; left: -5px; top: -4px; width: 12px; height: 2px; background: #7fffff; transform: rotate(35deg); box-shadow: 0 0 13px 4px #1bbaff88; }
+#prism-shell .prism-dock button { font-size: 10px !important; gap: 6px; }
+#prism-shell .prism-dock button > svg { width: 37px !important; height: 37px !important; color: #e1efff; border-color: #3d6b9754; background: radial-gradient(at top, #2859a759, #07162b); box-shadow: 0 0 13px #156dff12; }
+#prism-shell .prism-dock .prism-dock-core > svg { width: 69px !important; height: 69px !important; margin-top: -24px; border-color: #5fe5ff; background: radial-gradient(at 40% 20%, #153992cc, #020b1e 75%); padding: 9px; filter: drop-shadow(0 0 13px #177affb0); }
+#prism-shell #prism-toast { left: calc(50% + 110px); }
+#prism-shell .prism-footer { margin-top: 29px; font-size: 9px; letter-spacing: 1.6px; color: #37dfff; }
+#prism-shell .prism-page-header { padding: 15px 2px 30px; }
+#prism-shell .prism-page-header h1 { font-weight: 500; color: #e3efff; text-shadow: 0 0 26px #2474ff1b; }
+#prism-shell .prism-project-card, #prism-shell .prism-note-card, #prism-shell .prism-integration-card { border-top-color: #5a9fda9c; }
+#prism-shell .prism-note-card { padding: 21px; }
+#prism-shell .prism-note-card > span { color: #7ed3ef; font-size: 9px; letter-spacing: 1.3px; }
+#prism-shell .prism-integration-card { padding: 20px; }
+#prism-shell .prism-integration-card > header { padding: 0 0 15px; margin: 0 0 16px; min-height: 45px; }
+#prism-shell .prism-integration-card > h2 { margin: 0 0 13px; }
+#prism-shell .prism-integration-card > p { margin: 0 0 15px; }
+#prism-shell .prism-integration-card > button { margin-left: 0; align-self: flex-start; margin-top: auto; }
+#prism-shell .prism-calendar-day { background: #020f1fe0; }
+#prism-shell .prism-calendar-day.today { background: #073252bb; box-shadow: inset 0 2px #50dcff; }
+#prism-shell .prism-command-emblem svg { width: 94px; height: 94px; }
+#prism-shell .prism-command-surface { border-color: #4ab4df66; background: radial-gradient(ellipse at 50% 0, #09499665, transparent 65%), #031322df; }
+#prism-shell .prism-command-box { border-color: #4fa3d4a8; box-shadow: 0 0 20px #008eff13; }
+#prism-shell .prism-dialog { border-color: #559edebb; background: linear-gradient(140deg, #0b2440f7, #020c1cfa); box-shadow: 0 35px 100px #000d, 0 0 55px #0667ca22; }
+#prism-shell .prism-dialog > header { background: #0c294040; }
+.prism-standalone { background: linear-gradient(#01061118, #010611a0), url('/assets/u1-landscape.png') center bottom / cover fixed no-repeat, #010611 !important; }
+.prism-standalone .studio-brand > span:last-child { font-size: 26px; letter-spacing: 2px; }
+.prism-standalone .studio-brand > .prism-logo > svg { width: 43px; height: 43px; }
+.prism-standalone .studio-card, .prism-standalone .studio-panel, .prism-standalone .integration-card { background: #041322eb; border-color: #426fa777; }
+@media (min-width: 1650px) { #prism-shell .prism-hero { height: 380px; min-height: 380px; } #prism-shell .prism-planet { width: 505px; right: 12%; } }
+@media (max-width: 1340px) {
+  #prism-shell .prism-home-layout { grid-template-columns: minmax(0, 1fr) 255px; gap: 15px; }
+  #prism-shell .prism-provider-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #prism-shell .prism-add-tool { display: none; }
+  #prism-shell .prism-provider { grid-template-columns: 29px minmax(0, 1fr); padding-inline: 10px; column-gap: 7px; }
+  #prism-shell .prism-provider > .prism-provider-mark { width: 28px; height: 28px; }
+  #prism-shell .prism-provider > .prism-provider-mark svg { width: 26px !important; height: 26px !important; }
+  #prism-shell .prism-provider > strong { font-size: 10px; }
+  #prism-shell .prism-provider > span:not(.prism-provider-mark):not(.prism-status) { font-size: 7px; }
+  #prism-shell .prism-planet { right: -2%; width: 64%; }
+  #prism-shell .prism-hero-words { display: none; }
+  #prism-shell .prism-hero h1 { font-size: 22px; }
+  #prism-shell .prism-hero-subtitle { font-size: 13px; }
+  #prism-shell .prism-dashboard-panels { grid-template-columns: 1fr 1fr; }
+  #prism-shell .prism-dashboard-panels > :last-child { grid-column: 1 / -1; min-height: 190px; }
+}
+@media (max-width: 1050px) {
+  #prism-shell { grid-template-columns: 76px minmax(0, 1fr); }
+  #prism-shell .prism-sidebar { padding-inline: 10px; }
+  #prism-shell .prism-brand { padding-inline: 0; gap: 0; justify-content: center; }
+  #prism-shell .prism-brand::after { display: none; }
+  #prism-shell .prism-sidebar nav button { padding-inline: 8px; }
+  #prism-shell .prism-global-search { margin-left: 0; }
+  #prism-shell .prism-dock { left: calc(50% + 38px); min-width: 0; gap: 11px; padding-inline: 19px; }
+  #prism-shell #prism-toast { left: calc(50% + 38px); }
+}
+@media (max-width: 820px) {
+  #prism-shell .prism-home-layout { grid-template-columns: minmax(0, 1fr); }
+  #prism-shell .prism-home-rail { grid-template-columns: 1fr 1fr; }
+  #prism-shell .prism-home-rail > :last-child { grid-column: 1 / -1; }
+  #prism-shell .prism-planet { right: 4%; width: 65%; }
+  #prism-shell .prism-hero h1 { font-size: 24px; }
+  #prism-shell .prism-top-actions { gap: 5px; }
+  #prism-shell .prism-dock { gap: 8px; padding-inline: 13px; }
+  #prism-shell .prism-dock button { font-size: 9px !important; }
+  #prism-shell .prism-dock button > svg { width: 32px !important; height: 32px !important; }
+  #prism-shell .prism-dock .prism-dock-core > svg { width: 57px !important; height: 57px !important; margin-top: -17px; }
+}
+@media (max-width: 600px) {
+  #prism-shell { display: block; background-position: 60% bottom; }
+  #prism-shell .prism-sidebar { padding: 23px 15px; background: #020c1af7; }
+  #prism-shell .prism-sidebar nav { gap: 3px; }
+  #prism-shell .prism-sidebar nav button { min-height: 41px; padding-inline: 12px; }
+  #prism-shell .prism-brand { justify-content: flex-start; gap: 14px; }
+  #prism-shell .prism-brand > span:last-child { font-size: 30px; }
+  #prism-shell .prism-topbar { padding: 12px 10px 18px; min-height: 69px; gap: 8px; }
+  #prism-shell .prism-global-search { margin-left: 0; height: 37px; width: 100%; font-size: 10px !important; padding-inline: 11px; }
+  #prism-shell .prism-top-actions { gap: 0; }
+  #prism-shell #prism-focus-caption { font-size: 6px; letter-spacing: .8px; bottom: 4px; right: 15px; }
+  #prism-live-bar [aria-label="Live information bar"] { padding-inline: 8px !important; }
+  #prism-shell #prism-scroll { padding: 13px 12px 108px; }
+  #prism-shell .prism-home-layout { display: grid; grid-template-columns: minmax(0, 1fr); }
+  #prism-shell .prism-hero { height: 322px; min-height: 322px; overflow: hidden; }
+  #prism-shell .prism-hero-copy { padding: 8px 3px 0; }
+  #prism-shell #prism-date { font-size: 11px; }
+  #prism-shell #prism-time { font-size: 58px; }
+  #prism-shell #prism-period { font-size: 12px !important; }
+  #prism-shell .prism-hero h1 { font-size: 22px; max-width: 96%; margin-top: 8px !important; }
+  #prism-shell .prism-hero-subtitle { font-size: 12px; }
+  #prism-shell .prism-quote { margin-top: 17px; width: 154px; max-width: 47%; padding: 12px; font-size: 10px; }
+  #prism-shell .prism-planet { width: 88%; right: -28%; top: 66%; }
+  #prism-shell .prism-horizon { height: 53px; }
+  #prism-shell .prism-provider-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  #prism-shell .prism-provider { grid-template-columns: 35px minmax(0, 1fr); min-height: 132px; padding: 12px 11px 25px; }
+  #prism-shell .prism-provider > .prism-provider-mark { width: 34px; height: 34px; }
+  #prism-shell .prism-provider > .prism-provider-mark svg { width: 30px !important; height: 30px !important; }
+  #prism-shell .prism-provider > strong { font-size: 11px; }
+  #prism-shell .prism-provider > span:not(.prism-provider-mark):not(.prism-status) { font-size: 8px; }
+  #prism-shell .prism-dashboard-panels, #prism-shell .prism-home-rail { grid-template-columns: minmax(0, 1fr); }
+  #prism-shell .prism-dashboard-panels > :last-child, #prism-shell .prism-home-rail > :last-child { grid-column: auto; }
+  #prism-shell .prism-dashboard-panels > .prism-panel { min-height: 0; }
+  #prism-shell .prism-home-rail .prism-integration-rows { grid-template-columns: minmax(0, 1fr); }
+  #prism-shell .prism-dock { left: 50%; bottom: max(9px, env(safe-area-inset-bottom)); min-width: 0; width: calc(100% - 18px); max-width: 410px; gap: 2px; padding: 10px 9px 8px; border-radius: 18px; }
+  #prism-shell .prism-dock button { font-size: 7px !important; min-width: 27px; }
+  #prism-shell .prism-dock button > svg { width: 28px !important; height: 28px !important; }
+  #prism-shell .prism-dock .prism-dock-core { min-width: 42px; }
+  #prism-shell .prism-dock .prism-dock-core > svg { width: 43px !important; height: 43px !important; padding: 6px; margin-top: -13px; }
+  #prism-shell #prism-toast { left: 50%; }
+  #prism-shell .prism-footer { font-size: 6px; letter-spacing: .7px; }
+  #prism-shell .prism-hero-words { display: none; }
+  #prism-shell .prism-calendar-toolbar { flex-wrap: wrap; }
+  #prism-shell .prism-calendar-toolbar > .prism-button { font-size: 9px !important; }
+  #prism-shell .prism-page-header { padding-top: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { #prism-shell .prism-provider-energy, #prism-shell .prism-dock-core { animation: none !important; } }
+/* The local autopilot is deliberately separate from external account permissions. */
+#prism-shell .u1-autopilot { margin-bottom: 21px; }
+#prism-shell .u1-autopilot-hero { display: flex; align-items: center; gap: 20px; padding: 25px 8px; }
+#prism-shell .u1-autopilot-hero > div { flex: 1; }
+#prism-shell .u1-autopilot-hero h2 { font-size: 25px; margin-bottom: 9px; }
+#prism-shell .u1-autopilot-hero p { max-width: 670px; font-size: 12px; color: #a3bfdd; margin: 0; }
+#prism-shell .u1-agent-orb { display: grid; place-items: center; width: 65px; height: 65px; flex: 0 0 auto; color: #8df3ff; border-radius: 50%; border: 1px solid #48beed; background: radial-gradient(#1d609c, #041c37 70%); box-shadow: 0 0 25px #168dff38; }
+#prism-shell .u1-agent-orb svg { width: 31px; height: 31px; }
+#prism-shell .u1-autopilot-rules { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 15px; padding: 0 8px 22px; }
+#prism-shell .u1-autopilot-rules > div { display: flex; gap: 10px; align-items: center; padding: 15px; border: 1px solid #436e965a; background: #0e2d434d; border-radius: 11px; }
+#prism-shell .u1-autopilot-rules > div > div { flex: 1; }
+#prism-shell .u1-autopilot-rules > div > span { color: #64dcf4; }
+#prism-shell .u1-autopilot-rules strong { font-size: 11px; font-weight: 500; }
+#prism-shell .u1-autopilot-rules p { font-size: 10px; color: #92b0d0; margin: 5px 0 0; }
+#prism-shell .u1-toggle { width: 33px; height: 19px; padding: 2px; border: 1px solid #517496; border-radius: 20px; background: #142539; flex: 0 0 auto; }
+#prism-shell .u1-toggle i { display: block; width: 13px; height: 13px; border-radius: 50%; background: #a2b7ce; transition: transform .2s; }
+#prism-shell .u1-toggle.on { background: #076579; border-color: #27daed; }
+#prism-shell .u1-toggle.on i { background: #a5f8ff; transform: translateX(13px); }
+#prism-shell .u1-autopilot-details { margin-bottom: 20px; }
+#prism-shell .u1-briefing-date { padding-top: 18px; color: #62dff9; font-size: 11px; }
+#prism-shell .u1-briefing-copy { font: 500 19px/1.6 var(--prism-title); color: #d2e8ff; }
+#prism-shell .u1-guardrails { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+#prism-shell .u1-guardrails > span { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #b4c9df; background: #21395166; border-radius: 7px; padding: 6px 8px; }
+#prism-shell .u1-guardrails svg { width: 13px; height: 13px; color: #ddc089; }
+#prism-shell .u1-agent-activity { display: grid; }
+#prism-shell .u1-agent-activity article { display: flex; gap: 13px; padding: 15px 2px; border-bottom: 1px solid #5383ac28; }
+#prism-shell .u1-agent-activity article > span { color: #5bcbeb; }
+#prism-shell .u1-agent-activity strong { font-size: 12px; font-weight: 500; }
+#prism-shell .u1-agent-activity p { font-size: 11px; color: #a8c3de; margin: 4px 0; }
+#prism-shell .u1-agent-activity small { font-size: 9px; }
+#prism-shell .u1-existing-automation { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 20px; }
+#prism-shell .notion-mark { background: #dce8f2; color: #071425; font: 700 24px Georgia,serif; border-radius: 6px; }
+#prism-shell .github-mark { background: #21395780; }
+#prism-shell .gmail-mark, #prism-shell .calendar-mark, #prism-shell .slack-mark { background: #14284370; }
+#prism-shell .prism-sidebar .u1-glyph { filter: drop-shadow(0 0 4px #458cff36); }
+#prism-shell .prism-dock [data-route="ai"] > .u1-glyph { color: #73f2fa; }
+#prism-shell .prism-dock [data-route="legacy:ai"] > .u1-glyph { color: #a4bfff; }
+#prism-shell .prism-dock [data-route="notes"] > .u1-glyph { color: #eed19a; }
+#prism-shell .prism-dock [data-route="media"] > .u1-glyph { color: #8cdaff; }
+@media (max-width:1050px) { #prism-shell .u1-autopilot-rules { grid-template-columns: 1fr; } }
+@media (max-width:600px) { #prism-shell .u1-autopilot-hero { flex-wrap: wrap; gap: 14px; padding: 19px 0; } #prism-shell .u1-autopilot-hero h2 { font-size: 19px; } #prism-shell .u1-agent-orb { width: 49px; height: 49px; } #prism-shell .u1-autopilot-hero > div { min-width: 200px; } #prism-shell .u1-autopilot-rules { padding-inline: 0; } }

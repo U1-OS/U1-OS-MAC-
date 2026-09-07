@@ -1,0 +1,691 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# COMMAND CENTER // macOS Business Operating System CLI
+# ==============================================================================
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+PID_FILE="$DIR/.command-center.pid"
+PORT=8787
+HOST="127.0.0.1"
+
+get_pid() {
+  if [ -f "$PID_FILE" ]; then
+    PID=$(cat "$PID_FILE")
+    if ps -p "$PID" > /dev/null 2>&1; then
+      echo "$PID"
+      return
+    fi
+  fi
+  # Fallback to lsof on port
+  PID=$(lsof -ti :$PORT 2>/dev/null | head -n 1)
+  if [ -n "$PID" ]; then
+    echo "$PID"
+  fi
+}
+
+cmd_start() {
+  PID=$(get_pid)
+  if [ -n "$PID" ]; then
+    echo -e "\033[33m[WARN]\033[0m Command Center is already running (PID: $PID) on http://$HOST:$PORT"
+    return 0
+  fi
+
+  echo -e "\033[33m[BOOT]\033[0m Starting Command Center local feeder on http://$HOST:$PORT..."
+  nohup python3 "$DIR/server.py" > "$DIR/command-center.log" 2>&1 &
+  NEW_PID=$!
+  echo $NEW_PID > "$PID_FILE"
+  sleep 1
+
+  if ps -p $NEW_PID > /dev/null 2>&1; then
+    echo -e "\033[32m[ACTIVE]\033[0m Command Center running successfully (PID: $NEW_PID)"
+    echo -e "         URL: \033[1;33mhttp://$HOST:$PORT\033[0m"
+    echo -e "         Binding: Localhost only (Strict 127.0.0.1)"
+  else
+    echo -e "\033[31m[ERROR]\033[0m Failed to start server. Check logs: $DIR/command-center.log"
+    exit 1
+  fi
+}
+
+cmd_stop() {
+  PID=$(get_pid)
+  if [ -z "$PID" ]; then
+    echo -e "\033[33m[INFO]\033[0m Command Center is not currently running."
+    rm -f "$PID_FILE"
+    return 0
+  fi
+
+  echo -e "\033[33m[SHUTDOWN]\033[0m Stopping Command Center feeder (PID: $PID)..."
+  kill $PID 2>/dev/null
+  sleep 1
+  if ps -p $PID > /dev/null 2>&1; then
+    kill -9 $PID 2>/dev/null
+  fi
+  rm -f "$PID_FILE"
+  echo -e "\033[32m[STOPPED]\033[0m Command Center shut down cleanly."
+}
+
+cmd_restart() {
+  cmd_stop
+  sleep 1
+  cmd_start
+}
+
+cmd_status() {
+  PID=$(get_pid)
+  echo "============================================================"
+  echo " COMMAND CENTER // macOS Business Operating System"
+  echo "============================================================"
+  if [ -n "$PID" ]; then
+    echo -e "Status:      \033[32mONLINE // ACTIVE\033[0m"
+    echo -e "Process ID:  $PID"
+    echo -e "Binding:     http://$HOST:$PORT (127.0.0.1 ONLY)"
+    
+    # Query state
+    STATE_INFO=$(curl -s "http://$HOST:$PORT/api/state" 2>/dev/null)
+    if [ -n "$STATE_INFO" ]; then
+      COMMIT=$(echo "$STATE_INFO" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('services',{}).get('settings',{}).get('data',{}).get('updater',{}).get('commit','unknown'))")
+      BRANCH=$(echo "$STATE_INFO" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('services',{}).get('settings',{}).get('data',{}).get('updater',{}).get('branch','main'))")
+      SERVICES=$(echo "$STATE_INFO" | python3 -c "import sys, json; d=json.load(sys.stdin); print(len(d.get('services',{})))")
+      echo -e "Git Commit:  $COMMIT (branch: $BRANCH)"
+      echo -e "Services:    $SERVICES modular integrations mounted"
+    fi
+  else
+    echo -e "Status:      \033[31mOFFLINE // STOPPED\033[0m"
+    echo -e "Binding:     http://$HOST:$PORT"
+    echo -e "Action:      Run './command-center start' to launch"
+  fi
+  echo "============================================================"
+}
+
+cmd_open() {
+  PID=$(get_pid)
+  if [ -z "$PID" ]; then
+    echo -e "\033[33m[NOTICE]\033[0m Starting server first..."
+    cmd_start
+  fi
+  echo -e "\033[33m[OPEN]\033[0m Launching Command Center in default macOS browser..."
+  open "http://$HOST:$PORT"
+}
+
+cmd_test() {
+  if [ -f "tests/test_full_suite.py" ]; then
+    python3 tests/test_full_suite.py
+  else
+    echo -e "\033[33m[TEST]\033[0m Running Command Center automated verification suite..."
+    python3 -c "
+import urllib.request, json
+try:
+    with urllib.request.urlopen('http://$HOST:$PORT/api/state', timeout=5) as r:
+        d = json.loads(r.read().decode('utf-8'))
+        print('  [PASS] /api/state reachable')
+        print(f'  [PASS] Mounted services: {list(d.get(\"services\", {}).keys())}')
+    with urllib.request.urlopen('http://$HOST:$PORT/api/config', timeout=5) as r:
+        c = json.loads(r.read().decode('utf-8'))
+        print('  [PASS] /api/config reachable & masked')
+    print('\033[32m  [SUCCESS] All verification probes passed.\033[0m')
+except Exception as e:
+    print(f'\033[31m  [FAIL] Error connecting to feeder: {e}\033[0m')
+"
+  fi
+}
+
+cmd_install_agent() {
+  echo -e "\033[33m[macOS]\033[0m Registering Command Center LaunchAgent daemon..."
+  python3 utils/macos.py install
+}
+
+cmd_uninstall_agent() {
+  echo -e "\033[33m[macOS]\033[0m Deregistering Command Center LaunchAgent daemon..."
+  python3 utils/macos.py uninstall
+}
+
+cmd_notify() {
+  TITLE="${2:-Command Center}"
+  MSG="${3:-macOS Notification Bridge Operational}"
+  python3 utils/macos.py notify --title "$TITLE" --message "$MSG"
+}
+
+cmd_vault() {
+  SUB="$2"
+  shift 2 2>/dev/null || shift 1 2>/dev/null
+  python3 utils/vault.py "$SUB" "$@"
+}
+
+cmd_briefing() {
+  echo -e "\033[33m[DOSSIER]\033[0m Compiling Command Center Executive Business Dossier..."
+  python3 utils/briefing.py
+}
+
+cmd_menubar() {
+  python3 utils/menubar.py
+}
+
+cmd_llm() {
+  PROMPT="${2:-Analyze current business velocity and market conditions.}"
+  PROVIDER="${3:-ollama}"
+  echo -e "\033[33m[AI WORKBENCH]\033[0m Dispatching query via $PROVIDER..."
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'service': 'ai_workbench', 'action': 'run_prompt', 'payload': {'provider': '$PROVIDER', 'prompt': '$PROMPT', 'sandbox': True}}).encode('utf-8')
+req = urllib.request.Request('http://127.0.0.1:8787/api/action', data=payload, headers={'Content-Type': 'application/json'})
+with urllib.request.urlopen(req) as r:
+    res = json.loads(r.read().decode('utf-8'))
+    print(res.get('text', ''))
+"
+}
+
+cmd_speak() {
+  echo -e "\033[33m[AUDIO BRIEF]\033[0m Speaking Command Center executive business brief..."
+  python3 -c "
+from utils.briefing import speak_briefing
+res = speak_briefing()
+if res.get('success'):
+    print('\033[32m[SPOKEN]\033[0m Briefing completed successfully.')
+else:
+    print('\033[31m[ERR]\033[0m', res.get('error', 'Speech synthesis failed'))
+"
+}
+
+cmd_hardware() {
+  echo "============================================================"
+  echo " COMMAND CENTER // macOS Hardware Telemetry HUD"
+  echo "============================================================"
+  python3 -c "
+import urllib.request, json
+try:
+    with urllib.request.urlopen('http://$HOST:$PORT/api/state', timeout=3) as r:
+        d = json.loads(r.read().decode('utf-8'))
+        hw = d.get('services', {}).get('intelligence', {}).get('data', {}).get('hardware', {})
+        sys_info = hw.get('system', {})
+        batt = hw.get('battery', {})
+        disk = hw.get('disk', {})
+        print(f'Apple Model:  {sys_info.get(\"model\", \"Macintosh\")}')
+        print(f'Compute:      {sys_info.get(\"cpu_cores\", \"--\")} Cores // {sys_info.get(\"ram_gb\", \"--\")} GB RAM')
+        print(f'Power/Batt:   {batt.get(\"status_label\", \"AC Connected\")} (Present: {batt.get(\"present\")})')
+        print(f'SSD Storage:  {disk.get(\"free_gb\", 0)} GB Free of {disk.get(\"total_gb\", 0)} GB ({disk.get(\"used_pct\", 0)}% used)')
+except Exception as e:
+    print(f'Error querying hardware: {e}')
+"
+  echo "============================================================"
+}
+
+cmd_webhook_test() {
+  SOURCE="${2:-stripe}"
+  echo -e "\033[33m[WEBHOOK]\033[0m Transmitting test webhook payload to /api/webhooks/$SOURCE..."
+  curl -s -X POST "http://$HOST:$PORT/api/webhooks/$SOURCE" \
+    -H "Content-Type: application/json" \
+    -d "{\"event\":\"payment_intent.succeeded\",\"customer\":\"cus_vip_998\",\"amount\":125000,\"currency\":\"usd\",\"status\":\"succeeded\"}" | python3 -m json.tool
+}
+
+cmd_scheduler() {
+  ACTION="${2:-status}"
+  JOB_ID="$3"
+  if [ "$ACTION" == "trigger" ] && [ -n "$JOB_ID" ]; then
+    echo -e "\033[33m[SCHEDULER]\033[0m Triggering scheduled task '$JOB_ID'..."
+    curl -s -X POST "http://$HOST:$PORT/api/action" \
+      -H "Content-Type: application/json" \
+      -d "{\"service\":\"settings\",\"action\":\"trigger_scheduled_task\",\"payload\":{\"job_id\":\"$JOB_ID\"}}" | python3 -m json.tool
+  else
+    echo "============================================================"
+    echo " COMMAND CENTER // Background Automation Tasks"
+    echo "============================================================"
+    curl -s "http://$HOST:$PORT/api/scheduler" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for j in data.get('jobs', []):
+    print(f\"• [{j['status']}] {j['name']} ({j['interval_human']})\")
+    print(f\"    ID: {j['id']} | Last Run: {j['last_run_str']} | Next: {j['next_run_str']}\")
+    if j.get('last_result'):
+        print(f\"    Result: {j['last_result'].get('summary', '')}\")
+"
+    echo "============================================================"
+  fi
+}
+
+cmd_ssl() {
+  DOMAIN="${2:-apple.com}"
+  echo -e "\033[33m[SSL SENTINEL]\033[0m Inspecting Port 443 TLS certificate for $DOMAIN..."
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'service': 'osint', 'action': 'inspect_ssl', 'payload': {'domain': '$DOMAIN'}}).encode('utf-8')
+req = urllib.request.Request('http://$HOST:$PORT/api/action', data=payload, headers={'Content-Type': 'application/json'})
+with urllib.request.urlopen(req) as r:
+    res = json.loads(r.read().decode('utf-8'))
+    if res.get('success'):
+        c = res['result']
+        print(f\"Domain:       {c['domain']}\")
+        print(f\"Issuer:       {c['issuer']}\")
+        print(f\"Subject CN:   {c['subject_cn']}\")
+        print(f\"Valid Until:  {c['valid_to']} ({c['days_left']} days remaining)\")
+        print(f\"Risk Level:   {c['risk_level']}\")
+        print(f\"TLS Cipher:   {c['cipher']} ({c['tls_version']})\")
+        print(f\"SANs:         {', '.join(c['sans'][:4])}\")
+    else:
+        print('Error:', res.get('error'))
+"
+}
+
+cmd_ports() {
+  echo "============================================================"
+  echo " COMMAND CENTER // Localhost Listening Ports & Services"
+  echo "============================================================"
+  python3 -c "
+import urllib.request, json
+payload = json.dumps({'service': 'osint', 'action': 'audit_ports', 'payload': {}}).encode('utf-8')
+req = urllib.request.Request('http://$HOST:$PORT/api/action', data=payload, headers={'Content-Type': 'application/json'})
+with urllib.request.urlopen(req) as r:
+    res = json.loads(r.read().decode('utf-8'))
+    if res.get('success'):
+        p = res['result']
+        print(f\"Total Listening: {p['total_open_ports']} | Localhost Only: {p['localhost_count']} | Exposed: {p['exposed_count']}\")
+        print('------------------------------------------------------------')
+        for item in p['ports']:
+            exp_badge = '\033[32m[LOCAL]\033[0m' if item['localhost_only'] else '\033[33m[EXPOSED]\033[0m'
+            print(f\"{item['port']:<6} {exp_badge} {item['command']:<12} PID: {item['pid']:<7} {item['bind_str']}\")
+    else:
+        print('Error:', res.get('error'))
+"
+  echo "============================================================"
+}
+
+cmd_top() {
+  python3 -c "
+import sys
+from utils.process_watchdog import get_top_processes
+by = 'mem' if '--mem' in sys.argv else 'cpu'
+procs = get_top_processes(by=by, limit=12)
+print('============================================================')
+print(f' COMMAND CENTER // macOS Process Watchdog (Sort: {by.upper()})')
+print('============================================================')
+print(f'{\"PID\":<7} {\"CPU%\":>6} {\"MEM%\":>6} {\"STATUS\":<12} {\"PROCESS\"}')
+print('------------------------------------------------------------')
+for p in procs:
+    prot = '\033[33m[SYSTEM]\033[0m' if p.get('is_protected') else '\033[32m[APP]\033[0m'
+    print(f\"{p.get('pid'):<7} {p.get('cpu_pct'):>5.1f}% {p.get('mem_pct'):>5.1f}% {prot:<18} {p.get('name')}\")
+print('============================================================')
+" "$@"
+}
+
+cmd_kill() {
+  PID="$2"
+  SIG="${3:-TERM}"
+  if [ -z "$PID" ]; then
+    echo "Usage: ./command-center kill <pid> [TERM|KILL]"
+    exit 1
+  fi
+  echo -e "\033[33m[SAFETY GUARD]\033[0m Terminate process $PID with SIG$SIG?"
+  read -p "Type 'CONFIRM' to proceed: " CONF
+  if [ "$CONF" != "CONFIRM" ]; then
+    echo "Aborted."
+    exit 1
+  fi
+  python3 -c "
+from utils.process_watchdog import kill_process
+res = kill_process($PID, signal_name='$SIG', confirmed=True)
+if res.get('success'):
+    print('\033[32m[TERMINATED]\033[0m', res.get('message'))
+else:
+    print('\033[31m[ERROR]\033[0m', res.get('message', res.get('error')))
+"
+}
+
+cmd_lockdown() {
+  MODE="$2"
+  REASON="$3"
+  python3 -c "
+import urllib.request, json, sys
+mode = '$MODE'.lower()
+reason = '$REASON' or 'CLI Operator action'
+if mode in ['on', 'enable', 'true']:
+    body = json.dumps({'service': 'settings', 'action': 'toggle_lockdown', 'payload': {'enable': True, 'reason': reason, 'confirmed': True}}).encode('utf-8')
+    req = urllib.request.Request('http://127.0.0.1:8787/api/action', data=body, headers={'Content-Type': 'application/json'})
+    try:
+        with urllib.request.urlopen(req) as r:
+            res = json.loads(r.read().decode('utf-8'))
+            print('\033[31m[!] EMERGENCY LOCKDOWN ACTIVATED\033[0m')
+            print('    Reason:', res.get('reason'))
+            print('    All outbound actions & inbound webhooks halted.')
+    except Exception as e:
+        print('Failed to activate lockdown:', e)
+elif mode in ['off', 'disable', 'false']:
+    body = json.dumps({'service': 'settings', 'action': 'toggle_lockdown', 'payload': {'enable': False, 'confirmed': True}}).encode('utf-8')
+    req = urllib.request.Request('http://127.0.0.1:8787/api/action', data=body, headers={'Content-Type': 'application/json'})
+    try:
+        with urllib.request.urlopen(req) as r:
+            res = json.loads(r.read().decode('utf-8'))
+            print('\033[32m[✓] EMERGENCY LOCKDOWN DISENGAGED\033[0m')
+            print('    Normal operational state restored across all subsystems.')
+    except Exception as e:
+        print('Failed to disengage lockdown:', e)
+else:
+    try:
+        with urllib.request.urlopen('http://127.0.0.1:8787/api/state') as r:
+            st = json.loads(r.read().decode('utf-8'))
+            ld = st.get('services',{}).get('settings',{}).get('data',{}).get('lockdown',{})
+            print('============================================================')
+            print(' COMMAND CENTER // Emergency Lockdown Status')
+            print('============================================================')
+            if ld.get('active'):
+                print('Status:     \033[31mACTIVE // SYSTEM HALTED\033[0m')
+                print('Reason:    ', ld.get('reason'))
+                print(f'Elapsed:    {ld.get(\"elapsed_sec\")} seconds')
+            else:
+                print('Status:     \033[32mDISENGAGED // NOMINAL\033[0m')
+                print('Subsystems: All 9 feeder services running freely')
+            print('============================================================')
+    except Exception as e:
+        print('Could not query feeder:', e)
+"
+}
+
+cmd_ledger() {
+  python3 -c "
+from utils.ledger import get_stats, get_audit_log, get_history
+import sys, time
+sub = sys.argv[1] if len(sys.argv) > 1 else 'stats'
+if sub == 'history':
+    h = get_history('load', 24)
+    print('============================================================')
+    print(f' COMMAND CENTER // Telemetry Ledger (Last {len(h)} Snapshots)')
+    print('============================================================')
+    for row in h[-10:]:
+        t = time.strftime('%H:%M:%S', time.localtime(row['timestamp']))
+        print(f\"{t} | Load: {row.get('cpu_load_1m'):.2f} | RAM: {row.get('ram_used_gb', 0):.1f}GB | Batt: {row.get('battery_percent')}% | Ports: {row.get('ports_open')}\")
+    print('============================================================')
+else:
+    s = get_stats()
+    print('============================================================')
+    print(' COMMAND CENTER // SQLite Telemetry & Audit Ledger')
+    print('============================================================')
+    print(f\"Database:     {s.get('db_path')}\")
+    print(f\"Size:         {s.get('db_size_kb')} KB\")
+    print(f\"Snapshots:    {s.get('total_snapshots')} records\")
+    print(f\"Audit Logs:   {s.get('total_audits')} entries\")
+    print('============================================================')
+" "$2"
+}
+
+cmd_crypto() {
+  SUB="$2"
+  python3 -c "
+import sys, json, urllib.request
+
+sub = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else 'tokens'
+host = '$HOST'
+port = $PORT
+
+def call_api(path, data=None):
+    url = f'http://{host}:{port}{path}'
+    if data is not None:
+        req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
+    else:
+        req = urllib.request.Request(url)
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        print(f'Error connecting to feeder: {e}')
+        sys.exit(1)
+
+if sub == 'tokens':
+    state = call_api('/api/state')
+    tokens = state.get('services', {}).get('crypto', {}).get('data', {}).get('tokens', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Dedicated Crypto & Trading Desk (Photon / DEX Screener)')
+    print('========================================================================================')
+    print(f'{\"SYMBOL\":<8} {\"NAME\":<18} {\"PRICE\":<12} {\"5m%\":<8} {\"1h%\":<8} {\"24h%\":<8} {\"LIQUIDITY\":<14} {\"MARKET CAP\"}')
+    print('----------------------------------------------------------------------------------------')
+    for t in tokens:
+        p_str = f\"\${t['price_usd']:.6f}\" if t['price_usd'] < 0.01 else f\"\${t['price_usd']:.2f}\"
+        liq_str = f\"\${t['liquidity_usd']/1e6:.1f}M\"
+        mc_str = f\"\${t['market_cap_usd']/1e6:.1f}M\" if t['market_cap_usd'] < 1e9 else f\"\${t['market_cap_usd']/1e9:.1f}B\"
+        print(f\"{t['symbol']:<8} {t['name']:<18} {p_str:<12} {t['pnl_5m']:+6.2f}% {t['pnl_1h']:+6.2f}% {t['pnl_24h']:+6.2f}% {liq_str:<14} {mc_str}\")
+    print('========================================================================================')
+
+elif sub == 'alpha':
+    state = call_api('/api/state')
+    tweets = state.get('services', {}).get('crypto', {}).get('data', {}).get('alpha_tweets', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Twitter / X Memecoin & Alpha Social Monitor')
+    print('========================================================================================')
+    for tw in tweets[:8]:
+        cas = ', '.join(tw.get('contract_addresses', [])) or 'None detected'
+        print(f\"[{tw.get('handle')}] ({tw.get('sentiment')}) - {tw.get('likes')} likes | {tw.get('retweets')} RTs\")
+        print(f\"   Text: {tw.get('text')}\")
+        print(f\"   CAs:  {cas}\")
+        print(f\"   Photon: {tw.get('photon_link')}\")
+        print('----------------------------------------------------------------------------------------')
+
+elif sub == 'copy':
+    state = call_api('/api/state')
+    traders = state.get('services', {}).get('crypto', {}).get('data', {}).get('copy_traders', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Alpha Whitelist & Copy Trading Engine')
+    print('========================================================================================')
+    print(f'{\"HANDLE\":<18} {\"WIN RATE\":<10} {\"PNL (30d)\":<14} {\"ALLOCATION\":<12} {\"STATUS\"}')
+    print('----------------------------------------------------------------------------------------')
+    for c in traders:
+        status = 'ACTIVE (Auto-Copy)' if c.get('active') else 'PAUSED'
+        handle = c.get('handle') or c.get('username') or 'unknown'
+        win = c.get('win_rate_pct') or c.get('win_rate') or 0
+        pnl = c.get('pnl_30d_usd') if c.get('pnl_30d_usd') is not None else c.get('pnl_total_usd', 0)
+        alloc = c.get('allocation_sol', 0.5)
+        print(f\"{handle:<18} {win}%{'':<5} \${pnl:+10,.0f} USD  {alloc} SOL{'':<5} {status}\")
+    print('========================================================================================')
+
+elif sub == 'positions':
+    state = call_api('/api/state')
+    positions = state.get('services', {}).get('crypto', {}).get('data', {}).get('positions', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Active Memecoin Positions & Unrealized PnL')
+    print('========================================================================================')
+    print(f'{\"SYMBOL\":<8} {\"AMOUNT\":<14} {\"ENTRY\":<10} {\"MARK\":<10} {\"VALUE\":<10} {\"PNL ($)\":<12} {\"PNL (%)\"}')
+    print('----------------------------------------------------------------------------------------')
+    for p in positions:
+        print(f\"{p.get('symbol'):<8} {p.get('amount'):<14,.1f} \${p.get('entry_price'):<9.4f} \${p.get('mark_price'):<9.4f} \${p.get('value_usd'):<9.2f} \${p.get('unrealized_pnl_usd'):<11.2f} {p.get('unrealized_pnl_pct'):+6.2f}%\")
+    print('========================================================================================')
+
+elif sub == 'alert':
+    state = call_api('/api/state')
+    alerts = state.get('services', {}).get('crypto', {}).get('data', {}).get('price_alerts', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Real-Time Crypto Price Alerts')
+    print('========================================================================================')
+    for a in alerts:
+        print(f\"[{a.get('id')}] \${a.get('symbol')} {a.get('condition')} \${a.get('target_price')} (Current: \${a.get('current_price', '--')}) - Status: {a.get('status')}\")
+    print('========================================================================================')
+
+elif sub == 'swap':
+    args = sys.argv[2:]
+    if len(args) < 3:
+        print('Usage: ./command-center crypto swap <BUY|SELL> <SYMBOL> <AMOUNT_SOL> [--confirm]')
+        sys.exit(1)
+    side, sym, amt = args[0].upper(), args[1].upper(), float(args[2])
+    confirmed = '--confirm' in args
+    res = call_api('/api/action', {
+        'service': 'crypto',
+        'action': 'execute_swap',
+        'payload': {'side': side, 'symbol': sym, 'amount': amt, 'confirmed': confirmed}
+    })
+    print(json.dumps(res, indent=2))
+" "$2" "$3" "$4" "$5" "$6"
+}
+
+cmd_bot() {
+  SUB="$2"
+  python3 -c "
+import sys, json, urllib.request
+
+sub = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else 'status'
+host = '$HOST'
+port = $PORT
+
+def call_api(path, data=None):
+    url = f'http://{host}:{port}{path}'
+    if data is not None:
+        req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
+    else:
+        req = urllib.request.Request(url)
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        print(f'Error connecting to feeder: {e}')
+        sys.exit(1)
+
+if sub == 'status':
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'get_bot_status', 'payload': {}})
+    st = res.get('bot_state', {})
+    print('========================================================================================')
+    print(' COMMAND CENTER // Autonomous AI Strategy Bot Status')
+    print('========================================================================================')
+    print(f' Status:             {st.get(\"status\")}')
+    print(f' Active Strategies:  {\", \".join(st.get(\"active_strategies\", []))}')
+    print(f' Paper Balance:      {st.get(\"paper_balance_sol\", 0):.2f} SOL')
+    print(f' Realized Bot PnL:   {st.get(\"realized_pnl_sol\", 0):+.3f} SOL (\${st.get(\"realized_pnl_usd\", 0):+,.2f} USD)')
+    print(f' Stop-Loss / TP:     SL: {st.get(\"stop_loss_pct\")}%, TP: +{st.get(\"take_profit_pct\")}%')
+    print(f' Executed Trades:    {st.get(\"total_bot_trades\", 0)}')
+    print('========================================================================================')
+
+elif sub == 'start':
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'start_trading_bot', 'payload': {}})
+    print(f'Bot Started: {res.get(\"status\")} - {res.get(\"message\")}')
+
+elif sub == 'stop':
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'stop_trading_bot', 'payload': {}})
+    print(f'Bot Stopped: {res.get(\"status\")} - {res.get(\"message\")}')
+
+elif sub == 'backtest':
+    epochs = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 100
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'run_strategy_backtest', 'payload': {'epochs': epochs}})
+    bt = res.get('backtest', {})
+    print('========================================================================================')
+    print(f' COMMAND CENTER // Quantitative Strategy Backtester ({bt.get(\"epochs\", epochs)} Epochs)')
+    print('========================================================================================')
+    print(f' Win Rate:           {bt.get(\"win_rate_pct\", 0):.1f}% ({bt.get(\"winning_trades\")}/{bt.get(\"trades_executed\")})')
+    print(f' Profit Factor:      {bt.get(\"profit_factor\", 0):.2f}')
+    print(f' Net Realized PnL:   {bt.get(\"net_pnl_sol\", 0):+.2f} SOL (\${bt.get(\"net_pnl_usd\", 0):+,.2f} USD)')
+    print(f' Sharpe Ratio:       {bt.get(\"sharpe_ratio\", 0):.2f}')
+    print(f' Max Drawdown:       -{bt.get(\"max_drawdown_pct\", 0):.1f}%')
+    print('========================================================================================')
+
+elif sub == 'log':
+    state = call_api('/api/state')
+    logs = state.get('services', {}).get('crypto', {}).get('data', {}).get('bot_log', [])
+    print('========================================================================================')
+    print(' COMMAND CENTER // Autonomous Bot Event Journal')
+    print('========================================================================================')
+    for l in logs[-15:]:
+        print(f'[{l.get(\"type\", \"INFO\")}] {l.get(\"message\")}')
+    print('========================================================================================')
+
+elif sub == 'exec':
+    cmd_str = ' '.join(sys.argv[2:])
+    res = call_api('/api/action', {'service': 'crypto', 'action': 'execute_terminal_command', 'payload': {'command': cmd_str}})
+    print(res.get('output', ''))
+
+else:
+    print('Usage: ./command-center bot [status|start|stop|backtest|log|exec <cmd>]')
+" "$2" "$3" "$4" "$5"
+}
+
+case "$1" in
+  start)
+    cmd_start
+    ;;
+  stop)
+    cmd_stop
+    ;;
+  restart)
+    cmd_restart
+    ;;
+  status)
+    cmd_status
+    ;;
+  open)
+    cmd_open
+    ;;
+  test)
+    cmd_test
+    ;;
+  install-agent)
+    cmd_install_agent
+    ;;
+  uninstall-agent)
+    cmd_uninstall_agent
+    ;;
+  notify)
+    cmd_notify "$@"
+    ;;
+  vault)
+    cmd_vault "$@"
+    ;;
+  briefing)
+    cmd_briefing
+    ;;
+  menubar)
+    cmd_menubar
+    ;;
+  llm)
+    cmd_llm "$@"
+    ;;
+  speak)
+    cmd_speak
+    ;;
+  hardware)
+    cmd_hardware
+    ;;
+  webhook-test)
+    cmd_webhook_test "$@"
+    ;;
+  scheduler)
+    cmd_scheduler "$@"
+    ;;
+  ssl)
+    cmd_ssl "$@"
+    ;;
+  ports)
+    cmd_ports
+    ;;
+  top)
+    cmd_top "$@"
+    ;;
+  kill)
+    cmd_kill "$@"
+    ;;
+  lockdown)
+    cmd_lockdown "$@"
+    ;;
+  ledger)
+    cmd_ledger "$@"
+    ;;
+  crypto)
+    cmd_crypto "$@"
+    ;;
+  bot)
+    cmd_bot "$@"
+    ;;
+  *)
+    echo "Usage: ./command-center {start|stop|restart|status|open|test|crypto|bot|top|kill|lockdown|ledger|...}"
+    echo "       ./command-center bot [status|start|stop|backtest|log|exec <cmd>] # Autonomous AI Strategy Bot & Terminal"
+    echo "       ./command-center crypto [tokens|alpha|copy|alert|positions|swap] # Dedicated Crypto Desk"
+    echo "       ./command-center top [--cpu|--mem]               # macOS Process Resource Watchdog"
+    echo "       ./command-center kill <pid>                      # Terminate rogue process with guard"
+    echo "       ./command-center lockdown [on|off|status]        # Emergency security lockdown killswitch"
+    echo "       ./command-center ledger [stats|history]          # SQLite telemetry & audit ledger"
+    echo "       ./command-center briefing                        # Generate executive dossier"
+    echo "       ./command-center ssl <domain>                    # Inspect SSL/TLS certificate"
+    echo "       ./command-center ports                           # Audit localhost listening ports"
+    echo "       ./command-center speak                           # Speak audio executive brief aloud"
+    echo "       ./command-center hardware                        # Display macOS hardware & power HUD"
+    echo "       ./command-center webhook-test [source]           # Test inbound webhook ingestion & SSE"
+    echo "       ./command-center scheduler [trigger <id>]        # Inspect or trigger cron automation jobs"
+    echo "       ./command-center menubar                         # Run macOS status bar stream"
+    echo "       ./command-center llm \"prompt\" [provider]         # Query AI Workbench"
+    echo "       ./command-center notify \"Title\" \"Message\"        # Test macOS notification"
+    echo "       ./command-center vault export --password <pass>  # Export encrypted vault"
+    echo "       ./command-center vault import --vault <file>     # Restore encrypted vault"
+    exit 1
+    ;;
+esac
+
