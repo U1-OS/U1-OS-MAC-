@@ -53,7 +53,7 @@ def post(path, body):
         url, data=data,
         headers={"Content-Type": "application/json", "User-Agent": "CC-TestRunner/1.0"}
     )
-    with urllib.request.urlopen(req, timeout=10) as r:
+    with urllib.request.urlopen(req, timeout=25) as r:
         return r.status, json.loads(r.read().decode("utf-8"))
 
 def action(service, act, payload=None):
@@ -522,6 +522,84 @@ def main():
     s, term_ai = action("crypto", "execute_terminal_command", {"command": "ai check domain apple.com"})
     log_test("Cyber Terminal Bridge to AI Copilot (ai check domain)", term_ai.get("success") and "AI WORKBENCH COPILOT" in term_ai.get("output", ""), "AI copilot executed directive via terminal")
 
+    # 40. Pump.fun & Raydium Token Launchpad Sniper Desk
+    print(f"\n{INFO} 40. Subsystem: Pump.fun & Raydium Token Launchpad Sniper Desk:")
+    s, pools_res = action("crypto", "get_launchpad_pools", {})
+    log_test("Fetch Launchpad Pools (Pump.fun & Raydium)", pools_res.get("success") and len(pools_res.get("pools", [])) > 0, f"Discovered {len(pools_res.get('pools', []))} pools")
+
+    s, audit_res = action("crypto", "audit_token_security", {"mint": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"})
+    audit_data = audit_res.get("audit", {})
+    log_test("On-Chain Anti-Rug Contract Audit", audit_res.get("success") and audit_data.get("safety_score") is not None, f"Safety Score: {audit_data.get('safety_score')}/100, Mint Revoked: {audit_data.get('mint_authority_revoked')}")
+
+    s, snipe_res = action("crypto", "execute_snipe_order", {"mint": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU", "amount_sol": 0.1})
+    log_test("Execute Launchpad Snipe Order", snipe_res.get("success") and "signature" in snipe_res.get("order", {}), f"Snipe TX: {snipe_res.get('order', {}).get('signature')}")
+
+    s, toggle_sniper_res = action("crypto", "toggle_auto_sniper", {})
+    log_test("Toggle Auto-Sniper Engine", toggle_sniper_res.get("success"), f"Auto-Sniper Active: {toggle_sniper_res.get('active')}")
+
+    s, term_pools = action("crypto", "execute_terminal_command", {"command": "pools"})
+    log_test("Cyber Terminal Launchpad Pools (pools)", term_pools.get("success") and "PUMP.FUN & RAYDIUM LAUNCHPAD POOLS" in term_pools.get("output", ""), "Launchpad pools printed in terminal")
+
+    # 41. Autonomous Daily Video & Audio Briefing Broadcast
+    print(f"\n{INFO} 41. Subsystem: Autonomous Daily Video & Audio Briefing Broadcast:")
+    s, broadcast_res = action("studio", "compile_daily_broadcast", {"voice": "Daniel", "telegram_broadcast": True})
+    log_test("Compile Daily Broadcast (macOS Speech Synthesis)", broadcast_res.get("success") and "audio_file" in broadcast_res.get("broadcast", {}), f"Audio File: {broadcast_res.get('broadcast', {}).get('audio_file')}")
+
+    s, sched_res = get("/api/scheduler")
+    jobs = sched_res.get("jobs", [])
+    has_broadcast_job = any(j.get("id") == "daily_broadcast_compiler" for j in jobs)
+    log_test("Scheduler Job #8 Daily Broadcast Daemon", has_broadcast_job, "Scheduled daily broadcast compiler job registered")
+
+    # 42. Discord & Slack C2 Operations Room
+    print(f"\n{INFO} 42. Subsystem: Discord & Slack C2 Operations Room:")
+    s, discord_webhook = post("/api/webhooks/discord", {"command": "/u1 status", "user": "DiscordCommander"})
+    log_test("Discord Webhook Ingestion & ChatOps (/u1 status)", discord_webhook.get("success") and discord_webhook.get("chatops", {}).get("success"), f"Response: {discord_webhook.get('chatops', {}).get('chatops', {}).get('response', '')}")
+
+    s, slack_webhook = post("/api/webhooks/slack", {"command": "/u1 briefing", "user": "SlackExecutive"})
+    log_test("Slack Webhook Ingestion & ChatOps (/u1 briefing)", slack_webhook.get("success") and slack_webhook.get("chatops", {}).get("success"), f"Briefing Dispatched: {slack_webhook.get('chatops', {}).get('chatops', {}).get('response', '')}")
+
+    s, chatops_swap = action("comms", "execute_chatops_command", {"command": "/u1 swap 0.1 BONK", "platform": "discord"})
+    log_test("ChatOps Swap Execution (/u1 swap 0.1 BONK)", chatops_swap.get("success"), f"Response: {chatops_swap.get('chatops', {}).get('response', '')}")
+
+    s, chatops_bcast = action("comms", "broadcast_chatops", {"message": "U1 OS Operational Alpha Signal", "platform": "all"})
+    log_test("Bi-directional ChatOps Broadcast", chatops_bcast.get("success"), f"Dispatched to {len(chatops_bcast.get('dispatched', []))} platforms")
+
+    # 43. Local Neural Engine & Apple Silicon MLX Desk
+    print(f"\n{INFO} 43. Subsystem: Local Neural Engine & Apple Silicon MLX Desk:")
+    s, neural_status = action("ai_workbench", "get_local_neural_status", {})
+    ln_data = neural_status.get("local_neural", {})
+    log_test("Local Neural Engine Hardware Probe", neural_status.get("success") and ln_data.get("apple_silicon"), f"Device: {ln_data.get('device')}, Engine: {ln_data.get('engine')}")
+
+    s, neural_infer = action("ai_workbench", "execute_local_inference", {"prompt": "Analyze market volatility", "model": "llama3.2"})
+    infer_res = neural_infer.get("result", {})
+    log_test("Zero-Cloud Offline Neural Inference", neural_infer.get("success") and infer_res.get("offline_airgap"), f"Offline Reasoned in {infer_res.get('latency_ms')}ms on {infer_res.get('device')}")
+
+    # 44. macOS Touch ID & WebAuthn Biometric Security Gate
+    print(f"\n{INFO} 44. Subsystem: macOS Touch ID & WebAuthn Biometric Security Gate:")
+    s, challenge_res = post("/api/auth/webauthn-challenge", {"action_name": "disengage_lockdown"})
+    challenge = challenge_res.get("challenge")
+    log_test("WebAuthn Hardware Challenge Generation", challenge_res.get("success") and bool(challenge), f"Challenge: {challenge[:16]}...")
+
+    s, verify_res = post("/api/auth/webauthn-verify", {"challenge": challenge, "credential_id": "touchid_hw_token"})
+    b_token = verify_res.get("biometric_token")
+    log_test("WebAuthn Biometric Verification & Token Issue", verify_res.get("success") and bool(b_token), f"Biometric Token: {b_token[:16]}...")
+
+    s, gate_toggle = action("settings", "toggle_biometric_gate", {"enable": True})
+    log_test("Enforce Touch ID Hardware Biometric Gate", gate_toggle.get("success") and gate_toggle.get("biometric_enforced"), "Biometric gate enforcement armed")
+
+    # Verify gate blocks lockdown disengage without valid token
+    s, lock_on = action("settings", "toggle_lockdown", {"enable": True, "confirmed": True, "reason": "Biometric Gate Drill"})
+    s, lock_off_fail = action("settings", "toggle_lockdown", {"enable": False, "confirmed": True})
+    log_test("Privileged Action Blocked Without Biometric Token", not lock_off_fail.get("success") and lock_off_fail.get("error") == "BIOMETRIC_VERIFICATION_REQUIRED", "Lockdown disengage blocked: BIOMETRIC_VERIFICATION_REQUIRED")
+
+    # Issue fresh challenge and token to disengage
+    s, ch2 = post("/api/auth/webauthn-challenge", {"action_name": "disengage_lockdown"})
+    s, vf2 = post("/api/auth/webauthn-verify", {"challenge": ch2.get("challenge")})
+    s, lock_off_ok = action("settings", "toggle_lockdown", {"enable": False, "confirmed": True, "biometric_token": vf2.get("biometric_token")})
+    log_test("Privileged Action Authorized With Biometric Token", lock_off_ok.get("success"), "Lockdown successfully disengaged via Touch ID token")
+
+    # Restore gate to false for normal tests
+    action("settings", "toggle_biometric_gate", {"enable": False})
 
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")

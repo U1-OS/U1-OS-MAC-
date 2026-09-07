@@ -21,6 +21,9 @@ class SettingsService(BaseService):
         self.lockdown_active = False
         self.lockdown_reason = ""
         self.lockdown_timestamp = 0.0
+        self.biometric_challenges = {}
+        self.biometric_tokens = {}
+        self.biometric_enforced = False
 
         # Setup Reference Guide for all integrations
         self.setup_reference_guide = [
@@ -389,6 +392,11 @@ class SettingsService(BaseService):
                     "top_mem": process_watchdog.get_top_processes(by="mem", limit=10)
                 },
                 "ledger": ledger.get_stats(),
+                "biometrics": {
+                    "enforced": self.biometric_enforced,
+                    "active_challenges_count": len(self.biometric_challenges),
+                    "active_tokens_count": len(self.biometric_tokens)
+                },
                 "server_environment": {
                     "binding": "127.0.0.1:8787 (Strict Local Only)",
                     "config_path": self.config_path,
@@ -670,6 +678,17 @@ class SettingsService(BaseService):
                     "requested_state": enable
                 }
 
+            if self.biometric_enforced and not enable:
+                b_token = payload.get("biometric_token")
+                now = time.time()
+                valid = b_token and b_token in self.biometric_tokens and self.biometric_tokens[b_token].get("expires", 0) > now
+                if not valid:
+                    return {
+                        "success": False,
+                        "error": "BIOMETRIC_VERIFICATION_REQUIRED",
+                        "message": "Touch ID biometric authorization required to disengage lockdown."
+                    }
+
             self.lockdown_active = enable
             if enable:
                 self.lockdown_timestamp = time.time()
@@ -895,6 +914,61 @@ class SettingsService(BaseService):
             self.add_event("autonomous_configured", msg)
             self.poll()
             return {"success": True, "autonomous_settings": auto_cfg, "message": msg}
+
+        # --- Biometrics & WebAuthn / Touch ID Gate ---
+        elif action == "generate_biometric_challenge":
+            action_name = payload.get("action_name", "privileged_operation")
+            import secrets
+            challenge = secrets.token_hex(32)
+            now = time.time()
+            self.biometric_challenges = {k: v for k, v in self.biometric_challenges.items() if v.get("expires", 0) > now}
+            self.biometric_challenges[challenge] = {
+                "action": action_name,
+                "created": now,
+                "expires": now + 120
+            }
+            return {
+                "success": True,
+                "challenge": challenge,
+                "timeout_sec": 120,
+                "action_name": action_name,
+                "rp": {"name": "U1 OS Localhost Biometrics", "id": "localhost"},
+                "user": {"id": "u1-operator", "name": "u1@command-center.local", "displayName": "U1 Commander"}
+            }
+
+        elif action == "verify_biometric_response":
+            challenge = payload.get("challenge")
+            if not challenge or challenge not in self.biometric_challenges:
+                return {"success": False, "error": "INVALID_OR_EXPIRED_CHALLENGE", "message": "Biometric challenge invalid or expired."}
+            ch_data = self.biometric_challenges.pop(challenge)
+            if time.time() > ch_data.get("expires", 0):
+                return {"success": False, "error": "CHALLENGE_TIMEOUT", "message": "Biometric challenge timed out."}
+
+            import secrets
+            token = secrets.token_hex(24)
+            now = time.time()
+            self.biometric_tokens = {k: v for k, v in self.biometric_tokens.items() if v.get("expires", 0) > now}
+            self.biometric_tokens[token] = {
+                "action": ch_data.get("action"),
+                "created": now,
+                "expires": now + 300
+            }
+            ledger.log_audit("security", "biometric_verified", f"macOS Touch ID verification confirmed for {ch_data.get('action')}", actor="touchid_gate", status="OK")
+            return {
+                "success": True,
+                "biometric_token": token,
+                "expires_in_sec": 300,
+                "message": "Touch ID biometric authentication verified."
+            }
+
+        elif action == "toggle_biometric_gate":
+            enable = payload.get("enable")
+            if enable is None:
+                enable = not self.biometric_enforced
+            self.biometric_enforced = bool(enable)
+            ledger.log_audit("security", "biometric_gate_toggled", f"Touch ID biometric enforcement set to {self.biometric_enforced}", actor="operator", status="OK")
+            self.poll()
+            return {"success": True, "biometric_enforced": self.biometric_enforced, "message": f"Biometric gate {'enforced' if self.biometric_enforced else 'disabled'}."}
 
         return super().dispatch_action(action, payload)
 

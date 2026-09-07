@@ -560,6 +560,27 @@
               <span class="footer-meta mono">TRUNK: 127.0.0.1 PROXY</span>
             </footer>
           </article>
+
+          <!-- Widget 6: Discord & Slack C2 Operations Room [Span 12] -->
+          <article class="slab-panel span-12" id="commsC2Panel" data-service="comms">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-purple);">CHATOPS // 06 &bull; DISCORD &amp; SLACK</span>
+                <h2 class="slab-title">COMMAND &amp; CONTROL (C2) OPERATIONS ROOM &bull; INBOUND WEBHOOK DESK</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="c2WebhookStatusBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:3px 10px; font-size:11px;">CHATOPS GATEWAY ONLINE</span>
+                <button class="btn btn-sm btn-secondary mono" onclick="CommandCenter.testChatOpsCommand('/u1 status')">TEST /u1 status</button>
+              </div>
+            </header>
+            <div class="slab-body" id="commsC2Container"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">INBOUND ENDPOINTS: /api/webhooks/discord &bull; /api/webhooks/slack</span>
+              <span class="footer-meta mono">SUPPORTED: /u1 status &bull; /u1 swap &bull; /u1 briefing &bull; /u1 lockdown</span>
+            </footer>
+          </article>
         </section>
 
         <!-- ======================================================== -->
@@ -822,6 +843,28 @@
               <span class="footer-meta mono" id="multiWalletCountMeta">3 WALLETS TRACKED</span>
             </footer>
           </article>
+
+          <!-- Widget 11: Pump.fun & Raydium Launchpad Sniper Desk [Span 12] -->
+          <article class="slab-panel span-12" id="cryptoLaunchpadPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-emerald);">LAUNCHPAD // 11 &bull; PUMP.FUN &amp; RAYDIUM</span>
+                <h2 class="slab-title">TOKEN LAUNCHPAD SNIPER DESK &bull; ANTI-RUG CONTRACT AUDITOR</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="sniperActiveBadge" style="background:rgba(0,255,163,0.1); color:var(--neon-emerald); border:1px solid rgba(0,255,163,0.3); padding:3px 10px; font-size:11px;">AUTO-SNIPER: STANDBY</span>
+                <button class="btn btn-sm btn-secondary mono" onclick="CommandCenter.toggleAutoSniper()" id="btnToggleAutoSniper">ENGAGE AUTO-SNIPER</button>
+                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.refreshLaunchpadPools()">REFRESH POOLS</button>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoLaunchpadContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">BONDING CURVES &bull; REAL-TIME DEV HOLDING AUDIT &bull; INSTANT JITO TIP ROUTING</span>
+              <span class="footer-meta mono" id="launchpadLastAudit">SECURITY ENGINE: STRICT</span>
+            </footer>
+          </article>
         </section>
 
         <!-- ======================================================== -->
@@ -896,6 +939,27 @@
             <div class="slab-body" id="studioBrollContainer"></div>
             <footer class="slab-footer">
               <span class="footer-meta mono">COMMERCIAL USE LICENSE-CLEAR &bull; ZERO COPYRIGHT CLAIMS</span>
+            </footer>
+          </article>
+
+          <!-- Widget 5: Autonomous Daily Video & Audio Briefing Broadcast [Span 12] -->
+          <article class="slab-panel span-12" id="studioBroadcastPanel" data-service="studio">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--gold);">BROADCAST // 05 &bull; AUTONOMOUS MEDIA</span>
+                <h2 class="slab-title">DAILY VIDEO &amp; AUDIO BRIEFING BROADCAST &bull; MULTI-PLATFORM SYNDICATION</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="broadcastStatusBadge" style="background:rgba(212,175,55,0.1); color:var(--gold); border:1px solid rgba(212,175,55,0.3); padding:3px 10px; font-size:11px;">SYNTHESIZER READY</span>
+                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.compileDailyBroadcast()" id="btnCompileBroadcast">COMPILE TODAY'S BROADCAST</button>
+              </div>
+            </header>
+            <div class="slab-body" id="studioBroadcastContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">VOICE SYNTHESIS: MACOS NATIVE DANIEL &bull; ENGINE: FFMPEG &bull; DELIVERY: TELEGRAM ALPHA</span>
+              <span class="footer-meta mono" id="broadcastScheduleMeta">SCHEDULER: 08:00 DAILY CRON</span>
             </footer>
           </article>
         </section>
@@ -1043,6 +1107,27 @@
             <footer class="slab-footer">
               <span class="footer-meta mono">NATURAL LANGUAGE ENGINE: MULTI-TOOL ROUTER &bull; DIRECT OS EXECUTION &bull; ZERO MOCK</span>
               <span class="footer-meta mono" id="aiAgentLastAction">LAST ACTION: READY</span>
+            </footer>
+          </article>
+
+          <!-- Widget 7: Local Neural Engine & Apple Silicon MLX Desk [Span 12] -->
+          <article class="slab-panel span-12" id="aiLocalNeuralPanel" data-service="ai_workbench">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">OFFLINE AI // 07 &bull; LOCAL NEURAL ENGINE</span>
+                <h2 class="slab-title">APPLE SILICON MLX &amp; OLLAMA DESK &bull; ZERO-CLOUD EMBEDDINGS</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="localNeuralStatusBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:3px 10px; font-size:11px;">HARDWARE ACCEL ACTIVE</span>
+                <button class="btn btn-sm btn-secondary mono" onclick="CommandCenter.checkLocalNeuralStatus()">PROBE HARDWARE</button>
+              </div>
+            </header>
+            <div class="slab-body" id="aiLocalNeuralContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">ZERO NETWORK EGRESS &bull; FULL AIR-GAP REASONING &bull; LOCAL REPO CONTEXT</span>
+              <span class="footer-meta mono" id="localNeuralLatency">INFERENCE: STANDBY</span>
             </footer>
           </article>
         </section>
@@ -1734,6 +1819,50 @@
       <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary mono" onclick="CommandCenter.closeAddWalletModal()">CANCEL</button>
         <button class="btn btn-gold mono" onclick="CommandCenter.submitAddWallet()">ADD &amp; FETCH RPC</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- macOS Touch ID / WebAuthn Biometric Verification Modal -->
+  <div class="modal-overlay" id="biometricModal" aria-hidden="true" style="display:none;">
+    <div class="modal-card" style="max-width: 480px; text-align:center;">
+      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+      <div class="modal-header" style="justify-content:center; text-align:center;">
+        <span class="modal-kicker mono" style="color:var(--neon-cyan);">MACOS HARDWARE SECURITY GATE</span>
+        <h3 class="modal-title" style="margin-top:6px;">TOUCH ID VERIFICATION</h3>
+      </div>
+      <div class="modal-body" style="margin: 20px 0; display:flex; flex-direction:column; align-items:center; gap:16px;">
+        <div style="width:72px; height:72px; border-radius:50%; border:2px solid var(--neon-cyan); display:flex; align-items:center; justify-content:center; background:rgba(0,240,255,0.08); box-shadow:0 0 20px rgba(0,240,255,0.2);">
+          <span style="font-size:32px;">👆</span>
+        </div>
+        <p class="mono" id="biometricPromptText" style="font-size:13px; color:var(--text-main); line-height:1.5;">
+          Touch ID biometric scan required to authorize privileged action.
+        </p>
+        <div class="mono" id="biometricChallengeStatus" style="font-size:11px; color:var(--text-muted);">
+          AWAITING TOUCH ID SENSOR INPUT...
+        </div>
+      </div>
+      <div class="modal-actions" style="justify-content:center; gap:12px;">
+        <button class="btn btn-secondary mono" onclick="CommandCenter.cancelBiometricPrompt()">CANCEL</button>
+        <button class="btn btn-cyan mono" id="btnTriggerTouchID" onclick="CommandCenter.triggerTouchIDAuth()">SCAN TOUCH ID</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Token Security Audit Modal -->
+  <div class="modal-overlay" id="tokenAuditModal" aria-hidden="true" style="display:none;">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+      <div class="modal-header">
+        <span class="modal-kicker mono" style="color:var(--neon-emerald);">ON-CHAIN AUDITOR // ANTI-RUG ENGINE</span>
+        <h3 class="modal-title" id="tokenAuditTitle">TOKEN SECURITY AUDIT</h3>
+      </div>
+      <div class="modal-body" id="tokenAuditModalBody" style="margin: 16px 0;"></div>
+      <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center;">
+        <button class="btn btn-secondary mono" onclick="CommandCenter.closeTokenAuditModal()">CLOSE</button>
+        <button class="btn btn-emerald mono" id="btnAuditSnipe" onclick="">SNIPE TOKEN</button>
       </div>
     </div>
   </div>

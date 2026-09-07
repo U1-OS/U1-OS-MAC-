@@ -163,6 +163,15 @@ class AutomationScheduler:
             handler=self._job_autonomous_trading_agent
         )
 
+        # 8. Daily Executive Video & Audio Broadcast
+        self.register_job(
+            "daily_broadcast_compiler",
+            "Daily Executive Media Broadcast",
+            "Synthesizes audio & video briefing from daily business dossier with macOS speech and chart snapshots",
+            interval_sec=86400,
+            handler=self._job_daily_broadcast
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -271,6 +280,15 @@ class AutomationScheduler:
                 "summary": summary
             }
         return {"summary": "Crypto service unavailable for autonomous trading agent"}
+
+    def _job_daily_broadcast(self, feeder):
+        if feeder and hasattr(feeder, "services") and "studio" in feeder.services:
+            studio_svc = feeder.services["studio"]
+            res = studio_svc.dispatch_action("compile_daily_broadcast", {})
+            bcast = res.get("broadcast", {})
+            summary = f"Daily Broadcast produced: {bcast.get('title')} ({bcast.get('duration_sec')}s)"
+            return {"broadcast": bcast, "summary": summary}
+        return {"summary": "Studio service unavailable for daily broadcast"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:

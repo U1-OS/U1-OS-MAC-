@@ -455,7 +455,37 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             source = path[len("/api/webhooks/"):].strip("/") or "generic"
             headers_dict = dict(self.headers)
             entry = feeder.record_webhook(source, payload, headers_dict)
-            self.send_json({"success": True, "message": f"Webhook received from {source}", "entry": entry})
+            chatops_out = None
+            if source in ["discord", "slack"] and isinstance(payload, dict) and payload.get("command") and "comms" in feeder.services:
+                chatops_out = feeder.services["comms"].dispatch_action("execute_chatops_command", {
+                    "command": payload.get("command"),
+                    "platform": source,
+                    "user": payload.get("user", f"{source.title()}User")
+                })
+            self.send_json({
+                "success": True,
+                "message": f"Webhook received from {source}",
+                "entry": entry,
+                "chatops": chatops_out
+            })
+            return
+
+        if path == "/api/auth/webauthn-challenge":
+            settings_svc = feeder.services.get("settings")
+            if settings_svc:
+                res = settings_svc.dispatch_action("generate_biometric_challenge", payload)
+                self.send_json(res)
+            else:
+                self.send_json({"success": False, "error": "Settings service unavailable"}, 500)
+            return
+
+        if path == "/api/auth/webauthn-verify":
+            settings_svc = feeder.services.get("settings")
+            if settings_svc:
+                res = settings_svc.dispatch_action("verify_biometric_response", payload)
+                self.send_json(res)
+            else:
+                self.send_json({"success": False, "error": "Settings service unavailable"}, 500)
             return
 
         if path == "/api/action":

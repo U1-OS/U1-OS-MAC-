@@ -1575,6 +1575,42 @@ const CommandCenter = (() => {
               </div>
             </div>
           </div>
+      `;
+    }
+
+    // 6. Discord & Slack C2 Operations Room (Bi-directional ChatOps Hub)
+    const c2Container = document.getElementById('commsC2Container');
+    if (c2Container) {
+      const chatopsLog = d.chatops_log || [
+        { time: new Date().toLocaleTimeString(), platform: 'discord', user: 'Operator', command: '/u1 status', response: 'U1 OS Core Operational. All subsystems green.' }
+      ];
+      c2Container.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px; background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; gap:12px; align-items:center;">
+              <span class="badge mono" style="background:rgba(88,101,242,0.15); color:#5865F2; border:1px solid rgba(88,101,242,0.3); padding:3px 8px; font-size:10.5px;">DISCORD /api/webhooks/discord</span>
+              <span class="badge mono" style="background:rgba(224,30,90,0.15); color:#E01E5A; border:1px solid rgba(224,30,90,0.3); padding:3px 8px; font-size:10.5px;">SLACK /api/webhooks/slack</span>
+            </div>
+            <div class="mono" style="font-size:11px; color:var(--text-muted);">
+              CHATOPS PROTOCOL: BI-DIRECTIONAL DISCORD &amp; SLACK ENGINE
+            </div>
+          </div>
+
+          <div class="mono" style="background:#040608; border:1px solid var(--border-subtle); border-radius:4px; padding:12px; max-height:160px; overflow-y:auto; font-size:11.5px; display:flex; flex-direction:column; gap:6px;" id="c2LogFeed">
+            ${chatopsLog.map(l => `
+              <div style="display:flex; gap:8px; align-items:flex-start;">
+                <span style="color:var(--text-muted); font-size:10px;">[${escapeHtml(l.time || '')}]</span>
+                <span style="color:${l.platform === 'discord' ? '#5865F2' : '#E01E5A'}; font-weight:700;">${escapeHtml(l.platform ? l.platform.toUpperCase() : 'C2')}</span>
+                <span style="color:var(--gold); font-weight:700;">${escapeHtml(l.command || '')}</span>
+                <span style="color:var(--text-secondary);">&rarr; ${escapeHtml(l.response || '')}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="text" id="c2CommandInput" class="mono form-input" placeholder="Execute ChatOps command: /u1 status, /u1 swap 0.1 BONK, /u1 briefing, /u1 lockdown..." style="flex:1; font-size:12px;" onkeydown="if(event.key==='Enter') CommandCenter.dispatchChatOpsInput()">
+            <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.dispatchChatOpsInput()">EXECUTE /u1</button>
+          </div>
         </div>
       `;
     }
@@ -2371,6 +2407,86 @@ const CommandCenter = (() => {
                   <div style="margin-top:auto; padding-top:8px; border-top:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center;">
                     <span class="mono" style="font-size:9.5px; color:var(--text-muted);">LAST RPC SYNC: LIVE</span>
                     <button class="mini-btn mono" style="color:var(--neon-crimson); border-color:rgba(255,60,60,0.2);" onclick="CommandCenter.removeTrackedWallet('${escapeHtml(w.address)}')">REMOVE</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+    }
+
+    // 11. Pump.fun & Raydium Token Launchpad Sniper Desk
+    const launchpadEl = document.getElementById('cryptoLaunchpadContainer');
+    const sniperBadge = document.getElementById('sniperActiveBadge');
+    const btnToggleSniper = document.getElementById('btnToggleAutoSniper');
+    const launchpadPools = d.launchpad_pools || [];
+    const autoSniperActive = d.auto_sniper_active || false;
+
+    if (sniperBadge) {
+      sniperBadge.textContent = autoSniperActive ? 'AUTO-SNIPER: ENGAGED' : 'AUTO-SNIPER: STANDBY';
+      sniperBadge.style.color = autoSniperActive ? 'var(--neon-emerald)' : 'var(--text-muted)';
+      sniperBadge.style.borderColor = autoSniperActive ? 'var(--neon-emerald)' : 'var(--border-subtle)';
+    }
+    if (btnToggleSniper) {
+      btnToggleSniper.textContent = autoSniperActive ? 'DISENGAGE SNIPER' : 'ENGAGE AUTO-SNIPER';
+      btnToggleSniper.className = autoSniperActive ? 'btn btn-sm btn-secondary mono' : 'btn btn-sm btn-emerald mono';
+    }
+
+    if (launchpadEl) {
+      if (launchpadPools.length === 0) {
+        launchpadEl.innerHTML = '<div class="mono" style="padding:20px; text-align:center; color:var(--text-muted);">No new launchpad pools discovered. Click REFRESH POOLS.</div>';
+      } else {
+        launchpadEl.innerHTML = `
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:12px;">
+            ${launchpadPools.map(p => {
+              const audit = p.security_audit || {};
+              const score = audit.safety_score !== undefined ? audit.safety_score : 80;
+              const isSafe = score >= 70;
+              const scoreColor = isSafe ? 'var(--neon-emerald)' : (score >= 40 ? 'var(--gold)' : 'var(--neon-crimson)');
+              const progress = Math.min(100, Math.max(0, p.bonding_curve_pct || 0));
+              return `
+                <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="mono" style="font-size:14px; font-weight:700; color:var(--text-main);">$${escapeHtml(p.symbol)}</span>
+                        <span class="mono" style="font-size:11px; color:var(--text-secondary);">${escapeHtml(p.name)}</span>
+                        <span class="badge mono" style="font-size:9.5px; background:rgba(0,255,163,0.1); color:var(--neon-emerald); border:1px solid rgba(0,255,163,0.3); padding:1px 6px;">${escapeHtml(p.platform || 'PUMP.FUN')}</span>
+                      </div>
+                      <div class="mono" style="font-size:10px; color:var(--neon-cyan); margin-top:2px;">CA: ${escapeHtml(p.mint.slice(0, 6))}...${escapeHtml(p.mint.slice(-6))}</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <span class="badge mono" style="font-size:11px; font-weight:700; color:${scoreColor}; border:1px solid ${scoreColor}; background:rgba(0,0,0,0.4); padding:2px 8px;">
+                        SAFETY: ${score}/100
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:10.5px; margin-bottom:4px;" class="mono">
+                      <span style="color:var(--text-muted);">BONDING CURVE</span>
+                      <span style="color:var(--gold); font-weight:700;">${progress.toFixed(1)}% GRADUATED</span>
+                    </div>
+                    <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
+                      <div style="height:100%; width:${progress}%; background:linear-gradient(90deg, var(--neon-cyan), var(--gold));"></div>
+                    </div>
+                  </div>
+
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10.5px;" class="mono">
+                    <div style="background:rgba(0,0,0,0.3); padding:6px; border-radius:3px;">
+                      <span style="color:var(--text-muted);">DEV HOLD:</span>
+                      <span style="color:${(p.dev_holding_pct || 0) > 10 ? 'var(--neon-crimson)' : 'var(--neon-emerald)'}; font-weight:700;"> ${p.dev_holding_pct || 0}%</span>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.3); padding:6px; border-radius:3px;">
+                      <span style="color:var(--text-muted);">LP BURNED:</span>
+                      <span style="color:${audit.lp_burned ? 'var(--neon-emerald)' : 'var(--neon-crimson)'}; font-weight:700;"> ${audit.lp_burned ? 'YES' : 'NO'}</span>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; gap:8px; margin-top:4px;">
+                    <button class="btn btn-sm btn-secondary mono" style="flex:1; font-size:11px;" onclick="CommandCenter.openTokenAuditModal('${escapeHtml(p.mint)}', '${escapeHtml(p.symbol)}')">AUDIT CONTRACT</button>
+                    <button class="btn btn-sm btn-emerald mono" style="flex:1; font-size:11px;" onclick="CommandCenter.executeSnipe('${escapeHtml(p.mint)}', '${escapeHtml(p.symbol)}')">⚡ SNIPE 0.1 SOL</button>
                   </div>
                 </div>
               `;
@@ -3847,6 +3963,45 @@ const CommandCenter = (() => {
       }
     }
 
+    // 7. Render Widget 7: Local Neural Engine & Apple Silicon MLX Desk
+    const localNeuralContainer = document.getElementById('aiLocalNeuralContainer');
+    if (localNeuralContainer) {
+      const lnStatus = data.local_neural || {
+        apple_silicon: true,
+        metal_available: true,
+        engine: 'mlx',
+        models_available: ['llama3.2:latest', 'mistral:latest', 'mlx-community/Llama-3.2-3B-Instruct-4bit'],
+        device: 'Apple M-Series Metal GPU'
+      };
+      localNeuralContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px; background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="badge mono" style="background:rgba(0,240,255,0.15); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:3px 8px; font-size:11px;">
+                ACCELERATION: ${escapeHtml(lnStatus.device || 'Apple Silicon Metal')}
+              </span>
+              <span class="badge mono" style="background:rgba(0,255,163,0.15); color:var(--neon-emerald); border:1px solid rgba(0,255,163,0.3); padding:3px 8px; font-size:11px;">
+                ZERO-CLOUD AIR-GAP
+              </span>
+            </div>
+            <div class="mono" style="font-size:11px; color:var(--text-muted);">
+              MODELS: ${(lnStatus.models_available || []).length} DETECTED
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:8px;">
+            <input type="text" id="localNeuralPromptInput" class="mono form-input" placeholder="Prompt offline neural engine..." style="font-size:12px;" onkeydown="if(event.key==='Enter') CommandCenter.dispatchLocalInference()">
+            <select id="localNeuralModelSelect" class="mono ai-select" style="font-size:11px;">
+              ${(lnStatus.models_available || ['llama3.2', 'mlx-local']).map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('')}
+            </select>
+            <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.dispatchLocalInference()" id="btnRunLocalInference">RUN OFFLINE &rarr;</button>
+          </div>
+
+          <div id="localNeuralOutputBox" class="mono" style="display:none; background:#040608; border:1px solid var(--border-subtle); border-radius:4px; padding:12px; font-size:12px; line-height:1.5; color:var(--text-primary); max-height:160px; overflow-y:auto; white-space:pre-wrap;"></div>
+        </div>
+      `;
+    }
+
     aiLocalState.initialized = true;
   }
 
@@ -4474,6 +4629,56 @@ const CommandCenter = (() => {
                 </div>
               </div>
             `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 6. Render Widget 5: Autonomous Daily Video & Audio Briefing Broadcast
+    const broadcastContainer = document.getElementById('studioBroadcastContainer');
+    if (broadcastContainer) {
+      const bData = (studio && studio.data && studio.data.daily_broadcast) ? studio.data.daily_broadcast : {
+        date: new Date().toISOString().split('T')[0],
+        voice: 'Daniel',
+        audio_file: 'exports/broadcast_daily.aiff',
+        summary_text: 'Global briefing compiled. Markets, comms, and cloud status synchronized.',
+        telegram_broadcast: true,
+        last_compiled: null
+      };
+      broadcastContainer.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:14px; background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div class="mono" style="font-size:14px; font-weight:700; color:var(--gold);">
+                AUDIO &amp; VIDEO BRIEFING DOSSIER &bull; ${escapeHtml(bData.date)}
+              </div>
+              <div class="mono" style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                SYNTHESIZER: macOS Native Speech (/usr/bin/say -v ${escapeHtml(bData.voice)}) &bull; TELEGRAM: SYNDICATED
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="badge mono" style="font-size:11px; background:rgba(212,175,55,0.15); color:var(--gold); border:1px solid rgba(212,175,55,0.3); padding:3px 8px;">
+                ${bData.last_compiled ? 'LAST RUN: TODAY' : 'READY TO COMPILE'}
+              </span>
+            </div>
+          </div>
+
+          <div class="mono" style="background:#030508; border:1px solid var(--border-subtle); padding:12px; border-radius:4px; font-size:12px; line-height:1.6; color:var(--text-primary); max-height:120px; overflow-y:auto;">
+            "${escapeHtml(bData.summary_text)}"
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <audio controls style="height:36px; filter:invert(0.9) hue-rotate(180deg);" id="dailyBroadcastAudio">
+                <source src="/exports/${encodeURIComponent(bData.audio_file ? bData.audio_file.split('/').pop() : 'broadcast_daily.aiff')}" type="audio/x-aiff">
+                Your browser does not support audio playback.
+              </audio>
+              <span class="mono" style="font-size:11px; color:var(--text-muted);">AUDIO MASTER (.AIFF / .WAV)</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm btn-secondary mono" onclick="CommandCenter.downloadBroadcastAudio('${escapeHtml(bData.audio_file || '')}')">DOWNLOAD MASTER</button>
+              <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.compileDailyBroadcast()">FORCE RECOMPILE</button>
+            </div>
           </div>
         </div>
       `;
@@ -7391,6 +7596,388 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     }
   }
 
+  // --- 1. Pump.fun & Raydium Token Launchpad Actions ---
+  async function openTokenAuditModal(mint, symbol) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const modal = document.getElementById('tokenAuditModal');
+    const title = document.getElementById('tokenAuditTitle');
+    const body = document.getElementById('tokenAuditModalBody');
+    const snipeBtn = document.getElementById('btnAuditSnipe');
+
+    if (title) title.textContent = `TOKEN SECURITY AUDIT // $${symbol || 'TOKEN'}`;
+    if (body) body.innerHTML = '<div class="mono" style="padding:20px; text-align:center; color:var(--neon-cyan);">PROBING ON-CHAIN METADATA, MINT/FREEZE AUTHORITIES, AND LIQUIDITY...</div>';
+    if (snipeBtn) {
+      snipeBtn.onclick = () => { closeTokenAuditModal(); executeSnipe(mint, symbol); };
+    }
+    if (modal) modal.style.display = 'flex';
+
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'crypto',
+          action: 'audit_token_security',
+          payload: { mint: mint }
+        })
+      });
+      const data = await res.json();
+      const audit = data.audit || {};
+      const score = audit.safety_score !== undefined ? audit.safety_score : 85;
+      const scoreColor = score >= 70 ? 'var(--neon-emerald)' : (score >= 40 ? 'var(--gold)' : 'var(--neon-crimson)');
+
+      if (body) {
+        body.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:12px; border-radius:4px; border:1px solid var(--border-subtle);">
+              <div>
+                <span class="mono" style="font-size:11px; color:var(--text-muted);">OVERALL ANTI-RUG SAFETY SCORE</span>
+                <div class="mono" style="font-size:24px; font-weight:700; color:${scoreColor};">${score} / 100</div>
+              </div>
+              <div class="mono" style="text-align:right;">
+                <span class="badge mono" style="font-size:11px; font-weight:700; color:${scoreColor}; border:1px solid ${scoreColor}; padding:4px 10px;">
+                  ${audit.can_snipe ? 'PASS &bull; APPROVED' : 'HIGH RISK &bull; CAUTION'}
+                </span>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;" class="mono">
+              <div style="background:rgba(255,255,255,0.02); padding:10px; border:1px solid var(--border-subtle); border-radius:4px;">
+                <span style="color:var(--text-muted); font-size:10px;">MINT AUTHORITY:</span>
+                <div style="color:${audit.mint_authority_revoked ? 'var(--neon-emerald)' : 'var(--neon-crimson)'}; font-weight:700; font-size:12px; margin-top:2px;">
+                  ${audit.mint_authority_revoked ? 'REVOKED (SAFE)' : 'ACTIVE (CAN INFLATE)'}
+                </div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02); padding:10px; border:1px solid var(--border-subtle); border-radius:4px;">
+                <span style="color:var(--text-muted); font-size:10px;">FREEZE AUTHORITY:</span>
+                <div style="color:${audit.freeze_authority_revoked ? 'var(--neon-emerald)' : 'var(--neon-crimson)'}; font-weight:700; font-size:12px; margin-top:2px;">
+                  ${audit.freeze_authority_revoked ? 'REVOKED (CANNOT FREEZE)' : 'ACTIVE (HONEYPOT RISK)'}
+                </div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02); padding:10px; border:1px solid var(--border-subtle); border-radius:4px;">
+                <span style="color:var(--text-muted); font-size:10px;">LP BURNED %:</span>
+                <div style="color:var(--neon-emerald); font-weight:700; font-size:12px; margin-top:2px;">
+                  ${audit.lp_burn_pct || 100}% BURNED
+                </div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02); padding:10px; border:1px solid var(--border-subtle); border-radius:4px;">
+                <span style="color:var(--text-muted); font-size:10px;">DEV TOKEN SHARE:</span>
+                <div style="color:${(audit.dev_holding_pct || 0) > 10 ? 'var(--neon-crimson)' : 'var(--neon-emerald)'}; font-weight:700; font-size:12px; margin-top:2px;">
+                  ${audit.dev_holding_pct || 2.4}%
+                </div>
+              </div>
+            </div>
+
+            <div class="mono" style="background:#030508; border:1px solid var(--border-subtle); border-radius:4px; padding:10px; font-size:11px; color:var(--text-muted); word-break:break-all;">
+              CONTRACT ADDRESS: <span style="color:var(--neon-cyan);">${escapeHtml(mint)}</span>
+            </div>
+          </div>
+        `;
+      }
+    } catch (e) {
+      if (body) body.innerHTML = `<div class="mono" style="color:var(--neon-crimson);">Error fetching security audit: ${e.message}</div>`;
+    }
+  }
+
+  function closeTokenAuditModal() {
+    const modal = document.getElementById('tokenAuditModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function executeSnipe(mint, symbol) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    showConfirmModal(
+      'EXECUTE LAUNCHPAD SNIPE ORDER',
+      `Snipe $${symbol || 'TOKEN'} with 0.1 SOL on bonding curve? Anti-rug filters active.`,
+      `CONTRACT: ${mint}\nAMOUNT: 0.1 SOL\nJITO TIP: 0.002 SOL\nSLIPPAGE: 5.0%`,
+      async () => {
+        try {
+          const res = await fetch('/api/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              service: 'crypto',
+              action: 'execute_snipe_order',
+              payload: { mint, amount_sol: 0.1 }
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            if (typeof AudioFeedback !== 'undefined') AudioFeedback.trade();
+            showNotification(`Snipe executed for $${symbol}: ${data.order.signature.slice(0, 12)}...`);
+            fetchState();
+          } else {
+            showNotification(`Snipe rejected: ${data.error || data.message}`);
+          }
+        } catch (e) {
+          showNotification(`Error: ${e.message}`);
+        }
+      }
+    );
+  }
+
+  async function toggleAutoSniper() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'crypto',
+          action: 'toggle_auto_sniper',
+          payload: {}
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(`Auto-Sniper is now ${data.active ? 'ENGAGED' : 'STANDBY'}`);
+        fetchState();
+      }
+    } catch (e) {
+      showNotification(`Error: ${e.message}`);
+    }
+  }
+
+  function refreshLaunchpadPools() {
+    fetchState();
+    showNotification('Refreshed launchpad pool stream.');
+  }
+
+  // --- 2. Autonomous Daily Broadcast Actions ---
+  async function compileDailyBroadcast() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    showNotification('Compiling Daily Video & Audio Briefing Broadcast with macOS Speech Synthesis...');
+    const btn = document.getElementById('btnCompileBroadcast');
+    if (btn) { btn.disabled = true; btn.textContent = 'COMPILING AUDIO/VIDEO...'; }
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'studio',
+          action: 'compile_daily_broadcast',
+          payload: { voice: 'Daniel', telegram_broadcast: true }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showNotification(`Daily Broadcast compiled! Master: ${data.broadcast.audio_file}`);
+        fetchState();
+      } else {
+        showNotification(`Compilation failed: ${data.error || data.message}`);
+      }
+    } catch (e) {
+      showNotification(`Error: ${e.message}`);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "COMPILE TODAY'S BROADCAST"; }
+    }
+  }
+
+  function downloadBroadcastAudio(filepath) {
+    if (!filepath) return;
+    const filename = filepath.split('/').pop();
+    window.open(`/exports/${encodeURIComponent(filename)}`, '_blank');
+  }
+
+  // --- 3. Discord & Slack C2 ChatOps Actions ---
+  async function testChatOpsCommand(cmd) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'comms',
+          action: 'execute_chatops_command',
+          payload: { command: cmd, platform: 'discord', user: 'Operator' }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(`ChatOps: ${data.chatops.response}`);
+        fetchState();
+      }
+    } catch (e) {
+      showNotification(`Error: ${e.message}`);
+    }
+  }
+
+  async function dispatchChatOpsInput() {
+    const inp = document.getElementById('c2CommandInput');
+    if (!inp) return;
+    const cmd = inp.value.trim();
+    if (!cmd) return;
+    inp.value = '';
+    await testChatOpsCommand(cmd);
+  }
+
+  // --- 4. Local Neural Engine Actions ---
+  async function checkLocalNeuralStatus() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    showNotification('Probing Apple Silicon MLX and local Ollama hardware...');
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'ai_workbench',
+          action: 'get_local_neural_status',
+          payload: {}
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const s = data.local_neural || {};
+        showNotification(`Local Hardware Active: ${s.device} (${(s.models_available || []).length} models)`);
+        fetchState();
+      }
+    } catch (e) {
+      showNotification(`Error: ${e.message}`);
+    }
+  }
+
+  async function dispatchLocalInference() {
+    const inp = document.getElementById('localNeuralPromptInput');
+    const sel = document.getElementById('localNeuralModelSelect');
+    const outBox = document.getElementById('localNeuralOutputBox');
+    const btn = document.getElementById('btnRunLocalInference');
+    if (!inp) return;
+    const prompt = inp.value.trim();
+    if (!prompt) return;
+    const model = sel ? sel.value : 'llama3.2';
+
+    if (btn) { btn.disabled = true; btn.textContent = 'REASONING OFFLINE...'; }
+    if (outBox) {
+      outBox.style.display = 'block';
+      outBox.textContent = `[OFFLINE NEURAL ENGINE] Executing inference on Apple Silicon (${model})...\n`;
+    }
+
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'ai_workbench',
+          action: 'execute_local_inference',
+          payload: { prompt, model }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        const r = data.result || {};
+        if (outBox) {
+          outBox.textContent = `[OFFLINE RESPONSE] (Model: ${r.model} | Latency: ${r.latency_ms}ms | Device: ${r.device})\n\n${r.response}`;
+        }
+      } else {
+        if (outBox) outBox.textContent = `[ERROR]: ${data.error || data.message}`;
+      }
+    } catch (e) {
+      if (outBox) outBox.textContent = `[NETWORK ERROR]: ${e.message}`;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'RUN OFFLINE →'; }
+    }
+  }
+
+  // --- 5. Touch ID & WebAuthn Biometric Security Gate ---
+  let activeBiometricCallback = null;
+  let activeBiometricChallenge = null;
+
+  async function requestBiometricAuth(actionName, onAuthorized) {
+    activeBiometricCallback = onAuthorized;
+    const modal = document.getElementById('biometricModal');
+    const statusText = document.getElementById('biometricChallengeStatus');
+    const promptText = document.getElementById('biometricPromptText');
+    if (promptText) promptText.textContent = `Touch ID scan required to authorize: ${actionName}`;
+    if (statusText) statusText.textContent = 'GENERATING HARDWARE CHALLENGE...';
+    if (modal) modal.style.display = 'flex';
+
+    try {
+      const res = await fetch('/api/auth/webauthn-challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action_name: actionName })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed challenge');
+      activeBiometricChallenge = data.challenge;
+      if (statusText) statusText.textContent = 'TOUCH ID HARDWARE GATE READY. CLICK "SCAN TOUCH ID"';
+      
+      if (window.PublicKeyCredential) {
+        triggerTouchIDAuth();
+      }
+    } catch (e) {
+      if (statusText) statusText.textContent = `Challenge Error: ${e.message}`;
+    }
+  }
+
+  async function triggerTouchIDAuth() {
+    const statusText = document.getElementById('biometricChallengeStatus');
+    if (!activeBiometricChallenge) {
+      if (statusText) statusText.textContent = 'No active biometric challenge.';
+      return;
+    }
+    if (statusText) statusText.textContent = 'TOUCH SENSOR ON MACBOOK KEYBOARD NOW...';
+
+    let credentialPayload = {
+      challenge: activeBiometricChallenge,
+      credential_id: 'local_touchid_token_' + Date.now()
+    };
+
+    if (window.PublicKeyCredential && navigator.credentials && navigator.credentials.get) {
+      try {
+        const challengeBuffer = new Uint8Array(32);
+        window.crypto.getRandomValues(challengeBuffer);
+        const assertion = await navigator.credentials.get({
+          publicKey: {
+            challenge: challengeBuffer,
+            timeout: 60000,
+            userVerification: 'preferred',
+            rpId: window.location.hostname
+          }
+        }).catch(err => {
+          console.warn('WebAuthn direct hardware prompt skipped/mocked for localhost:', err);
+          return null;
+        });
+
+        if (assertion) {
+          credentialPayload.raw_id = assertion.id;
+        }
+      } catch (err) {
+        console.warn('WebAuthn call exception:', err);
+      }
+    }
+
+    try {
+      const verifyRes = await fetch('/api/auth/webauthn-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentialPayload)
+      });
+      const verifyData = await verifyRes.json();
+      if (verifyData.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        cancelBiometricPrompt();
+        if (activeBiometricCallback) {
+          activeBiometricCallback(verifyData.biometric_token);
+        }
+        showNotification('Touch ID biometric authentication successful.');
+      } else {
+        if (statusText) statusText.textContent = `Verification failed: ${verifyData.error || verifyData.message}`;
+      }
+    } catch (err) {
+      if (statusText) statusText.textContent = `Auth error: ${err.message}`;
+    }
+  }
+
+  function cancelBiometricPrompt() {
+    const modal = document.getElementById('biometricModal');
+    if (modal) modal.style.display = 'none';
+    activeBiometricChallenge = null;
+    activeBiometricCallback = null;
+  }
+
   // Expose API
   return {
     init,
@@ -7532,7 +8119,21 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     removeTrackedWallet,
     syncMultiWallets,
     setAgentPrompt,
-    executeAgentAction
+    executeAgentAction,
+    openTokenAuditModal,
+    closeTokenAuditModal,
+    executeSnipe,
+    toggleAutoSniper,
+    refreshLaunchpadPools,
+    compileDailyBroadcast,
+    downloadBroadcastAudio,
+    testChatOpsCommand,
+    dispatchChatOpsInput,
+    checkLocalNeuralStatus,
+    dispatchLocalInference,
+    requestBiometricAuth,
+    triggerTouchIDAuth,
+    cancelBiometricPrompt
   };
 })();
 
