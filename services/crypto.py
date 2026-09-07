@@ -15,6 +15,7 @@ from utils import dexscreener
 from utils import jupiter
 from utils import nitter
 from utils import solana
+from utils import browser_crawler
 
 SOL_CA_REGEX = re.compile(r'\b[1-9A-HJ-NP-Za-km-z]{32,44}\b')
 EVM_CA_REGEX = re.compile(r'\b0x[a-fA-F0-9]{40}\b')
@@ -906,5 +907,36 @@ class CryptoService(BaseService):
             self.bot_log.append({"timestamp": time.time(), "type": "AUTONOMOUS", "message": msg})
             self.poll()
             return {"success": True, "bot_state": self.bot_state, "message": msg}
+
+        elif action == "browse_token_chart":
+            symbol = payload.get("symbol", "").upper()
+            ca = payload.get("ca", "")
+            dex = payload.get("dex", "photon")
+
+            if not ca and symbol:
+                tok = next((t for t in self.tokens if t["symbol"] == symbol), None)
+                if tok:
+                    ca = tok.get("ca", "")
+
+            if not ca:
+                ca = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"  # Fallback to BONK
+
+            crawl_res = browser_crawler.inspect_token_dex(ca, dex=dex)
+            self.add_event("browser_chart_inspected", f"Headless Chrome inspected {dex.upper()} chart for {symbol or ca[:8]}", crawl_res)
+            return {"success": crawl_res.get("ok", False), "ca": ca, "dex": dex, "crawler": crawl_res}
+
+        elif action == "capture_chart_snapshot":
+            symbol = payload.get("symbol", "BONK").upper()
+            ca = payload.get("ca", "")
+            if not ca:
+                tok = next((t for t in self.tokens if t["symbol"] == symbol), None)
+                ca = tok.get("ca") if tok else "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+
+            out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "charts")
+            os.makedirs(out_dir, exist_ok=True)
+            shot_file = os.path.join(out_dir, f"chart_{symbol}_{int(time.time())}.png")
+            url = f"https://photon-sol.tinyastro.io/en/lp/{ca}"
+            snap_res = browser_crawler.capture_screenshot(url, shot_file, wait_ms=2500)
+            return {"success": snap_res.get("ok", False), "symbol": symbol, "ca": ca, "snapshot": snap_res}
 
         return super().dispatch_action(action, payload)

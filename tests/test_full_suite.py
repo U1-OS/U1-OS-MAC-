@@ -421,6 +421,35 @@ def main():
     s, term_tokens = action("crypto", "execute_terminal_command", {"command": "tokens"})
     log_test("Cyber Terminal Command Interpreter (tokens screener)", term_tokens.get("success") and "PRICE" in term_tokens.get("output", ""), "Screener matrix formatted for cyber console")
 
+    # 33. Telegram Alpha Bot Subsystem & Remote Command Terminal
+    print(f"\n{INFO} 33. Subsystem: Telegram Alpha Bot & Remote Command Terminal:")
+    s, tg_status = action("telegram", "execute_command", {"command": "/status"})
+    log_test("Telegram /status Remote Command", tg_status.get("success") and "TELEMETRY STATUS" in tg_status.get("output", ""), "System telemetry rendered for Telegram")
+
+    s, tg_tokens = action("telegram", "execute_command", {"command": "/tokens"})
+    log_test("Telegram /tokens DexScreener Radar", tg_tokens.get("success") and "TRENDING RADAR" in tg_tokens.get("output", ""), "Memecoin prices and 24h PnL formatted for Telegram")
+
+    s, tg_buy = action("telegram", "execute_command", {"command": "/buy BONK 0.1"})
+    log_test("Telegram /buy Remote Swap Dispatch", tg_buy.get("success") and "TRADE EXECUTED" in tg_buy.get("output", ""), "Executed swap via Telegram command with receipt")
+
+    s, tg_pnl = action("telegram", "execute_command", {"command": "/pnl"})
+    log_test("Telegram /pnl Holdings & Balance Query", tg_pnl.get("success") and "PORTFOLIO" in tg_pnl.get("output", ""), "Open positions & PnL summarized for Telegram")
+
+    # 34. Telegram Bot Integration & Standby Diagnostics
+    print(f"\n{INFO} 34. Subsystem: Telegram Bot Connectivity & Integration Diagnostics:")
+    s, tg_test = action("telegram", "test_bot")
+    log_test("Telegram Bot getMe Handshake", "bot_info" in tg_test, tg_test.get("message", "Standby"))
+
+    s, tg_int_test = action("settings", "test_integration_connection", {"id": "telegram"})
+    log_test("Integrations Hub Telegram Test Ping", tg_int_test.get("success"), tg_int_test.get("message", "OK"))
+
+    # 35. Native Headless Google Chrome Web Inspector & Dex Chart Scraper
+    print(f"\n{INFO} 35. Subsystem: Native Headless Google Chrome Web Inspector & Chart Scraper:")
+    s, crawl_res = action("crypto", "browse_token_chart", {"symbol": "BONK"})
+    crawler = crawl_res.get("crawler", {})
+    log_test("Headless Chrome JavaScript DOM Crawl", crawl_res.get("success") and crawler.get("engine") in ["chrome_headless", "http_urllib"], f"Engine: {crawler.get('engine')} ({crawler.get('latency_ms', 0)}ms)")
+    log_test("On-Page Contract Address (CA) Extraction", len(crawler.get("detected_solana_cas", [])) > 0, f"{len(crawler.get('detected_solana_cas', []))} Solana CAs extracted from live rendered DOM")
+
 
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")

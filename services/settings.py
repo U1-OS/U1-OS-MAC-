@@ -835,6 +835,16 @@ class SettingsService(BaseService):
                 lat_ms = round((time.time() - t0) * 1000, 1)
                 return {"success": True, "latency_ms": lat_ms, "message": f"Git repository inspected (Branch: {git_info['branch']}, Commit: {git_info['commit']})", "git": git_info}
 
+            elif int_id == "telegram":
+                from utils import telegram
+                tok = self.config.get("integrations", {}).get("telegram", {}).get("bot_token", "")
+                if not tok:
+                    return {"success": True, "latency_ms": 0.5, "message": "Telegram Bot registered (Standby: Awaiting Bot Token from @BotFather)"}
+                res = telegram.get_me(tok, timeout=4)
+                lat_ms = round((time.time() - t0) * 1000, 1)
+                ok = res.get("ok", False)
+                return {"success": ok, "latency_ms": lat_ms, "message": f"Telegram Bot @{res.get('result', {}).get('username')} responding ({lat_ms}ms)" if ok else f"Telegram response: {res.get('error')}"}
+
             elif int_id in ["openai", "anthropic", "elevenlabs", "twilio", "stripe"]:
                 cfg_item = self.config.get("integrations", {}).get(int_id, {})
                 has_val = any(bool(v) for v in cfg_item.values()) if isinstance(cfg_item, dict) else bool(cfg_item)

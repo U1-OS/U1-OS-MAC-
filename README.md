@@ -115,7 +115,7 @@ open http://127.0.0.1:8787
 ./command-center stop           # Graceful shutdown
 ./command-center restart        # Hot reload
 ./command-center status         # Health check
-./command-center test           # Run 95-test verification suite
+./command-center test           # Run 103-test verification suite
 ./command-center logs           # Live log tail
 ./command-center bot status     # AI bot status
 ./command-center bot backtest 100  # Run quantitative backtest
@@ -128,6 +128,38 @@ open http://127.0.0.1:8787
 ## Architecture
 
 ```
+Command Center OS (macOS)
+├── Core Server (server.py) -> 127.0.0.1:8787
+├── 11 Subsystem Services:
+│   ├── Intelligence, Finance, Comms, Deploy, AI Workbench,
+│   ├── Studio, Gaming, OSINT, Crypto, Telegram, Settings
+├── Integrations Hub (18 Pre-Installed Services):
+│   ├── Solana, Jupiter v6, DexScreener, Autonomous Trading
+│   ├── Telegram Alpha Bot, GitHub, Stripe, OpenAI, Anthropic
+│   ├── ElevenLabs, Twilio, Google Calendar, Gmail, AWS, etc.
+├── Utilities & Engines:
+│   ├── Pure-Python ed25519 & base58 Solana crypto primitives
+│   ├── Jupiter Aggregator v6 quote & swap transaction builder
+│   ├── Native Headless Chrome Web Crawler & DOM chart inspector
+│   ├── Pure-Python Telegram Bot API client (outbound/inbound)
+└── Living Bezel UI (HTML5 / Vanilla CSS / SSE Stream)
+```
+
+---
+
+## Roadmap
+
+- [x] Real Solana wallet & RPC integration (utils/solana.py)
+- [x] Live Jupiter on-chain quote & swap routing (utils/jupiter.py)
+- [x] Telegram bot remote control & alpha broadcast alerts (services/telegram_bot.py)
+- [x] Native headless Chrome browser web crawler & chart DOM inspector (utils/browser_crawler.py)
+- [x] Operator CLI terminal helper (cli.py)
+- [x] All-in-One Integrations Hub & Autonomous Usages Deck
+- [ ] VPS 24/7 cloud deploy
+- [ ] PostgreSQL backend
+- [ ] PWA / iPhone home screen app
+- [ ] AI autonomous agent (GPT-4o acts across all sections)
+- [ ] Multi-wallet PnL dashboard
 U1-OS-MAC-/
 ├── command-center          # CLI entrypoint (bash)
 ├── server.py               # Flask HTTP + SSE server (127.0.0.1:8787)
@@ -147,7 +179,7 @@ U1-OS-MAC-/
 │   ├── css/style.css       # Neon/cyber design system
 │   └── js/app.js           # Frontend engine
 ├── tests/
-│   └── test_full_suite.py  # 95-test master verification suite
+│   └── test_full_suite.py  # 103-test master verification suite
 └── docs/
     └── index.html          # GitHub Pages site
 ```
@@ -159,11 +191,11 @@ U1-OS-MAC-/
 ```bash
 ./command-center test
 
-# TOTAL TESTS PASSED:   95 / 95
+# TOTAL TESTS PASSED:   103 / 103
 # [PASS] ALL SUBSYSTEMS 100% OPERATIONAL
 ```
 
-32 verified modules across: Finance · Comms · Deploy · AI · Studio · Gaming · OSINT · Settings · macOS · SSE · Vault · Ollama · Dossier · Menu Bar · Hardware · Webhooks · Scheduler · Voice · SSL · Ports · Network · Watchdog · Ledger · Lockdown · Photon DEX · Twitter Alpha · Copy Trading · Price Alerts · AI Bot · Backtester · Cyber Terminal
+35 verified modules across: Finance · Comms · Deploy · AI · Studio · Gaming · OSINT · Settings · macOS · SSE · Vault · Ollama · Dossier · Menu Bar · Hardware · Webhooks · Scheduler · Voice · SSL · Ports · Network · Watchdog · Ledger · Lockdown · Photon DEX · Twitter Alpha · Copy Trading · Price Alerts · AI Bot · Backtester · Cyber Terminal · Telegram Bot · Telegram Integration Diagnostics · Native Chrome Headless Scraper
 
 ---
 
@@ -173,19 +205,6 @@ U1-OS-MAC-/
 - **Encrypted vault.** PBKDF2-CTR with HMAC-SHA256 tamper detection.
 - **Audit ledger.** Every action written to an immutable SQLite log.
 - **Emergency killswitch.** One command freezes all outbound mutations.
-
----
-
-## Roadmap
-
-- [ ] Real Solana wallet connect (Phantom)
-- [ ] Live Jupiter on-chain swap execution
-- [ ] Telegram bot remote control
-- [ ] VPS 24/7 cloud deploy
-- [ ] PostgreSQL backend
-- [ ] PWA / iPhone home screen app
-- [ ] AI autonomous agent (GPT-4o acts across all sections)
-- [ ] Multi-wallet PnL dashboard
 
 ---
 

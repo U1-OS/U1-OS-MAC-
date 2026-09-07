@@ -32,6 +32,8 @@ from services.gaming import GamingService
 from services.osint import OSINTService
 from services.crypto import CryptoService
 from services.settings import SettingsService
+from services.telegram_bot import TelegramService
+from utils import telegram
 
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -94,6 +96,8 @@ class CommandCenterFeeder:
         self.services["gaming"] = GamingService(self.config)
         self.services["osint"] = OSINTService(self.config)
         self.services["crypto"] = CryptoService(self.config)
+        self.services["telegram"] = TelegramService(self.config)
+        self.services["telegram"].feeder = self
         self.services["settings"] = SettingsService(self.config, self.config_path, self.services)
         self.services["settings"].feeder = self
 
@@ -168,6 +172,36 @@ class CommandCenterFeeder:
         ]:
             title = f"COMMAND CENTER // {service_name.upper()}"
             macos.notify(title, summary, sound="Hero")
+
+        # Real-time Telegram broadcast for crypto & security events
+        if "telegram" in self.services and self.services["telegram"].configured:
+            try:
+                tg_svc = self.services["telegram"]
+                if evt_type in ["photon_swap_executed", "trade_executed"]:
+                    payload = event.get("payload", {})
+                    msg = telegram.format_trade_alert(
+                        token_symbol=payload.get("symbol", "SOL"),
+                        action=payload.get("side", "BUY"),
+                        amount_sol=payload.get("amount_sol", 0.5),
+                        price_usd=payload.get("price_usd", 0.0),
+                        tokens_qty=payload.get("tokens_received", 0.0),
+                        tx_hash=payload.get("tx_hash")
+                    )
+                    tg_svc.broadcast_alert(msg)
+                elif evt_type == "crypto_alert_triggered":
+                    alt = event.get("payload", {}).get("alert", {})
+                    msg = telegram.format_price_alert(
+                        alt.get("symbol", "TOKEN"),
+                        alt.get("current_price", 0),
+                        alt.get("condition", "ABOVE"),
+                        alt.get("target_price", 0)
+                    )
+                    tg_svc.broadcast_alert(msg)
+                elif evt_type in ["lockdown_engaged", "lockdown_disengaged"]:
+                    msg = telegram.format_lockdown_notice(evt_type == "lockdown_engaged")
+                    tg_svc.broadcast_alert(msg)
+            except Exception:
+                pass
 
     def broadcast_action(self, service_name, action, result):
         self.sse_broker.publish("action_dispatched", {
