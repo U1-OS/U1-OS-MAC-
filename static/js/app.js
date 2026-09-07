@@ -607,6 +607,8 @@ const CommandCenter = (() => {
       renderOSINTSection(s.osint);
     } else if (sectionId === 'crypto') {
       renderCryptoSection(s.crypto);
+    } else if (sectionId === 'integrations') {
+      renderIntegrationsSection(s.settings, s.crypto);
     }
   }
 
@@ -2663,6 +2665,379 @@ const CommandCenter = (() => {
         }
       }
     });
+  }
+
+  /* ========================================================
+     SECTION: INTEGRATIONS & AUTONOMOUS USAGES HUB
+     ======================================================== */
+  const integrationsState = {
+    filterCategory: 'all',
+    hubData: null,
+    currentEditId: null,
+    loading: false
+  };
+
+  async function loadIntegrationsHub() {
+    try {
+      const res = await sendAction('settings', 'get_integrations_hub', {});
+      if (res && res.success) {
+        integrationsState.hubData = res;
+        renderIntegrationsUI();
+      }
+    } catch (e) {
+      console.error('Failed to load integrations hub:', e);
+    }
+  }
+
+  function renderIntegrationsSection(settings, crypto) {
+    const botState = (crypto && crypto.data && crypto.data.bot_state) || {};
+    const autoCfg = (integrationsState.hubData && integrationsState.hubData.autonomous_settings) || {};
+
+    const mode = botState.autonomous_mode || autoCfg.mode || 'PAPER';
+    const buyingEnabled = botState.autonomous_buying_enabled !== undefined ? botState.autonomous_buying_enabled : (autoCfg.enabled || false);
+    const browserUsage = botState.full_browser_execution !== undefined ? botState.full_browser_execution : (autoCfg.full_browser_execution || false);
+    const status = botState.status || 'STANDBY';
+
+    const dot = document.getElementById('autoTradingDot');
+    const statusText = document.getElementById('autoTradingStatusText');
+    const modeLabel = document.getElementById('autoModeLabel');
+    const toggleModeBtn = document.getElementById('toggleAutoTradingModeBtn');
+    const browserLabel = document.getElementById('autoBrowserLabel');
+    const toggleBrowserBtn = document.getElementById('toggleAutoBrowserBtn');
+    const maxSolInput = document.getElementById('autoBuyMaxSolInput');
+    const dailySpendInput = document.getElementById('autoDailySpendSolInput');
+
+    if (dot && statusText) {
+      if (buyingEnabled && status === 'RUNNING') {
+        dot.style.background = mode === 'REAL_AUTONOMOUS' ? 'var(--neon-green)' : 'var(--gold)';
+        dot.style.boxShadow = mode === 'REAL_AUTONOMOUS' ? '0 0 10px var(--neon-green)' : '0 0 10px var(--gold)';
+        statusText.textContent = mode === 'REAL_AUTONOMOUS' ? 'ACTIVE // REAL ON-CHAIN LIVE BUYING' : 'RUNNING // SIMULATED PAPER TRADING';
+        statusText.style.color = mode === 'REAL_AUTONOMOUS' ? 'var(--neon-green)' : 'var(--gold)';
+      } else {
+        dot.style.background = 'var(--text-muted)';
+        dot.style.boxShadow = 'none';
+        statusText.textContent = 'STANDBY // AGENT MONITORING ONLY';
+        statusText.style.color = 'var(--text-muted)';
+      }
+    }
+
+    if (modeLabel && toggleModeBtn) {
+      if (mode === 'REAL_AUTONOMOUS') {
+        modeLabel.textContent = 'REAL AUTONOMOUS (LIVE BUYING)';
+        modeLabel.style.color = 'var(--neon-green)';
+        toggleModeBtn.textContent = 'SWITCH TO PAPER';
+        toggleModeBtn.style.borderColor = 'var(--gold)';
+        toggleModeBtn.style.color = 'var(--gold)';
+      } else {
+        modeLabel.textContent = 'PAPER TRADING (SIMULATION)';
+        modeLabel.style.color = 'var(--gold)';
+        toggleModeBtn.textContent = 'SWITCH TO REAL AUTONOMOUS';
+        toggleModeBtn.style.borderColor = 'var(--neon-green)';
+        toggleModeBtn.style.color = 'var(--neon-green)';
+      }
+    }
+
+    if (browserLabel && toggleBrowserBtn) {
+      if (browserUsage) {
+        browserLabel.textContent = 'ENABLED (ACTIVE HEADLESS USAGE)';
+        browserLabel.style.color = 'var(--neon-cyan)';
+        toggleBrowserBtn.textContent = 'DISABLE BROWSER';
+        toggleBrowserBtn.style.borderColor = 'var(--neon-crimson)';
+        toggleBrowserBtn.style.color = 'var(--neon-crimson)';
+      } else {
+        browserLabel.textContent = 'DISABLED (API ONLY)';
+        browserLabel.style.color = 'var(--text-muted)';
+        toggleBrowserBtn.textContent = 'ENABLE FULL BROWSER';
+        toggleBrowserBtn.style.borderColor = 'var(--neon-cyan)';
+        toggleBrowserBtn.style.color = 'var(--neon-cyan)';
+      }
+    }
+
+    if (maxSolInput && !maxSolInput.matches(':focus')) {
+      maxSolInput.value = botState.max_allocation_sol || autoCfg.auto_buy_max_sol || 0.2;
+    }
+    if (dailySpendInput && !dailySpendInput.matches(':focus')) {
+      dailySpendInput.value = autoCfg.daily_spend_limit_sol || 2.0;
+    }
+
+    // Bot execution logs stream
+    const logsEl = document.getElementById('autoBotStreamLogs');
+    const countEl = document.getElementById('autoBotStreamCount');
+    const logs = (crypto && crypto.data && crypto.data.bot_log) || [];
+    if (countEl) countEl.textContent = `${logs.length} SIGNALS & LOGS`;
+    if (logsEl && logs.length > 0) {
+      logsEl.innerHTML = logs.slice(-8).reverse().map(l => {
+        const timeStr = new Date(l.timestamp * 1000).toLocaleTimeString();
+        let col = 'var(--text-muted)';
+        if (l.type === 'AUTONOMOUS' || l.type === 'EXECUTION') col = 'var(--neon-green)';
+        if (l.type === 'SIGNAL') col = 'var(--neon-cyan)';
+        if (l.type === 'ALERT') col = 'var(--neon-crimson)';
+        return `<div><span style="color:var(--gold); font-size:9.5px;">[${timeStr}]</span> <span style="color:${col}; font-weight:700;">[${escapeHtml(l.type)}]</span> ${escapeHtml(l.message)}</div>`;
+      }).join('');
+    }
+
+    // 2. Render Integrations Catalog
+    if (!integrationsState.hubData) {
+      loadIntegrationsHub();
+    } else {
+      renderIntegrationsUI();
+    }
+  }
+
+  function renderIntegrationsUI() {
+    const container = document.getElementById('integrationsGridContainer');
+    if (!container || !integrationsState.hubData) return;
+
+    const items = integrationsState.hubData.integrations || [];
+    const filter = integrationsState.filterCategory;
+
+    const filtered = filter === 'all' ? items : items.filter(i => (i.category || '').toLowerCase() === filter.toLowerCase());
+
+    container.innerHTML = `
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+        ${filtered.map(item => {
+          const isCfg = item.configured;
+          const statusCol = isCfg ? 'var(--neon-green)' : 'var(--gold)';
+          const statusBg = isCfg ? 'rgba(16, 185, 129, 0.12)' : 'rgba(233, 180, 76, 0.12)';
+          const statusText = isCfg ? 'CONFIGURED & ONLINE' : 'READY // AWAITING KEY';
+
+          return `
+            <div class="cyber-stat-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; position:relative;">
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                  <div>
+                    <span class="mono" style="font-size:9.5px; color:var(--text-muted); text-transform:uppercase;">${escapeHtml(item.category || 'INTEGRATION')}</span>
+                    <h3 style="font-family:var(--font-display); font-size:14px; font-weight:700; color:var(--text-primary); margin:2px 0 0 0;">${escapeHtml(item.name)}</h3>
+                  </div>
+                  <span class="badge mono" style="background:${statusBg}; color:${statusCol}; font-size:9px; padding:2px 6px; border-radius:3px;">
+                    ${statusText}
+                  </span>
+                </div>
+                <p style="font-size:11.5px; color:var(--text-muted); line-height:1.45; margin:6px 0 12px 0;">
+                  ${escapeHtml(item.guide || '')}
+                </p>
+              </div>
+
+              <div>
+                <div class="mono" style="font-size:10px; color:var(--text-muted); background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:3px; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  <span style="color:var(--gold);">KEYS:</span> ${(item.keys || []).join(', ')}
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <button class="btn btn-sm mono" onclick="CommandCenter.pingIntegration('${item.id}', this)" style="font-size:10px; padding:3px 10px; border:1px solid rgba(255,255,255,0.15);">
+                    ⚡ TEST PING
+                  </button>
+                  <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.openIntegrationModal('${item.id}')" style="font-size:10px; padding:3px 12px;">
+                    MANAGE &rarr;
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function filterIntegrations(category) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    integrationsState.filterCategory = category;
+
+    ['filterIntAll', 'filterIntWallets', 'filterIntDex', 'filterIntAi', 'filterIntSocial', 'filterIntCloud'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) b.classList.remove('active');
+    });
+
+    const activeMap = {
+      'all': 'filterIntAll',
+      'Wallets & Chains': 'filterIntWallets',
+      'DEX & Routing': 'filterIntDex',
+      'Autonomous AI': 'filterIntAi',
+      'Social & Alpha': 'filterIntSocial',
+      'Business & DevOps': 'filterIntCloud'
+    };
+    const actBtn = document.getElementById(activeMap[category] || 'filterIntAll');
+    if (actBtn) actBtn.classList.add('active');
+
+    renderIntegrationsUI();
+  }
+
+  async function pingIntegration(id, btnEl) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const orig = btnEl ? btnEl.textContent : '';
+    if (btnEl) btnEl.textContent = 'PINGING...';
+    try {
+      const res = await sendAction('settings', 'test_integration_connection', { id });
+      if (res && res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.signal();
+        showNotification(`${id.toUpperCase()} ONLINE: ${res.message} (${res.latency_ms}ms)`);
+        if (btnEl) btnEl.textContent = `✓ ${res.latency_ms}ms`;
+      } else {
+        showNotification(`${id.toUpperCase()} STANDBY: ${res.message || res.error}`);
+        if (btnEl) btnEl.textContent = 'STANDBY';
+      }
+    } catch (e) {
+      showNotification(`Ping failed for ${id}`);
+      if (btnEl) btnEl.textContent = 'ERR';
+    }
+    setTimeout(() => { if (btnEl) btnEl.textContent = orig; }, 3000);
+  }
+
+  function openIntegrationModal(id) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    if (!integrationsState.hubData) return;
+    const item = (integrationsState.hubData.integrations || []).find(i => i.id === id);
+    if (!item) return;
+
+    integrationsState.currentEditId = id;
+    const modal = document.getElementById('integrationModal');
+    const title = document.getElementById('integrationModalTitle');
+    const body = document.getElementById('integrationModalBody');
+    if (!modal || !title || !body) return;
+
+    title.textContent = `CONFIGURE ${item.name.toUpperCase()}`;
+    const preview = item.config_preview || {};
+
+    body.innerHTML = `
+      <div style="margin-bottom:12px;">
+        <span class="mono" style="font-size:10.5px; color:var(--text-muted); display:block; margin-bottom:4px;">GUIDE &amp; SPECIFICATION:</span>
+        <p style="font-size:12px; color:var(--text-secondary); line-height:1.45; background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
+          ${escapeHtml(item.guide || '')}
+        </p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        ${(item.keys || []).map(k => {
+          const val = preview[k] || '';
+          const isSecret = ['key', 'secret', 'token', 'password', 'private', 'auth'].some(s => k.toLowerCase().includes(s));
+          return `
+            <div>
+              <label class="mono" style="font-size:10px; color:var(--gold); display:block; margin-bottom:4px;">${escapeHtml(k.toUpperCase())}</label>
+              <input type="${isSecret ? 'password' : 'text'}" id="int_input_${k}" class="mono form-input" style="width:100%; padding:6px 10px; font-size:12px;" value="${escapeHtml(String(val))}" placeholder="Enter ${k}...">
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <div style="margin-top:14px; font-size:10.5px; color:var(--text-muted);" class="mono">
+        Config path: ${escapeHtml(item.local_path || '')}
+      </div>
+    `;
+
+    modal.style.display = 'flex';
+  }
+
+  function closeIntegrationModal() {
+    const modal = document.getElementById('integrationModal');
+    if (modal) modal.style.display = 'none';
+    integrationsState.currentEditId = null;
+  }
+
+  async function testCurrentIntegration() {
+    if (!integrationsState.currentEditId) return;
+    const btn = document.getElementById('integrationModalPingBtn');
+    await pingIntegration(integrationsState.currentEditId, btn);
+  }
+
+  async function submitIntegrationSave() {
+    if (!integrationsState.currentEditId || !integrationsState.hubData) return;
+    const id = integrationsState.currentEditId;
+    const item = (integrationsState.hubData.integrations || []).find(i => i.id === id);
+    if (!item) return;
+
+    const fields = {};
+    (item.keys || []).forEach(k => {
+      const input = document.getElementById(`int_input_${k}`);
+      if (input) fields[k] = input.value.trim();
+    });
+
+    try {
+      const res = await sendAction('settings', 'save_integration', { id, fields });
+      if (res && res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showNotification(`Integration ${id.toUpperCase()} saved & hot-reloaded!`);
+        closeIntegrationModal();
+        await loadIntegrationsHub();
+        fetchState();
+      } else {
+        showNotification(`Save failed: ${res.error || res.message}`);
+      }
+    } catch (e) {
+      showNotification(`Failed to save integration: ${e.message}`);
+    }
+  }
+
+  async function toggleAutoTradingMode() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const cur = (currentState && currentState.services && currentState.services.crypto && currentState.services.crypto.data && currentState.services.crypto.data.bot_state) || {};
+    const curMode = cur.autonomous_mode || 'PAPER';
+    const nextMode = curMode === 'REAL_AUTONOMOUS' ? 'PAPER' : 'REAL_AUTONOMOUS';
+
+    const maxSol = parseFloat(document.getElementById('autoBuyMaxSolInput')?.value || '0.2');
+    const dailyCap = parseFloat(document.getElementById('autoDailySpendSolInput')?.value || '2.0');
+    const browser = cur.full_browser_execution || false;
+
+    const res = await sendAction('settings', 'configure_autonomous_usages', {
+      enabled: true,
+      mode: nextMode,
+      auto_buy_max_sol: maxSol,
+      daily_spend_limit_sol: dailyCap,
+      full_browser_execution: browser
+    });
+
+    if (res && res.success) {
+      if (typeof AudioFeedback !== 'undefined') AudioFeedback.trade();
+      showNotification(`Autonomous Trading switched to ${nextMode} mode!`);
+      await loadIntegrationsHub();
+      fetchState();
+    }
+  }
+
+  async function toggleAutoBrowserUsage() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const cur = (currentState && currentState.services && currentState.services.crypto && currentState.services.crypto.data && currentState.services.crypto.data.bot_state) || {};
+    const curBrowser = cur.full_browser_execution || false;
+    const nextBrowser = !curBrowser;
+
+    const mode = cur.autonomous_mode || 'PAPER';
+    const maxSol = parseFloat(document.getElementById('autoBuyMaxSolInput')?.value || '0.2');
+    const dailyCap = parseFloat(document.getElementById('autoDailySpendSolInput')?.value || '2.0');
+
+    const res = await sendAction('settings', 'configure_autonomous_usages', {
+      enabled: cur.autonomous_buying_enabled !== undefined ? cur.autonomous_buying_enabled : true,
+      mode: mode,
+      auto_buy_max_sol: maxSol,
+      daily_spend_limit_sol: dailyCap,
+      full_browser_execution: nextBrowser
+    });
+
+    if (res && res.success) {
+      if (typeof AudioFeedback !== 'undefined') AudioFeedback.signal();
+      showNotification(`Autonomous Full Browser Usage: ${nextBrowser ? 'ENABLED' : 'DISABLED'}`);
+      await loadIntegrationsHub();
+      fetchState();
+    }
+  }
+
+  async function saveAutonomousTradingConfig() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    const maxSol = parseFloat(document.getElementById('autoBuyMaxSolInput')?.value || '0.2');
+    const dailyCap = parseFloat(document.getElementById('autoDailySpendSolInput')?.value || '2.0');
+    const cur = (currentState && currentState.services && currentState.services.crypto && currentState.services.crypto.data && currentState.services.crypto.data.bot_state) || {};
+
+    const res = await sendAction('settings', 'configure_autonomous_usages', {
+      enabled: cur.autonomous_buying_enabled !== undefined ? cur.autonomous_buying_enabled : true,
+      mode: cur.autonomous_mode || 'REAL_AUTONOMOUS',
+      auto_buy_max_sol: maxSol,
+      daily_spend_limit_sol: dailyCap,
+      full_browser_execution: cur.full_browser_execution !== undefined ? cur.full_browser_execution : true
+    });
+
+    if (res && res.success) {
+      if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+      showNotification(`Capital Rails updated: Max ${maxSol} SOL / swap, Cap ${dailyCap} SOL daily.`);
+      await loadIntegrationsHub();
+      fetchState();
+    }
   }
 
   function renderDeploySection(deploy) {
@@ -6680,7 +7055,16 @@ STATUS: RESOLVED // NOMINAL
     stopCryptoBot,
     toggleCryptoBotStrategy,
     runCryptoBacktest,
-    closeBacktestModal
+    closeBacktestModal,
+    filterIntegrations,
+    pingIntegration,
+    openIntegrationModal,
+    closeIntegrationModal,
+    testCurrentIntegration,
+    submitIntegrationSave,
+    toggleAutoTradingMode,
+    toggleAutoBrowserUsage,
+    saveAutonomousTradingConfig
   };
 })();
 

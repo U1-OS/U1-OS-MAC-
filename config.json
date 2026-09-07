@@ -1,58 +1,22 @@
 {
-  "system": {
-    "host": "127.0.0.1",
-    "port": 8787,
-    "refresh_interval_sec": 5,
-    "accent_color": "#E9B44C",
-    "reduced_motion": false
-  },
-  "intelligence": {
-    "weather_city": "Sydney",
-    "weather_auto_ip": true,
-    "pool_sensor_url": "",
-    "news_feeds": [
-      "https://news.ycombinator.com/rss",
-      "https://feeds.bbci.co.uk/news/technology/rss.xml"
-    ]
-  },
   "integrations": {
-    "stripe": {
-      "secret_key": "",
-      "currency": "USD"
+    "solana": {
+      "rpc_url": "https://api.mainnet-beta.solana.com"
     },
-    "gmail": {
-      "client_id": "",
-      "client_secret": "",
-      "refresh_token": ""
-    },
-    "google_calendar": {
-      "calendar_id": "primary"
-    },
-    "twilio": {
-      "account_sid": "",
-      "auth_token": "",
-      "from_number": ""
-    },
-    "anthropic": {
-      "api_key": ""
-    },
-    "openai": {
-      "api_key": ""
-    },
-    "canva": {
-      "api_key": ""
-    },
-    "elevenlabs": {
-      "api_key": ""
-    },
-    "pexels": {
-      "api_key": ""
-    },
-    "hibp": {
-      "api_key": ""
+    "autonomous_trading": {
+      "enabled": true,
+      "mode": "REAL_AUTONOMOUS",
+      "full_browser_execution": true,
+      "auto_buy_max_sol": 0.25,
+      "daily_spend_limit_sol": 2.5,
+      "stop_loss_pct": 12.0,
+      "take_profit_pct": 35.0
     }
   },
   "sections_enabled": {
     "gaming": true
+  },
+  "system": {
+    "accent_color": "#E9B44C"
   }
 }

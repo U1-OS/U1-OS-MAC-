@@ -234,6 +234,19 @@
             <span class="nav-label">OSINT</span>
           </button>
 
+          <button class="nav-item" data-section="integrations" id="nav-integrations">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </span>
+            <span class="nav-label">Integrations</span>
+          </button>
+
           <button class="nav-item" data-section="settings" id="nav-settings">
             <span class="nav-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -1197,7 +1210,114 @@
         </section>
 
         <!-- ======================================================== -->
-        <!-- SECTION 9: SETTINGS -->
+        <!-- SECTION 9: INTEGRATIONS & AUTONOMOUS USAGES HUB -->
+        <!-- ======================================================== -->
+        <section class="section-grid" id="section-integrations" data-section-name="Integrations">
+          <!-- Widget 1: Autonomous AI Trading & Browser Usages Master Deck [Span 12] -->
+          <article class="slab-panel span-12" id="integrationsAutonomousDeck">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-magenta);">AI AGENT // REAL EXECUTION CONTROLS</span>
+                <h2 class="slab-title">AUTONOMOUS CRYPTO TRADING &amp; BROWSER USAGES ENGINE</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:10px;">
+                <span class="status-dot" id="autoTradingDot" style="background:var(--neon-green); box-shadow:0 0 8px var(--neon-green);"></span>
+                <span class="status-text mono" id="autoTradingStatusText" style="color:var(--neon-green); font-weight:700;">ACTIVE // LIVE MODE READY</span>
+              </div>
+            </header>
+            <div class="slab-body" style="padding: 16px;">
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <!-- Master Autonomous Mode Toggle -->
+                <div class="cyber-stat-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:14px;">
+                  <div class="mono" style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">TRADING MODE &amp; REAL BUYING</div>
+                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <span id="autoModeLabel" class="mono" style="font-size:14px; font-weight:700; color:var(--gold);">REAL AUTONOMOUS</span>
+                    <button class="btn btn-sm mono" id="toggleAutoTradingModeBtn" onclick="CommandCenter.toggleAutoTradingMode()" style="border:1px solid var(--gold); color:var(--gold);">SWITCH TO PAPER</button>
+                  </div>
+                  <div class="mono" style="font-size:10px; color:var(--text-muted); margin-top:8px;">
+                    When enabled, the AI agent executes live on-chain swaps via Jupiter v6 and Solana RPC without simulation.
+                  </div>
+                </div>
+
+                <!-- Full Browser Execution Usage Toggle -->
+                <div class="cyber-stat-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:14px;">
+                  <div class="mono" style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">FULL BROWSER USAGE &amp; NAVIGATION</div>
+                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <span id="autoBrowserLabel" class="mono" style="font-size:14px; font-weight:700; color:var(--neon-cyan);">ENABLED (ACTIVE)</span>
+                    <button class="btn btn-sm mono" id="toggleAutoBrowserBtn" onclick="CommandCenter.toggleAutoBrowserUsage()" style="border:1px solid var(--neon-cyan); color:var(--neon-cyan);">DISABLE</button>
+                  </div>
+                  <div class="mono" style="font-size:10px; color:var(--text-muted); margin-top:8px;">
+                    Authorizes the AI agent to launch headless browser sessions to inspect charts, DEX pools, and Twitter alpha feeds autonomously.
+                  </div>
+                </div>
+
+                <!-- Safety Rails: Max Allocation & Limits -->
+                <div class="cyber-stat-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:14px;">
+                  <div class="mono" style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">AUTONOMOUS CAPITAL RAILS</div>
+                  <div style="display:flex; gap:12px; align-items:center;">
+                    <div style="flex:1;">
+                      <label class="mono" style="font-size:9.5px; color:var(--text-muted);">MAX / SWAP (SOL)</label>
+                      <input type="number" step="0.05" id="autoBuyMaxSolInput" value="0.2" class="mono form-input" style="width:100%; padding:4px 8px; font-size:12px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); color:var(--text-main); border-radius:4px;">
+                    </div>
+                    <div style="flex:1;">
+                      <label class="mono" style="font-size:9.5px; color:var(--text-muted);">DAILY CAP (SOL)</label>
+                      <input type="number" step="0.5" id="autoDailySpendSolInput" value="2.0" class="mono form-input" style="width:100%; padding:4px 8px; font-size:12px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); color:var(--text-main); border-radius:4px;">
+                    </div>
+                  </div>
+                  <div style="margin-top:8px; text-align:right;">
+                    <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.saveAutonomousTradingConfig()" style="font-size:10px; padding:3px 10px;">APPLY PARAMS</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Terminal Strip for Autonomous Live Feed -->
+              <div style="background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:10px 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <span class="mono" style="font-size:10.5px; color:var(--gold); font-weight:700;">⚡ AUTONOMOUS AGENT REASONING &amp; EXECUTION STREAM</span>
+                  <span class="mono" style="font-size:9.5px; color:var(--text-muted);" id="autoBotStreamCount">10 RECENT SIGNALS</span>
+                </div>
+                <div id="autoBotStreamLogs" class="mono" style="font-size:11px; max-height:85px; overflow-y:auto; color:var(--text-muted); line-height:1.6;">
+                  <div style="color:var(--neon-green);">[ACTIVE] Autonomous engine connected to Solana Mainnet &amp; Jupiter Aggregator v6.</div>
+                  <div style="color:var(--text-main);">[MONITOR] Scanning Twitter alpha and DexScreener liquidity pools for breakout tokens...</div>
+                </div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">ZERO-SIMULATION ARCHITECTURE &bull; ED25519 ON-CHAIN SIGNING &bull; REAL-TIME DEX ROUTING</span>
+            </footer>
+          </article>
+
+          <!-- Widget 2: Pre-Installed Accounts & Integrations Catalog [Span 12] -->
+          <article class="slab-panel span-12" id="integrationsCatalogPanel">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">SYSTEM INTEGRATIONS // 02</span>
+                <h2 class="slab-title">ALL ACCOUNTS &amp; INTEGRATIONS (PRE-INSTALLED)</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <button class="mini-btn mono active" id="filterIntAll" onclick="CommandCenter.filterIntegrations('all')">ALL</button>
+                <button class="mini-btn mono" id="filterIntWallets" onclick="CommandCenter.filterIntegrations('Wallets & Chains')">WALLETS</button>
+                <button class="mini-btn mono" id="filterIntDex" onclick="CommandCenter.filterIntegrations('DEX & Routing')">DEX</button>
+                <button class="mini-btn mono" id="filterIntAi" onclick="CommandCenter.filterIntegrations('Autonomous AI')">AI</button>
+                <button class="mini-btn mono" id="filterIntSocial" onclick="CommandCenter.filterIntegrations('Social & Alpha')">SOCIAL</button>
+                <button class="mini-btn mono" id="filterIntCloud" onclick="CommandCenter.filterIntegrations('Business & DevOps')">DEVOPS</button>
+              </div>
+            </header>
+            <div class="slab-body" id="integrationsGridContainer" style="padding:16px;">
+              <!-- Dynamic Integration Cards inserted here -->
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PLUG-AND-PLAY MESH &bull; ALL SUBSYSTEMS INSTALLED &bull; ZERO SIMULATION</span>
+            </footer>
+          </article>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 10: SETTINGS -->
         <!-- ======================================================== -->
         <section class="section-grid" id="section-settings" data-section-name="Settings">
           <!-- Widget 1: Integration Credential Vault -->
@@ -1435,6 +1555,28 @@
       <span class="term-prompt-prefix mono">⚡ [U1-OS ~]$</span>
       <input type="text" id="cyberTerminalInput" class="term-input mono" placeholder="Enter command (e.g. help, bot status, alpha scan, tokens)..." autocomplete="off" spellcheck="false">
       <button class="btn btn-sm btn-gold mono" id="cyberTerminalSubmitBtn" onclick="CommandCenter.submitCyberTerminalCommand()">EXEC</button>
+    </div>
+  </div>
+
+  <!-- Integration Key & Parameter Config Modal -->
+  <div class="modal-overlay" id="integrationModal" aria-hidden="true" style="display:none;">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+      <div class="modal-header">
+        <span class="modal-kicker mono" id="integrationModalKicker" style="color:var(--gold);">INTEGRATION VAULT // REAL ADAPTER</span>
+        <h3 class="modal-title" id="integrationModalTitle">CONFIGURE INTEGRATION</h3>
+      </div>
+      <div class="modal-body" id="integrationModalBody" style="margin: 16px 0;">
+        <!-- Dynamic fields -->
+      </div>
+      <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center;">
+        <button class="btn btn-secondary mono" onclick="CommandCenter.closeIntegrationModal()">CANCEL</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary mono" id="integrationModalPingBtn" onclick="CommandCenter.testCurrentIntegration()">TEST CONNECTION</button>
+          <button class="btn btn-gold mono" onclick="CommandCenter.submitIntegrationSave()">SAVE SETTINGS</button>
+        </div>
+      </div>
     </div>
   </div>
 

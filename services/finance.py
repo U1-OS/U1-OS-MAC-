@@ -37,6 +37,15 @@ class FinanceService(BaseService):
         ]
         self.bills = [
             {
+                "id": "bill-1",
+                "vendor": "AWS Cloud Computing",
+                "amount": "$420.50",
+                "due": "Sep 12",
+                "category": "INFRASTRUCTURE",
+                "status": "DUE SOON",
+                "auto_pay": True
+            },
+            {
                 "id": "bill-101",
                 "vendor": "Google Cloud Infrastructure",
                 "amount": "$420.50",
@@ -74,6 +83,28 @@ class FinanceService(BaseService):
                 "status": "IN TRANSIT"
             }
         ]
+        portfolio_val = sum([p["current_price"] * p["units"] for p in self.positions])
+        total_unrealized_pl = sum([p["unrealized_pl"] for p in self.positions])
+        self.data = {
+            "stripe": {
+                "configured": False,
+                "currency": "USD",
+                "revenue_today": 0.0,
+                "revenue_month": 0.0,
+                "sparkline_7d": [],
+                "connect_notice": "Requires STRIPE_SECRET_KEY in config.json or Settings"
+            },
+            "bills": list(self.bills),
+            "upcoming_payouts": list(self.upcoming_payouts),
+            "trade_panel": {
+                "market_quotes": dict(self.market_cache),
+                "active_positions": list(self.positions),
+                "portfolio_value_usd": round(portfolio_val, 2),
+                "total_unrealized_pl_usd": round(total_unrealized_pl, 2),
+                "status": "LIVE MARKET FEED ONLINE"
+            }
+        }
+        self.last_updated = time.time()
 
     def _fetch_market_quotes(self):
         now = time.time()
@@ -223,11 +254,12 @@ class FinanceService(BaseService):
                         return {"success": False, "error": f"No open position in {ticker} to sell"}
 
             with self.lock:
-                self.data["trade_panel"]["active_positions"] = list(self.positions)
+                panel = self.data.setdefault("trade_panel", {})
+                panel["active_positions"] = list(self.positions)
                 portfolio_val = sum([p["current_price"] * p["units"] for p in self.positions])
                 total_unrealized_pl = sum([p["unrealized_pl"] for p in self.positions])
-                self.data["trade_panel"]["portfolio_value_usd"] = round(portfolio_val, 2)
-                self.data["trade_panel"]["total_unrealized_pl_usd"] = round(total_unrealized_pl, 2)
+                panel["portfolio_value_usd"] = round(portfolio_val, 2)
+                panel["total_unrealized_pl_usd"] = round(total_unrealized_pl, 2)
                 self.last_updated = time.time()
 
             self.add_event("trade_executed", f"Order executed: {order_action} {units} {ticker} @ ${curr_price:,.2f}")

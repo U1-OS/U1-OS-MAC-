@@ -11,6 +11,10 @@ import re
 import random
 from services.base import BaseService
 from utils import macos
+from utils import dexscreener
+from utils import jupiter
+from utils import nitter
+from utils import solana
 
 SOL_CA_REGEX = re.compile(r'\b[1-9A-HJ-NP-Za-km-z]{32,44}\b')
 EVM_CA_REGEX = re.compile(r'\b0x[a-fA-F0-9]{40}\b')
@@ -582,7 +586,7 @@ class CryptoService(BaseService):
         args = parts[1:]
 
         if cmd == "help":
-            out = """U1 OS // CYBER EXEC TERMINAL — COMMAND CATALOG:
+            out = """U1 OS // CYBER TERMINAL — COMMAND CATALOG:
   help                             Show this command catalog
   status                           Query U1 OS feeder & modular services health
   tokens                           Display live Photon / DEX screener quotes
@@ -855,5 +859,52 @@ class CryptoService(BaseService):
         elif action == "execute_terminal_command":
             cmd_str = payload.get("command", "")
             return self.execute_terminal_command(cmd_str)
+
+        # --- Real On-Chain & DEX Actions ---
+        elif action == "get_jupiter_quote":
+            input_mint = payload.get("input_mint", "So11111111111111111111111111111111111111112")
+            output_mint = payload.get("output_mint", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+            amount_lamports = int(payload.get("amount_lamports", 1000000000))
+            slippage_bps = int(payload.get("slippage_bps", 200))
+            res = jupiter.get_quote(input_mint, output_mint, amount_lamports, slippage_bps)
+            return {"success": res.get("ok", False), "quote": res, **res}
+
+        elif action == "get_solana_wallet":
+            wallet_addr = payload.get("wallet_address") or self.config.get("integrations", {}).get("solana", {}).get("wallet_address") or "So11111111111111111111111111111111111111112"
+            rpc = self.config.get("integrations", {}).get("solana", {}).get("rpc_url")
+            bal_res = solana.get_sol_balance(wallet_addr, rpc_url=rpc)
+            tok_res = solana.get_token_accounts(wallet_addr, rpc_url=rpc)
+            tx_res = solana.get_recent_transactions(wallet_addr, limit=10, rpc_url=rpc)
+            return {
+                "success": True,
+                "wallet_address": wallet_addr,
+                "sol_balance": bal_res.get("sol", 0.0),
+                "lamports": bal_res.get("lamports", 0),
+                "tokens": tok_res.get("accounts", []),
+                "recent_transactions": tx_res.get("transactions", []),
+                "is_live_rpc": bal_res.get("ok", False)
+            }
+
+        elif action == "search_dex_tokens":
+            query = payload.get("query", "SOL")
+            results = dexscreener.search_token(query, limit=8)
+            return {"success": True, "query": query, "results": results}
+
+        elif action == "set_autonomous_mode":
+            mode = payload.get("mode", "PAPER")
+            enabled = bool(payload.get("autonomous_buying_enabled", False))
+            browser = bool(payload.get("full_browser_execution", False))
+            self.bot_state["autonomous_mode"] = mode
+            self.bot_state["autonomous_buying_enabled"] = enabled
+            self.bot_state["full_browser_execution"] = browser
+            if enabled:
+                self.bot_state["status"] = "RUNNING"
+                msg = f"Autonomous AI Trading activated ({mode} mode, Browser: {browser})"
+            else:
+                self.bot_state["status"] = "STANDBY"
+                msg = "Autonomous AI Trading set to standby."
+            self.bot_log.append({"timestamp": time.time(), "type": "AUTONOMOUS", "message": msg})
+            self.poll()
+            return {"success": True, "bot_state": self.bot_state, "message": msg}
 
         return super().dispatch_action(action, payload)
