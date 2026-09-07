@@ -1,0 +1,39 @@
+{
+  "cluster_name": "Sovereign-Darwin-Mesh-Alpha",
+  "cluster_term": 4,
+  "leader_node_id": "node-studio-m2u",
+  "state_root_hash": "30c3dda0a64e7b899954c0bbc4e534359526cf1ed4c1f1fc1afe277f559358e0",
+  "nodes": [
+    {
+      "node_id": "node-studio-m2u",
+      "name": "Mac Studio Primary (M2 Ultra - 24 Core)",
+      "ip_mesh": "10.88.0.1",
+      "role": "LEADER",
+      "state_root": "30c3dda0a64e7b899954c0bbc4e534359526cf1ed4c1f1fc1afe277f559358e0",
+      "term": 4,
+      "heartbeat_latency_ms": 1.2,
+      "status": "ONLINE_ACTIVE"
+    },
+    {
+      "node_id": "node-mbp-m3max",
+      "name": "MacBook Pro Field Node (M3 Max - 16 Core)",
+      "ip_mesh": "10.88.0.2",
+      "role": "FOLLOWER_REPLICA",
+      "state_root": "30c3dda0a64e7b899954c0bbc4e534359526cf1ed4c1f1fc1afe277f559358e0",
+      "term": 4,
+      "heartbeat_latency_ms": 3.8,
+      "status": "ONLINE_ACTIVE"
+    },
+    {
+      "node_id": "node-air-m3",
+      "name": "MacBook Air Edge Courier (M3 - 8 Core)",
+      "ip_mesh": "10.88.0.3",
+      "role": "OBSERVER",
+      "state_root": "30c3dda0a64e7b899954c0bbc4e534359526cf1ed4c1f1fc1afe277f559358e0",
+      "term": 4,
+      "heartbeat_latency_ms": 12.4,
+      "status": "ONLINE_ACTIVE"
+    }
+  ],
+  "last_sync_timestamp": 1788761603
+}

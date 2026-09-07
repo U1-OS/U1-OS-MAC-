@@ -1271,6 +1271,30 @@ def main():
     log_test("Apple Vision Pro WebXR Spatial UI Panel Markup", 'id="settingsVisionOsPanel"' in index_html, "#settingsVisionOsPanel active in DOM")
     log_test("Client Application Wave 5 Solopreneur & 3D Spatial API Hooks", "calculateSaasMetrics" in app_js and "dispatchOutboundCampaign" in app_js and "refreshSeoRankings" in app_js and "scanFreelanceGigs" in app_js and "generatePitchDeck" in app_js and "renderSpatialGlobe" in app_js and "negotiateVisionOsSession" in app_js, "All 30 master features fully exposed in CommandCenter client API")
 
+    # 90. Full-Duplex Live Voice C2 Conversational Engine
+    print(f"\n{INFO} 90. Subsystem: Full-Duplex Live Voice C2 Conversational Engine:")
+    s, v_turn = action("settings", "process_voice_turn", {"operator_speech": "What is our current MRR velocity?", "voice": "Samantha", "execute_tts": False})
+    log_test("Acoustic Inbound Utterance Parsing & Local LLM Synthesis", v_turn.get("success") and len(v_turn.get("agent_response", "")) > 10, f"Operator: '{v_turn.get('operator_utterance')}' -> Agent: '{v_turn.get('agent_response')[:40]}...' ({v_turn.get('latency_ms')}ms)")
+    s, v_stat = action("settings", "get_voice_c2_telemetry", {})
+    log_test("Barge-In Acoustic Guard & Multi-Turn Conversation Log", v_stat.get("duplex_session_active") and v_stat.get("total_turns", 0) >= 1, f"Duplex voice active ({v_stat.get('total_turns')} turns recorded) | Engine: {v_stat.get('selected_voice')}")
+    log_test("Full-Duplex Voice C2 UI Panel Markup", 'id="settingsDuplexVoicePanel"' in index_html, "#settingsDuplexVoicePanel active in DOM")
+
+    # 91. Multi-Node Sovereign P2P Cluster Synchronization
+    print(f"\n{INFO} 91. Subsystem: Multi-Node Sovereign P2P Cluster Synchronization:")
+    s, cl_sync = action("settings", "sync_cluster_state", {"payload_data": {"event": "automated_consensus_check"}})
+    log_test("Merkle SHA-256 State Root Replicated Consensus", cl_sync.get("success") and cl_sync.get("consensus_status") == "QUORUM_UNANIMOUS_PASS", f"State Root: {cl_sync.get('state_root_hash')[:24]}... across {cl_sync.get('synced_nodes_count')} Apple Silicon nodes")
+    s, cl_stat = action("settings", "get_cluster_telemetry", {})
+    log_test("P2P Mesh Leader Election & Heartbeat Latency Matrix", cl_stat.get("total_nodes", 0) >= 3 and cl_stat.get("leader") == "node-studio-m2u", f"Cluster '{cl_stat.get('cluster_name')}': {cl_stat.get('total_nodes')} nodes | Leader: {cl_stat.get('leader')}")
+    log_test("Multi-Node P2P Cluster UI Panel Markup", 'id="settingsClusterSyncPanel"' in index_html, "#settingsClusterSyncPanel active in DOM")
+
+    # 92. Cognitive Focus & BCI / EEG Neural Telemetry HUD
+    print(f"\n{INFO} 92. Subsystem: Cognitive Focus & BCI / EEG Neural Telemetry HUD:")
+    s, bci_res = action("settings", "sample_bci_stream", {})
+    log_test("OpenBCI 8-Channel Frequency Band Spectral Decomposition", bci_res.get("success") and bci_res.get("flow_state_score", 0) > 0, f"Flow State: {bci_res.get('flow_state_score')}/100 | Cognitive Load: {bci_res.get('cognitive_load_index')}% ({bci_res.get('fatigue_level')})")
+    log_test("Dynamically Triggered Environmental Calm Mode Shield", bci_res.get("calm_mode_active") is True, f"Calm mode active for flow score {bci_res.get('flow_state_score')}/100 (Distraction shielding enabled)")
+    log_test("Cognitive Focus BCI Telemetry UI Panel Markup", 'id="settingsBciPanel"' in index_html, "#settingsBciPanel active in DOM")
+    log_test("Client Application Wave 6 Voice C2, Cluster & BCI API Hooks", "triggerVoiceTurn" in app_js and "syncClusterNodes" in app_js and "sampleBciNeuralStream" in app_js, "Wave 6 Next-Frontier methods exposed in CommandCenter client API")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

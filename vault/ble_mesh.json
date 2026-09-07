@@ -12,11 +12,11 @@
       "name": "Operator MacBook Pro (M3 Max)",
       "device_type": "macOS",
       "ble_address": "E4:5F:01:9A:88:B2",
-      "rssi_dbm": -46,
+      "rssi_dbm": -44,
       "distance_meters": 1.2,
       "awdl_airdrop_capable": true,
       "public_key_fingerprint": "SHA256:7f83b165...m3max",
-      "last_seen_sec": 1,
+      "last_seen_sec": 6,
       "status": "PAIRED_IN_PROXIMITY"
     },
     {
@@ -24,11 +24,11 @@
       "name": "Operator iPhone 16 Pro (Secure Enclave)",
       "device_type": "iOS",
       "ble_address": "D2:11:44:98:A2:CC",
-      "rssi_dbm": -55,
+      "rssi_dbm": -56,
       "distance_meters": 2.8,
       "awdl_airdrop_capable": true,
       "public_key_fingerprint": "SHA256:39a8bc41...sep",
-      "last_seen_sec": 13,
+      "last_seen_sec": 1,
       "status": "DISCOVERED_AIRDROP_READY"
     },
     {
@@ -36,7 +36,7 @@
       "name": "YubiKey 5Ci FIDO2 Dongle",
       "device_type": "HardwareToken",
       "ble_address": "AA:BB:CC:11:22:33",
-      "rssi_dbm": -37,
+      "rssi_dbm": -38,
       "distance_meters": 0.5,
       "awdl_airdrop_capable": false,
       "public_key_fingerprint": "SHA256:fido2...key",
@@ -45,6 +45,17 @@
     }
   ],
   "dispatched_transfers": [
+    {
+      "transfer_id": "awdl-ef6956bf",
+      "target_device": "Operator MacBook Pro (M3 Max)",
+      "device_id": "ble-peer-mbp-m3",
+      "payload_name": "vault_snapshot.ccvault",
+      "protocol": "Apple Wireless Direct Link (AWDL / AirDrop v2)",
+      "timestamp": 1788761598,
+      "status": "DELIVERED_AIRDROP_ACCEPTED",
+      "speed_mbps": 48.5,
+      "elapsed_sec": 0.82
+    },
     {
       "transfer_id": "awdl-5ae76a81",
       "target_device": "Operator MacBook Pro (M3 Max)",

@@ -29,6 +29,9 @@ from utils import gig_radar
 from utils import pitch_deck
 from utils import spatial_globe
 from utils import visionos_bridge
+from utils import duplex_voice
+from utils import cluster_sync
+from utils import bci_telemetry
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -449,6 +452,9 @@ class SettingsService(BaseService):
                 "pitch_deck": pitch_deck.get_pitch_deck_summary(),
                 "spatial_globe": spatial_globe.get_globe_telemetry(),
                 "visionos_bridge": visionos_bridge.get_visionos_status(),
+                "duplex_voice": duplex_voice.get_voice_c2_telemetry(),
+                "cluster_sync": cluster_sync.get_cluster_telemetry(),
+                "bci_telemetry": bci_telemetry.get_bci_telemetry(),
                 "server_environment": {
                     "binding": "127.0.0.1:8787 (Strict Local Only)",
                     "config_path": self.config_path,
@@ -1559,6 +1565,40 @@ class SettingsService(BaseService):
 
         elif action == "get_visionos_status":
             return visionos_bridge.get_visionos_status()
+
+        # Wave 6: Feature 31 - Full-Duplex Live Voice C2 Conversational Engine
+        elif action == "process_voice_turn":
+            speech = str(payload.get("operator_speech", "Status check on active services"))
+            vc = str(payload.get("voice", "Samantha"))
+            tts = bool(payload.get("execute_tts", False))
+            res = duplex_voice.process_voice_turn(operator_speech=speech, voice=vc, execute_tts=tts)
+            ledger.log_audit("voice_c2", "turn_processed", f"Operator query: '{speech}' -> Agent response generated", actor="duplex_voice", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_voice_c2_telemetry":
+            return duplex_voice.get_voice_c2_telemetry()
+
+        # Wave 6: Feature 32 - Multi-Node Sovereign P2P Cluster Synchronization
+        elif action == "sync_cluster_state":
+            p_data = payload.get("payload_data", {"timestamp": int(time.time()), "event": "cluster_sync_sweep"})
+            res = cluster_sync.sync_cluster_state(payload_data=p_data)
+            ledger.log_audit("cluster", "state_synchronized", f"Synced cluster state across {res.get('synced_nodes_count')} nodes (Root: {res.get('state_root_hash')[:12]}...)", actor="cluster_sync", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_cluster_telemetry":
+            return cluster_sync.get_cluster_telemetry()
+
+        # Wave 6: Feature 33 - Cognitive Focus & BCI / EEG Neural Telemetry HUD
+        elif action == "sample_bci_stream":
+            res = bci_telemetry.sample_bci_stream()
+            ledger.log_audit("bci", "eeg_sampled", f"Flow State Score: {res.get('flow_state_score')}/100 | Calm Mode: {res.get('calm_mode_active')}", actor="bci_telemetry", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_bci_telemetry":
+            return bci_telemetry.get_bci_telemetry()
 
         return super().dispatch_action(action, payload)
 

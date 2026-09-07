@@ -76,6 +76,15 @@
           "timestamp": 1788760879,
           "ciphertext": "oqchJS9WA+4XYkkbs/ar0mUKa0XDbO4kaIR5DutX+sE=",
           "decrypted_body": "Operator verified enclave bridge"
+        },
+        {
+          "event_id": "$ev_6a6de275522c",
+          "sender": "@root:u1.local",
+          "type": "m.room.encrypted",
+          "algorithm": "m.megolm.v1.aes-sha2",
+          "timestamp": 1788761597,
+          "ciphertext": "sLwvn9LznmbxzPA7yxw3KTEPpch/XXW9NloA+yaCHD8=",
+          "decrypted_body": "Operator verified enclave bridge"
         }
       ]
     },

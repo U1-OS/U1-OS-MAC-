@@ -1,0 +1,28 @@
+{
+  "session_active": true,
+  "selected_voice": "Samantha",
+  "sample_rate_hz": 16000,
+  "barge_in_sensitivity": 0.82,
+  "conversation_history": [
+    {
+      "speaker": "operator",
+      "text": "Command Center, what is our current MRR velocity?",
+      "timestamp": 1788761409
+    },
+    {
+      "speaker": "c2_agent",
+      "text": "Current MRR is $28,600 with ARR at $343,200. Net Revenue Retention is holding at 100.4%.",
+      "timestamp": 1788761411
+    },
+    {
+      "speaker": "operator",
+      "text": "What is our current MRR velocity?",
+      "timestamp": 1788761602
+    },
+    {
+      "speaker": "c2_agent",
+      "text": "Current MRR is $28,600 with $343,200 ARR. All Stripe and LemonSqueezy payment webhooks are healthy.",
+      "timestamp": 1788761603
+    }
+  ]
+}

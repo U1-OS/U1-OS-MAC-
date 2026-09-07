@@ -1,6 +1,67 @@
 {
   "decks": [
     {
+      "deck_id": "deck-261e9e32",
+      "startup_name": "U1 Sovereign OS",
+      "tagline": "The Autonomous Local-First Sovereign Operating Matrix",
+      "ask_amount": 5000000.0,
+      "total_slides": 10,
+      "slides": [
+        {
+          "slide": 1,
+          "title": "Vision & Frontier",
+          "content": "U1 Sovereign OS: The Autonomous Local-First Sovereign Operating Matrix"
+        },
+        {
+          "slide": 2,
+          "title": "The Problem",
+          "content": "Cloud dependency creates catastrophic latency, recurring subscription sprawl, and data leakage."
+        },
+        {
+          "slide": 3,
+          "title": "The Solution",
+          "content": "Pure Python zero-dependency local matrix accelerated by Apple Silicon Metal NPU and ZK enclaves."
+        },
+        {
+          "slide": 4,
+          "title": "Market Opportunity",
+          "content": "$84B TAM across autonomous AI infrastructure, quant finance, and cyber defense."
+        },
+        {
+          "slide": 5,
+          "title": "Product Architecture",
+          "content": "89 integrated subsystems, pure standard library, 100% test coverage."
+        },
+        {
+          "slide": 6,
+          "title": "Business Model",
+          "content": "High margin SaaS subscriptions ($49 - $999/mo) and lifetime enterprise sovereign node licenses."
+        },
+        {
+          "slide": 7,
+          "title": "Traction & Cohorts",
+          "content": "$28.6k MRR ($343k ARR), 103.6% Net Revenue Retention, 4.27 Quick Ratio."
+        },
+        {
+          "slide": 8,
+          "title": "Competitive Moat",
+          "content": "Zero external pip dependencies, off-grid LoRa radio mesh, physical YubiKey FIDO2 hardware gate."
+        },
+        {
+          "slide": 9,
+          "title": "Leadership Team",
+          "content": "Seasoned systems architects and cryptographic protocol engineers."
+        },
+        {
+          "slide": 10,
+          "title": "The Raise",
+          "content": "Seeking $5,000,000 Series A to expand international node infrastructure and visionOS spatial C2."
+        }
+      ],
+      "export_html_path": "/Users/u1/.gemini/antigravity-ide/scratch/command-center/exports/pitch_deck.html",
+      "created_at": 1788761601
+    },
+    {
       "deck_id": "deck-d57a474d",
       "startup_name": "U1 Sovereign OS",
       "tagline": "The Autonomous Local-First Sovereign Operating Matrix",

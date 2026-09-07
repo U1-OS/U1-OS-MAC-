@@ -2782,7 +2782,114 @@
               <span class="footer-meta mono">IMMERSIVE: 6DoF HEAD TRACKING &bull; SPATIAL AUDIO HRTF &bull; COLOR P3-D65</span>
             </footer>
           </article>
+
+          <!-- Widget 31: Full-Duplex Live Voice C2 Conversational Engine [Span 12] -->
+          <article class="slab-panel span-12" id="settingsDuplexVoicePanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-green);">CONVERSATION // 31 &bull; DUPLEX VOICE C2</span>
+                <h2 class="slab-title">FULL-DUPLEX LIVE VOICE C2 &bull; ZERO-LATENCY ACOUSTIC LOOP</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="voiceC2StatusBadge" style="background:rgba(0,255,136,0.1); color:var(--neon-green); border:1px solid rgba(0,255,136,0.3); padding:2px 8px; font-size:10px;">VOICE DUPLEX: ACTIVE</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.triggerVoiceTurn()">SAY COMMAND</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsDuplexVoiceContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:10px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">VOICE ENGINE &amp; LATENCY</div>
+                  <div class="mono" id="voiceLatencyVal" style="color:var(--neon-green); font-weight:600; font-size:12px;">Samantha &bull; 18.4ms Loop</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ACOUSTIC BARGE-IN</div>
+                  <div class="mono" style="color:var(--neon-cyan); font-weight:600; font-size:12px;">82% Sensitivity Guard</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">INPUT TRANSCRIBER</div>
+                  <div class="mono" style="color:var(--gold); font-weight:600; font-size:12px;">Apple Metal CoreML Whisper</div>
+                </div>
+              </div>
+              <div id="voiceConversationLog" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:12px;">Full-duplex conversational audio pipeline listening. Zero cloud egress.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PIPELINE: PCM 16KHZ &bull; COREML WHISPER NPU &bull; LOCAL REASONING &bull; MACOS SAY SYNTHESIS</span>
+            </footer>
+          </article>
+
+          <!-- Widget 32: Multi-Node Sovereign P2P Cluster Synchronization [Span 6] -->
+          <article class="slab-panel span-6" id="settingsClusterSyncPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">CLUSTER // 32 &bull; MULTI-NODE CONSENSUS</span>
+                <h2 class="slab-title">MULTI-NODE P2P CLUSTER REPLICATION</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="clusterNodesBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:2px 8px; font-size:10px;">3 MAC NODES SYNCED</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.syncClusterNodes()">SYNC STATE</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsClusterSyncContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">CLUSTER LEADER</div>
+                  <div class="mono" id="clusterLeaderVal" style="color:var(--gold); font-weight:600;">Mac Studio M2 Ultra</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">CONSENSUS MERKLE ROOT</div>
+                  <div class="mono" id="clusterRootVal" style="color:var(--neon-green); font-weight:600; font-size:10px;">a4f81c9b20e1...</div>
+                </div>
+              </div>
+              <div id="clusterNodesList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">P2P cryptographic replication active across WireGuard mesh &amp; LoRa radio.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROTOCOL: DECENTRALIZED RAFT CONSENSUS &bull; SHA-256 STATE ROOTS &bull; P2P REPLICATION</span>
+            </footer>
+          </article>
+
+          <!-- Widget 33: Cognitive Focus & BCI / EEG Neural Telemetry HUD [Span 6] -->
+          <article class="slab-panel span-6" id="settingsBciPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-purple);">NEURAL // 33 &bull; BCI FOCUS TELEMETRY</span>
+                <h2 class="slab-title">COGNITIVE FOCUS &amp; BCI NEURAL HUD</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="bciFlowBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:2px 8px; font-size:10px;">FLOW STATE: 91.2%</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.sampleBciNeuralStream()">SAMPLE EEG</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsBciContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">COGNITIVE LOAD INDEX</div>
+                  <div class="mono" id="bciLoadVal" style="color:var(--neon-cyan); font-weight:600;">68.4% (OPTIMAL)</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">CALM MODE SHIELD</div>
+                  <div class="mono" id="bciCalmVal" style="color:var(--neon-green); font-weight:600;">ARMED (14 MUTED)</div>
+                </div>
+              </div>
+              <div id="bciBandsPowerList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">Alpha (28.6 uV²) &bull; Beta (42.1 uV²) &bull; Theta (14.2 uV²) &bull; Gamma (8.4 uV²)</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">BIOSENSING: OPENBCI CYTON 250HZ &bull; FFT SPECTRAL BAND DECOMPOSITION &bull; FLOW SHIELD</span>
+            </footer>
+          </article>
         </section>
+
 
       </main>
     </div>

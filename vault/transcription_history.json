@@ -1,5 +1,36 @@
 [
   {
+    "transcription_id": "tx-d9268a32",
+    "timestamp": 1788761596,
+    "duration_sec": 3.2,
+    "language": "en",
+    "engine": "Apple Silicon Metal CoreML (Whisper-Base NPU)",
+    "confidence_score": 98.8,
+    "channels": 1,
+    "sample_rate": 16000,
+    "rms_energy": 0.038,
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 1.54,
+        "speaker": "Operator (Enclave 1)",
+        "text": "Command Center autonomous mesh online.",
+        "confidence": 0.985
+      },
+      {
+        "start": 1.66,
+        "end": 3.2,
+        "speaker": "Operator (Enclave 1)",
+        "text": "All sovereign services operating within parameters.",
+        "confidence": 0.991
+      }
+    ],
+    "full_text": "Command Center autonomous mesh online. All sovereign services operating within parameters.",
+    "word_count": 11,
+    "latency_ms": 15.1,
+    "status": "COMPLETED_ON_DEVICE"
+  },
+  {
     "transcription_id": "tx-1f0988f6",
     "timestamp": 1788760879,
     "duration_sec": 3.2,

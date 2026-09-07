@@ -1,0 +1,17 @@
+{
+  "device": "OpenBCI Cyton 8-Channel Biosensing Board",
+  "connection": "BLUETOOTH_SERIAL_RFCOMM",
+  "sampling_rate_hz": 250,
+  "bands_power_uv2": {
+    "theta_4_8hz": 14.2,
+    "alpha_8_12hz": 28.6,
+    "beta_13_30hz": 42.1,
+    "gamma_30_100hz": 8.4
+  },
+  "cognitive_load_index": 65.6,
+  "flow_state_score": 100.0,
+  "fatigue_level": "NOMINAL",
+  "calm_mode_active": true,
+  "suppressed_distractions_count": 14,
+  "last_sample_timestamp": 1788761603
+}

@@ -41,8 +41,8 @@
       "ttl": 3600
     }
   },
-  "queries_resolved": 54,
-  "cache_hits": 50,
+  "queries_resolved": 57,
+  "cache_hits": 53,
   "cache_misses": 4,
   "doh_resolvers": [
     "https://cloudflare-dns.com/dns-query",

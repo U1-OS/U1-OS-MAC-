@@ -1,6 +1,28 @@
 {
   "campaigns": [
     {
+      "campaign_id": "cmp-7555daca",
+      "name": "Enterprise C2 Sovereign Expansion",
+      "target_audience": "VP Infrastructure & DevOps",
+      "sequence_steps": [
+        {
+          "day": 1,
+          "subject": "Quick question on {company} self-hosted edge",
+          "body": "Hi {name}, saw your work on distributed systems..."
+        },
+        {
+          "day": 4,
+          "subject": "Following up on zero-cloud telemetry",
+          "body": "Hi {name}, our benchmark is ready..."
+        }
+      ],
+      "status": "ARMED_ACTIVE",
+      "leads_contacted": 1,
+      "replies_count": 0,
+      "reply_rate_pct": 0.0,
+      "created_at": 1788761599
+    },
+    {
       "campaign_id": "cmp-79ad4604",
       "name": "Enterprise C2 Sovereign Expansion",
       "target_audience": "VP Infrastructure & DevOps",
