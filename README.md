@@ -15,8 +15,8 @@
 AI trading bots · Crypto desk · OSINT engine · Cyber terminal · Executive dossier — all running locally at `127.0.0.1:8787`.
 
 [![Release](https://img.shields.io/badge/release-v2.4.0%20Apex%20Quantum-ff0055?style=flat-square&logo=apple)](https://github.com/U1-OS/U1-OS-MAC-/releases/tag/v2.4.0)
-[![Tests](https://img.shields.io/badge/tests-342%2F342%20passing-10b981?style=flat-square&logo=checkmarx)](https://github.com/U1-OS/U1-OS-MAC-)
-[![Subsystems](https://img.shields.io/badge/subsystems-36%20active-00f0ff?style=flat-square)](https://github.com/U1-OS/U1-OS-MAC-)
+[![Tests](https://img.shields.io/badge/tests-371%2F371%20passing-10b981?style=flat-square&logo=checkmarx)](https://github.com/U1-OS/U1-OS-MAC-)
+[![Subsystems](https://img.shields.io/badge/subsystems-37%20active-00f0ff?style=flat-square)](https://github.com/U1-OS/U1-OS-MAC-)
 [![PQC](https://img.shields.io/badge/crypto-NIST%20FIPS%20203%2F204%20PQC-a855f7?style=flat-square)](WHITEPAPER.md)
 [![Zero-Pip](https://img.shields.io/badge/dependencies-zero%20pip%20packages-00ff88?style=flat-square)](WHITEPAPER.md)
 [![Python](https://img.shields.io/badge/python-3.9%2B%20stdlib-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
@@ -31,7 +31,7 @@ AI trading bots · Crypto desk · OSINT engine · Cyber terminal · Executive do
 
 ## What is U1 OS?
 
-U1 OS is a **fully autonomous, localhost-bound business operating system and sovereign command matrix** built for macOS on Apple Silicon. It unifies 36 mission-critical enterprise and cryptographic subsystems — spanning autonomous AI swarms, algorithmic trading, duplex voice C2, multi-node P2P cluster sync, BCI neural focus HUD, and NIST FIPS 203/204 Post-Quantum Cryptography — running 100% locally with zero external pip packages.
+U1 OS is a **fully autonomous, localhost-bound business operating system and sovereign command matrix** built for macOS on Apple Silicon. It unifies 37 mission-critical enterprise and cryptographic subsystems — spanning autonomous AI swarms, algorithmic trading, duplex voice C2, multi-node P2P cluster sync, BCI neural focus HUD, and NIST FIPS 203/204 Post-Quantum Cryptography — running 100% locally with zero external pip packages.
 
 ### ⚡ 1-Line Sovereign Install
 ```bash
@@ -86,6 +86,16 @@ command-center start
 - Menu bar status extra
 - Voice audio briefing (`/usr/bin/say`)
 - Hardware telemetry HUD (CPU/RAM/disk/thermal)
+
+### 🎛️ Sensory Layer
+| Layer | Description |
+|-------|-------------|
+| **Tactile Audio Synth** | 18 synthesized interface voices (click · nav · execute · trade · cash · fault · boot) generated live by the Web Audio API — **zero binary audio assets** |
+| **Notification Centre** | Bell + unread badge in the top bezel, persistent signal history, mark-read / clear, `Cmd+Shift+N` |
+| **Toast Stack** | Up to 5 stacked toasts, severity auto-inferred from the message, colour-coded with a countdown life bar |
+| **Desktop Bridge** | Native macOS notifications via permission negotiation, mirrored from every live SSE event |
+| **Motion Engine** | Click ripples, staggered panel seat, cinematic section transitions, count-up numerals, green/red value flash, cold-boot scanline sweep |
+| **Accessibility** | Full `prefers-reduced-motion` compliance · master volume + mute, persisted across reloads |
 
 ### ⚡ Cyber Terminal
 ```
@@ -164,6 +174,7 @@ Command Center OS (macOS)
 - [x] All-in-One Integrations Hub & Autonomous Usages Deck
 - [ ] VPS 24/7 cloud deploy
 - [ ] PostgreSQL backend
+- [x] Sensory layer — audio synth, notification centre & motion engine
 - [ ] PWA / iPhone home screen app
 - [ ] AI autonomous agent (GPT-4o acts across all sections)
 - [ ] Multi-wallet PnL dashboard
@@ -184,6 +195,8 @@ U1-OS-MAC-/
 ├── static/
 │   ├── index.html          # Single-page OS shell
 │   ├── css/style.css       # Neon/cyber design system
+│   ├── css/fx.css          # Motion, toast stack & notification centre
+│   ├── js/fx.js            # Sensory layer: audio synth, notify, motion
 │   └── js/app.js           # Frontend engine
 ├── tests/
 │   └── test_full_suite.py  # 106-test master verification suite
@@ -198,7 +211,7 @@ U1-OS-MAC-/
 ```bash
 ./command-center test
 
-# TOTAL TESTS PASSED:   106 / 106
+# TOTAL TESTS PASSED:   371 / 371
 # [PASS] ALL SUBSYSTEMS 100% OPERATIONAL
 ```
 

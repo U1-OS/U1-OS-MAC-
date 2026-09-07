@@ -112,6 +112,18 @@ const CommandCenter = (() => {
     toastTimer = setTimeout(() => {
       toastEl.style.display = 'none';
     }, 4500);
+
+    // Wave 9: mirror every live SSE event into the Notification Centre
+    // so nothing scrolls past unseen. The legacy bezel toast stays as a
+    // fallback for browsers where fx.js failed to load.
+    if (window.U1FX) {
+      toastEl.style.display = 'none';
+      window.U1FX.notify.show(message || 'Real-time telemetry event received', {
+        type: 'event',
+        source: (kicker || 'EVENT').toUpperCase(),
+        silent: true
+      });
+    }
   }
 
   function setupSSE() {
@@ -200,6 +212,18 @@ const CommandCenter = (() => {
     // Populate section-specific subviews if state is ready
     if (currentState) {
       renderActiveSectionDetails(sectionId);
+    }
+
+    // Wave 9: cinematic section entry + staggered panel seat
+    if (window.U1FX) {
+      const activeSec = document.getElementById(`section-${sectionId}`);
+      if (activeSec) {
+        window.U1FX.motion.sectionEnter(activeSec);
+        const panels = activeSec.querySelectorAll('.panel, .widget, .card, .glass-panel');
+        for (let i = 0; i < panels.length && i < 24; i++) {
+          window.U1FX.motion.reveal(panels[i], i * 38);
+        }
+      }
     }
   }
 
@@ -6142,19 +6166,66 @@ const CommandCenter = (() => {
         playTone(523, 523, 'sine', 0.08, 0.04);
         setTimeout(() => playTone(659, 659, 'sine', 0.08, 0.04), 70);
         setTimeout(() => playTone(784, 784, 'sine', 0.14, 0.05), 140);
+      },
+
+      /* --- Wave 9 sensory layer: previously-missing voices.
+         Delegates to the richer U1FX synth when fx.js is loaded,
+         and falls back to the local oscillator when it is not. --- */
+      tick: () => {
+        if (window.U1FX) return window.U1FX.audio.tick();
+        playTone(1400, 1100, 'square', 0.018, 0.028);
+      },
+      execute: () => {
+        if (window.U1FX) return window.U1FX.audio.execute();
+        playTone(140, 620, 'square', 0.13, 0.05);
+      },
+      error: () => {
+        if (window.U1FX) return window.U1FX.audio.error();
+        playTone(240, 90, 'sawtooth', 0.26, 0.06);
+      },
+      warn: () => {
+        if (window.U1FX) return window.U1FX.audio.warn();
+        playTone(660, 495, 'triangle', 0.16, 0.045);
+      },
+      cash: () => {
+        if (window.U1FX) return window.U1FX.audio.cash();
+        playTone(1046, 2093, 'sine', 0.16, 0.04);
+      },
+      notify: () => {
+        if (window.U1FX) return window.U1FX.audio.notify();
+        playTone(880, 1174, 'sine', 0.12, 0.04);
+      },
+      boot: () => {
+        if (window.U1FX) return window.U1FX.audio.boot();
+        playTone(196, 523, 'sine', 0.4, 0.04);
+      },
+      whoosh: () => {
+        if (window.U1FX) return window.U1FX.audio.whoosh();
+        playTone(700, 200, 'sine', 0.22, 0.03);
+      },
+      open: () => {
+        if (window.U1FX) return window.U1FX.audio.open();
+        playTone(300, 760, 'sine', 0.14, 0.04);
+      },
+      close: () => {
+        if (window.U1FX) return window.U1FX.audio.close();
+        playTone(760, 300, 'sine', 0.12, 0.035);
       }
     };
   })();
 
   function toggleAudioFeedback() {
     const state = AudioFeedback.toggle();
+    // Wave 9: the global U1FX synth owns persistence, so mirror the state.
+    if (window.U1FX) window.U1FX.audio.setEnabled(state);
     const btn = document.getElementById('btnToggleAudio');
     if (btn) {
       btn.classList.toggle('active', state);
+      btn.classList.toggle('muted', !state);
       btn.title = state ? 'Tactile Audio Feedback: ON' : 'Tactile Audio Feedback: OFF';
     }
     if (state) AudioFeedback.success();
-    showNotification(`Audio feedback ${state ? 'activated' : 'muted'}`);
+    showNotification(`Audio feedback ${state ? 'activated' : 'muted'}`, { silent: !state });
   }
 
   /* ========================================================
