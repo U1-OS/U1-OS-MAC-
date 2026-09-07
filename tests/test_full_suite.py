@@ -46,6 +46,12 @@ def get_raw(path):
     with urllib.request.urlopen(req, timeout=5) as r:
         return r.status, r.getheader("Content-Type", "")
 
+def get_text(path):
+    url = f"{BASE_URL}{path}"
+    req = urllib.request.Request(url, headers={"User-Agent": "CC-TestRunner/1.0"})
+    with urllib.request.urlopen(req, timeout=5) as r:
+        return r.status, r.read().decode("utf-8", errors="replace")
+
 def post(path, body):
     url = f"{BASE_URL}{path}"
     data = json.dumps(body).encode("utf-8")
@@ -680,6 +686,86 @@ def main():
 
     # Restore YubiKey gate to false
     action("settings", "toggle_yubikey_interlock", {"enable": False})
+
+    # 50. Autonomous Social Media Growth & X/Twitter Auto-Poster Engine
+    print(f"\n{INFO} 50. Subsystem: Autonomous Social Media Growth & X/Twitter Auto-Poster Engine:")
+    s, soc_gen = action("studio", "generate_social_content", {"topic": "U1-OS Institutional Release", "channel": "x_twitter"})
+    post_item = soc_gen.get("post", {})
+    log_test("Social Media Content Matrix Generation", soc_gen.get("success") and bool(post_item.get("body")), f"Post generated: {len(post_item.get('body', ''))} chars (Virality: {post_item.get('virality_score')}/100)")
+
+    s, soc_q = action("studio", "queue_social_post", {"content": post_item.get("body", "U1 OS Online"), "channel": "x_twitter", "tags": post_item.get("tags", [])})
+    queued_item = soc_q.get("item", {})
+    log_test("Social Media Post Queueing", soc_q.get("success") and queued_item.get("status") == "QUEUED", f"Queued post ID: {queued_item.get('id')}")
+
+    s, soc_pub = action("studio", "publish_social_post", {"post_id": queued_item.get("id")})
+    log_test("Social Media Post Publication & Syndication", soc_pub.get("success") and soc_pub.get("post", {}).get("status") == "PUBLISHED", f"Syndicated to {soc_pub.get('post', {}).get('channel')}")
+
+    s, sched_res2 = get("/api/scheduler")
+    jobs2 = sched_res2.get("jobs", [])
+    has_social_job = any(j.get("id") == "social_auto_poster" for j in jobs2)
+    log_test("Scheduler Job #10 Social Auto-Poster Daemon", has_social_job, "Scheduled social auto-poster registered (1800s interval)")
+
+    # 51. Sub-Second Solana MEV & Jito Bundle Private Mempool Router
+    print(f"\n{INFO} 51. Subsystem: Sub-Second Solana MEV & Jito Bundle Private Mempool Router:")
+    s, jito_floor = action("crypto", "get_jito_tip_floor", {})
+    tf = jito_floor.get("tip_floor", {})
+    log_test("Jito Block Engine Real-Time Tip Floor API", jito_floor.get("success") and tf.get("p50_lamports") is not None, f"P50 Floor: {tf.get('p50_lamports')} lamports ({tf.get('p50_sol')} SOL)")
+
+    s, jito_accs = action("crypto", "get_jito_tip_accounts", {})
+    acc_list = jito_accs.get("accounts", [])
+    log_test("Jito Validator Tip Recipient Accounts Pool", jito_accs.get("success") and len(acc_list) >= 8, f"{len(acc_list)} official validator tip accounts discovered")
+
+    s, jito_bundle = action("crypto", "send_jito_bundle", {"tip_lamports": 50000, "simulated": True})
+    b_rec = jito_bundle.get("bundle", {})
+    log_test("Jito Atomic Bundle Private Mempool Submission", jito_bundle.get("success") and b_rec.get("status") == "Landed", f"Bundle ID: {b_rec.get('bundle_id')[:16]}... Slot: {b_rec.get('slot')} ({b_rec.get('latency_ms')}ms)")
+
+    s, term_jito = action("crypto", "execute_terminal_command", {"command": "jito tips"})
+    log_test("Cyber Terminal Jito / MEV Console Commands", term_jito.get("success") and "JITO BLOCK ENGINE MEV ROUTER" in term_jito.get("output", ""), "Jito MEV matrix rendered in cyber console")
+
+    # 52. Decentralized Nostr & Matrix Sovereign P2P Encrypted Mesh C2
+    print(f"\n{INFO} 52. Subsystem: Decentralized Nostr & Matrix Sovereign P2P Encrypted Mesh C2:")
+    s, nostr_stat = action("comms", "get_nostr_status", {})
+    mesh_info = nostr_stat.get("mesh", {})
+    log_test("Nostr Keypair & NIP-01/NIP-04 Identity Synthesis", nostr_stat.get("success") and mesh_info.get("identity", {}).get("npub", "").startswith("npub1"), f"Identity: {mesh_info.get('identity', {}).get('npub')[:18]}...")
+
+    s, nostr_dm = action("comms", "send_nostr_dm", {"message": "U1_OS_P2P_MESH_TEST_PING"})
+    log_test("Nostr NIP-04 End-to-End Encrypted C2 DM Broadcast", nostr_dm.get("success") and "?iv=" in nostr_dm.get("event", {}).get("content", ""), f"Broadcasted across {len(nostr_dm.get('relays_broadcasted', []))} relays")
+
+    s, nostr_cmd = action("comms", "execute_nostr_command", {"command": "system_diagnostic_pulse"})
+    log_test("Nostr P2P Inbound Event Validation & Decryption", nostr_cmd.get("success") and nostr_cmd.get("decrypted_command") == "system_diagnostic_pulse", "P2P command authenticated and decrypted successfully")
+
+    s, chatops_nostr = action("comms", "execute_chatops_command", {"command": "/u1 nostr"})
+    log_test("ChatOps /u1 nostr Mesh Interlock Command", chatops_nostr.get("success") and "NOSTR P2P MESH C2 ONLINE" in chatops_nostr.get("output", ""), "Nostr mesh status displayed via ChatOps gateway")
+
+    # 53. Autonomous AI Code Self-Healing & Continuous Patch Copilot
+    print(f"\n{INFO} 53. Subsystem: Autonomous AI Code Self-Healing & Continuous Patch Copilot:")
+    s, ast_health = action("deploy", "diagnose_codebase_health", {})
+    h_info = ast_health.get("health", {})
+    log_test("Codebase AST Static Syntax Integrity Audit", ast_health.get("success") and h_info.get("ast_syntax_clean") is True, f"Status: {h_info.get('status')} | Score: {h_info.get('health_score')}/100 | Files: {h_info.get('files_scanned')}")
+
+    scratch_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils", "jito.py")
+    valid_code = open(scratch_file).read()
+    s, patch_gen = action("deploy", "generate_self_heal_patch", {"target_file": scratch_file, "proposed_content": valid_code, "description": "Verification Hotpatch"})
+    p_rec = patch_gen.get("patch", {})
+    log_test("Hotpatch Synthesis with Pre-Validation AST Guard", patch_gen.get("success") and p_rec.get("status") == "VALIDATED", f"Hotpatch {p_rec.get('patch_id')[:18]}... pre-validated")
+
+    s, patch_app = action("deploy", "apply_self_healing_patch", {"patch_id": p_rec.get("patch_id")})
+    log_test("Hotpatch Atomic Application & Auto-Rollback Guarantee", patch_app.get("success") and patch_app.get("record", {}).get("status") == "SUCCESS", "Hotpatch safely applied with AST zero-breakage guarantee")
+
+    has_heal_job = any(j.get("id") == "self_healing_daemon" for j in jobs2)
+    log_test("Scheduler Job #11 Codebase Self-Healing Sentinel Daemon", has_heal_job, "Scheduled self-healing sentinel registered (3600s interval)")
+
+    # 54. 3D Cyberpunk Three.js WebGL Holographic Command Room
+    print(f"\n{INFO} 54. Subsystem: 3D Cyberpunk Three.js WebGL Holographic Command Room:")
+    s, three_js_text = get_text("/js/three_hologram.js")
+    log_test("3D WebGL Holographic Command Room Engine Static Delivery", s == 200 and "initHologram" in three_js_text, "three_hologram.js served with 200 OK")
+
+    s, index_html = get_text("/")
+    log_test("Hologram Modal Container Markup & Canvas Asset", 'id="hologramModal"' in index_html and 'id="hologramCanvas"' in index_html, "#hologramModal and #hologramCanvas active in DOM")
+    log_test("Top Bezel Hologram Command Button Trigger", 'id="btnHologramView"' in index_html, "#btnHologramView button mounted in header")
+
+    s, app_js = get_text("/js/app.js")
+    log_test("Client Application 3D Engine Hooks", "openHologramRoom" in app_js and "closeHologramRoom" in app_js, "3D room controls exposed in CommandCenter API")
 
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")

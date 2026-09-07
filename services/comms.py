@@ -4,6 +4,7 @@ import urllib.parse
 import json
 import base64
 from services.base import BaseService
+from utils import nostr
 
 class CommsService(BaseService):
     def __init__(self, config):
@@ -363,6 +364,11 @@ class CommsService(BaseService):
                 res = feeder.services["crypto"].dispatch_action("execute_swap", {"symbol": sym, "amount": amt, "confirmed": True, "side": "BUY"})
                 tx_sig = (res.get("swap", {}) or {}).get("transaction_signature") or res.get("transaction_signature", "5ZpSwap9942")
                 output = f"🪙 **SWAP DISPATCHED**: {amt} SOL -> ${sym}\nTX: {tx_sig}"
+            elif sub_cmd == "nostr":
+                n_status = nostr.nostr_mesh.get_status()
+                npub = n_status["identity"]["npub"]
+                relays_ct = n_status["connected_relays_count"]
+                output = f"⚡ **NOSTR P2P MESH C2 ONLINE**\nIdentity: `{npub[:16]}...{npub[-8:]}`\nRelays: {relays_ct} Public Relays Connected\nEncryption: NIP-04 End-to-End Encrypted"
             else:
                 output = f"U1 OS C2 Command `{cmd_str}` acknowledged by Ops Engine."
 
@@ -387,5 +393,26 @@ class CommsService(BaseService):
                 "output": output,
                 "entry": resp_entry
             }
+
+        elif action == "get_nostr_status":
+            return {"success": True, "mesh": nostr.nostr_mesh.get_status()}
+
+        elif action == "send_nostr_dm":
+            target = payload.get("target_pubkey") or nostr.nostr_mesh.identity["public_key_hex"]
+            message = payload.get("message") or payload.get("command") or "STATUS_PING"
+            res = nostr.nostr_mesh.send_encrypted_c2(target, message)
+            self.add_event("nostr_c2_broadcast", f"Sent encrypted Nostr C2 payload to {target[:12]}...")
+            return res
+
+        elif action == "execute_nostr_command":
+            event = payload.get("event")
+            if not event:
+                # Synthesize simulated event if not given
+                cmd_text = payload.get("command", "system_health_check")
+                id_hex = nostr.nostr_mesh.identity["public_key_hex"]
+                enc = nostr.encrypt_nip04(nostr.nostr_mesh.identity["private_key_hex"], id_hex, cmd_text)
+                event = nostr.create_event(id_hex, nostr.nostr_mesh.identity["private_key_hex"], 4, enc, [["p", id_hex]])
+            res = nostr.nostr_mesh.execute_c2_event(event)
+            return res
 
         return super().dispatch_action(action, payload)

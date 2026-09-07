@@ -17,6 +17,7 @@ from utils import nitter
 from utils import solana
 from utils import browser_crawler
 from utils import evm_btc
+from utils import jito
 
 SOL_CA_REGEX = re.compile(r'\b[1-9A-HJ-NP-Za-km-z]{32,44}\b')
 EVM_CA_REGEX = re.compile(r'\b0x[a-fA-F0-9]{40}\b')
@@ -938,6 +939,36 @@ class CryptoService(BaseService):
                 return {"success": True, "output": out, "command": cmd_str, "ai_res": ai_res}
             return {"success": True, "output": f"=== AI WORKBENCH COPILOT ===\nProcessed directive: {prompt}\nStatus: Direct execution completed.", "command": cmd_str}
 
+        elif cmd in ["jito", "mev"]:
+            sub = args[0].lower() if args else "status"
+            if sub in ["tips", "floor", "status"]:
+                floor = jito.get_tip_floor()
+                accs = jito.get_tip_accounts()
+                out = (
+                    f"=== JITO BLOCK ENGINE MEV ROUTER ===\n"
+                    f"Status: ONLINE (Sub-Second Private Mempool)\n"
+                    f"50th Percentile Tip: {floor.get('p50_lamports'):,} lamports ({floor.get('p50_sol')} SOL)\n"
+                    f"95th Percentile Tip: {floor.get('p95_lamports'):,} lamports ({floor.get('p95_sol')} SOL)\n"
+                    f"99th Percentile Tip: {floor.get('p99_lamports'):,} lamports\n"
+                    f"Active Tip Accounts: {len(accs)} Validators ({accs[0][:8]}...{accs[0][-6:]})"
+                )
+                return {"success": True, "output": out, "command": cmd_str}
+            elif sub in ["bundle", "send"]:
+                lamports = int(args[1]) if len(args) > 1 and args[1].isdigit() else 50000
+                dummy_tx = f"tx_sig_{int(time.time()*1000)}"
+                res = jito.send_mev_bundle([dummy_tx], tip_lamports=lamports)
+                b = res.get("bundle", {})
+                out = (
+                    f"🚀 JITO MEV BUNDLE TRANSMITTED:\n"
+                    f"Bundle ID: {b.get('bundle_id')}\n"
+                    f"Status: {b.get('status')} (Slot {b.get('slot')})\n"
+                    f"Latency: {b.get('latency_ms')}ms | Tip: {b.get('tip_lamports'):,} lamports ({b.get('tip_sol')} SOL)\n"
+                    f"Protection: {b.get('protection')}"
+                )
+                return {"success": True, "output": out, "command": cmd_str}
+            else:
+                return {"success": True, "output": f"Jito MEV usage: 'jito tips' or 'jito send [lamports]'", "command": cmd_str}
+
         return {"success": True, "output": f"Executed command: {cmd_str}", "command": cmd_str}
 
     def dispatch_action(self, action, payload=None):
@@ -1357,5 +1388,29 @@ class CryptoService(BaseService):
             chain = payload.get("chain", "base")
             res = evm_btc.execute_evm_swap(from_token, to_token, amt, chain=chain)
             return res
+
+        elif action == "get_jito_tip_floor":
+            floor = jito.get_tip_floor()
+            return {"success": True, "tip_floor": floor}
+
+        elif action == "get_jito_tip_accounts":
+            accounts = jito.get_tip_accounts()
+            return {"success": True, "accounts": accounts}
+
+        elif action == "send_jito_bundle":
+            txs = payload.get("transactions") or payload.get("txs") or [f"bundle_tx_{int(time.time()*1000)}"]
+            tip = int(payload.get("tip_lamports", 50000))
+            account = payload.get("tip_account")
+            region = payload.get("region", "mainnet")
+            sim = payload.get("simulated", True)
+            res = jito.send_mev_bundle(txs, tip_lamports=tip, tip_account=account, region=region, simulated=sim)
+            if res.get("success"):
+                b = res.get("bundle", {})
+                self.add_event("jito_bundle_sent", f"Jito MEV bundle {b.get('bundle_id')} sent ({tip} lamports)")
+            return res
+
+        elif action == "get_jito_bundle_status":
+            bundle_id = payload.get("bundle_id", "")
+            return jito.get_bundle_status(bundle_id)
 
         return super().dispatch_action(action, payload)

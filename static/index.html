@@ -127,6 +127,12 @@
           <span>TMA</span>
         </a>
 
+        <!-- 3D Cyberpunk Holographic Command Room Trigger -->
+        <button class="bezel-widget btn-palette-trigger mono" id="btnHologramView" title="3D Cyberpunk Holographic Command Room" style="padding:0 10px; font-size:10.5px; font-weight:700; color:#00ffcc; display:inline-flex; align-items:center; gap:5px;">
+          <span>🌐</span>
+          <span>3D HOLOGRAM</span>
+        </button>
+
         <!-- Tactile Audio Feedback Toggle -->
         <button class="bezel-widget btn-audio-toggle" id="btnToggleAudio" title="Toggle Tactile Audio Feedback" onclick="CommandCenter.toggleAudioFeedback()">
           <svg class="w-icon" id="audioIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -593,6 +599,27 @@
               <span class="footer-meta mono">SUPPORTED: /u1 status &bull; /u1 swap &bull; /u1 briefing &bull; /u1 lockdown</span>
             </footer>
           </article>
+
+          <!-- Widget 7: Decentralized Nostr Sovereign P2P Encrypted Mesh C2 [Span 12] -->
+          <article class="slab-panel span-12" id="commsNostrPanel" data-service="comms">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">NOSTR // 07 &bull; DECENTRALIZED P2P MESH</span>
+                <h2 class="slab-title">SOVEREIGN ENCRYPTED C2 &bull; PUBLIC NOSTR RELAY CLUSTER &bull; NIP-04 DM</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="nostrRelayBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:3px 10px; font-size:11px;">RELAYS: 5 CONNECTED</span>
+                <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.sendNostrPing()">SEND P2P PING</button>
+              </div>
+            </header>
+            <div class="slab-body" id="commsNostrContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROTOCOL: NIP-01 / NIP-04 &bull; ZERO PORT-FORWARDING NEEDED</span>
+              <span class="footer-meta mono" id="nostrNpubLabel">NPUB: INITIALIZING...</span>
+            </footer>
+          </article>
         </section>
 
         <!-- ======================================================== -->
@@ -898,6 +925,27 @@
               <span class="footer-meta mono" id="multichainTotalUsd">TOTAL CROSS-CHAIN: $0.00</span>
             </footer>
           </article>
+
+          <!-- Widget 13: Sub-Second Solana MEV & Jito Bundle Router [Span 12] -->
+          <article class="slab-panel span-12" id="cryptoJitoPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">MEV // 13 &bull; JITO BLOCK ENGINE</span>
+                <h2 class="slab-title">SUB-SECOND SOLANA MEV ROUTER &bull; ZERO-SLIPPAGE PRIVATE MEMPOOL</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="jitoFloorBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:3px 10px; font-size:11px;">TIP FLOOR: 25,000 LAMPORTS</span>
+                <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.sendSimulatedJitoBundle()">TRANSMIT MEV BUNDLE</button>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoJitoContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROTECTION: FRONT-RUNNING &amp; SANDWICH IMMUNE &bull; ATOMIC EXECUTION</span>
+              <span class="footer-meta mono" id="jitoLatencyMeta">BLOCK ENGINE: 14MS TOKYO / FRANKFURT</span>
+            </footer>
+          </article>
         </section>
 
         <!-- ======================================================== -->
@@ -993,6 +1041,27 @@
             <footer class="slab-footer">
               <span class="footer-meta mono">VOICE SYNTHESIS: MACOS NATIVE DANIEL &bull; ENGINE: FFMPEG &bull; DELIVERY: TELEGRAM ALPHA</span>
               <span class="footer-meta mono" id="broadcastScheduleMeta">SCHEDULER: 08:00 DAILY CRON</span>
+            </footer>
+          </article>
+
+          <!-- Widget 6: Autonomous Social Media Growth & Auto-Poster [Span 12] -->
+          <article class="slab-panel span-12" id="studioSocialPanel" data-service="studio">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-magenta);">GROWTH // 06 &bull; CONTENT MATRIX</span>
+                <h2 class="slab-title">AUTONOMOUS SOCIAL MEDIA GROWTH ENGINE &bull; X/TWITTER ALPHA AUTO-POSTER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="socialQueueBadge" style="background:rgba(255,0,85,0.1); color:var(--neon-magenta); border:1px solid rgba(255,0,85,0.3); padding:3px 10px; font-size:11px;">QUEUE: 0 PENDING</span>
+                <button class="btn btn-sm btn-magenta mono" onclick="CommandCenter.generateSocialThread()">GENERATE ALPHA THREAD</button>
+              </div>
+            </header>
+            <div class="slab-body" id="studioSocialContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">AUTOMATION: 30-MIN CRON DISPATCH &bull; VIRALITY MATRIX CALIBRATION</span>
+              <span class="footer-meta mono" id="socialPubMeta">CHANNELS: X / TWITTER &bull; TELEGRAM &bull; NOSTR</span>
             </footer>
           </article>
         </section>
@@ -1230,6 +1299,27 @@
             <footer class="slab-footer">
               <span class="footer-meta mono">DARWIN ZSH / BASH RUNTIME</span>
               <span class="footer-meta mono">EXECUTION SAFETY: CONFIRM BEFORE RUN</span>
+            </footer>
+          </article>
+
+          <!-- Widget 4: Autonomous AI Code Self-Healing & Hotpatch Copilot [Span 12] -->
+          <article class="slab-panel span-12" id="deploySelfHealingPanel" data-service="deploy">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:#10b981;">HEALING // 04 &bull; CONTINUOUS COPILOT</span>
+                <h2 class="slab-title">AUTONOMOUS AI CODE SELF-HEALING &bull; AST HOTPATCH COPILOT &bull; AUTO-ROLLBACK</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="selfHealingStatusBadge" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:3px 10px; font-size:11px;">AST STATUS: 100/100 HEALTHY</span>
+                <button class="btn btn-sm btn-emerald mono" onclick="CommandCenter.diagnoseCodebaseHealth()">DIAGNOSE HEALTH</button>
+              </div>
+            </header>
+            <div class="slab-body" id="deploySelfHealingContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">SAFETY: ATOMIC PRE-VALIDATION &bull; ZERO BREAKAGE ROLLBACK GUARANTEE</span>
+              <span class="footer-meta mono" id="healingScannedMeta">PYTHON AST PARSER: STDLIB 3.12</span>
             </footer>
           </article>
         </section>
@@ -1979,6 +2069,32 @@
     </div>
   </div>
 
+  <!-- 3D Cyberpunk Holographic Command Room Modal -->
+  <div class="modal-overlay" id="hologramModal" aria-hidden="true" style="display:none; align-items:center; justify-content:center; z-index:9999;">
+    <div class="modal-card" style="max-width: 960px; width: 92vw; height: 80vh; display:flex; flex-direction:column; background:rgba(7,10,19,0.95); border:1px solid var(--neon-cyan); box-shadow:0 0 35px rgba(0,255,204,0.3); padding:16px;">
+      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,255,204,0.2); padding-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:20px;">🌐</span>
+          <div>
+            <h3 class="modal-title mono" style="color:var(--neon-cyan); margin:0; font-size:16px;">3D CYBERPUNK HOLOGRAPHIC COMMAND ROOM</h3>
+            <span class="modal-kicker mono" style="font-size:11px; color:var(--text-muted);">Real-Time Planetary Node Mesh &amp; Mempool Topology</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary mono" id="btnCloseHologram" style="padding:4px 12px; font-size:11px;">CLOSE [ESC]</button>
+      </div>
+      <div class="modal-body" style="flex:1; position:relative; overflow:hidden; margin-top:10px; display:flex; align-items:center; justify-content:center; border-radius:6px; background:#070a13;">
+        <canvas id="hologramCanvas" style="width:100%; height:100%; display:block; cursor:grab;"></canvas>
+        <div style="position:absolute; bottom:12px; left:16px; background:rgba(10,14,24,0.75); border:1px solid rgba(0,255,204,0.2); border-radius:4px; padding:8px 12px; pointer-events:none;">
+          <div class="mono" style="font-size:11px; color:#00ffcc;">ORBIT CONTROLS: Click &amp; Drag to Rotate | Scroll to Zoom</div>
+          <div class="mono" style="font-size:10px; color:var(--text-muted);">Live C2 Hubs: Tokyo, New York, Frankfurt, London, Singapore, Sydney</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/three_hologram.js"></script>
   <script src="/js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

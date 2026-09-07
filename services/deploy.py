@@ -5,6 +5,7 @@ import json
 import subprocess
 import threading
 from services.base import BaseService
+from utils import self_healing
 
 class DeployService(BaseService):
     def __init__(self, config):
@@ -329,5 +330,42 @@ class DeployService(BaseService):
                 self.data["active_log"] = []
                 self.last_updated = time.time()
             return {"success": True}
+
+        # 4. Codebase Self-Healing Diagnostics
+        elif action == "diagnose_codebase_health":
+            health = self_healing.diagnose_codebase_health()
+            self._log(f"[SELF-HEALING] Health diagnosis: {health.get('status')} ({health.get('health_score')}/100)")
+            return {"success": True, "health": health}
+
+        # 5. Generate Hotpatch
+        elif action == "generate_self_heal_patch":
+            target_file = payload.get("target_file")
+            proposed_content = payload.get("proposed_content", "")
+            desc = payload.get("description", "Autonomous Self-Heal Hotpatch")
+            if not target_file:
+                return {"success": False, "error": "Target file required"}
+            res = self_healing.generate_self_heal_patch(target_file, proposed_content, description=desc)
+            if res.get("success"):
+                p = res.get("patch", {})
+                self._log(f"[HOTPATCH GENERATED] ID: {p.get('patch_id')} for {os.path.basename(target_file)}")
+            return res
+
+        # 6. Apply Hotpatch with Rollback Verification
+        elif action == "apply_self_healing_patch":
+            patch_id = payload.get("patch_id")
+            if not patch_id:
+                return {"success": False, "error": "Patch ID required"}
+            res = self_healing.apply_self_healing_patch(patch_id)
+            if res.get("success"):
+                self._log(f"[HOTPATCH APPLIED] ID {patch_id} successfully verified")
+                self.add_event("codebase_self_healed", f"Applied hotpatch {patch_id}")
+            else:
+                self._log(f"[HOTPATCH ABORTED] ID {patch_id} rolled back: {res.get('error')}")
+            return res
+
+        # 7. Get Healing History
+        elif action == "get_healing_history":
+            history = self_healing.get_healing_history()
+            return {"success": True, "history": history}
 
         return super().dispatch_action(action, payload)
