@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Command Center — macOS Business Operating System Local Feeder
-Binds strictly to 127.0.0.1:8787
+Binds strictly to 127.0.0.1 on the port set in config.json (default 8788)
 Feeds shared state across all services to the living slab UI
 """
 
@@ -256,7 +256,7 @@ class CommandCenterFeeder:
             "system": {
                 "server_time": time.time(),
                 "host": self.config.get("system", {}).get("host", "127.0.0.1"),
-                "port": self.config.get("system", {}).get("port", 8787),
+                "port": self.config.get("system", {}).get("port", 8788),
                 "os": "macOS",
                 "version": "1.0.0"
             },
@@ -408,7 +408,7 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
             self.send_header("Cache-Control", "no-cache, no-transform")
             self.send_header("Connection", "keep-alive")
-            self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8787")
+            self.send_header("Access-Control-Allow-Origin", self.self_origin())
             self.send_header("X-Accel-Buffering", "no")
             self.end_headers()
 

@@ -363,12 +363,12 @@ def main():
             whk_status = e.code
         log_test("Lockdown Inbound Webhook Blockade", whk_status == 403, "HTTP 403 Forbidden verified on webhook ingress")
 
-        act_status = 0
-        try:
-            action("finance", "execute_trade", {"symbol": "BTC", "side": "BUY", "amount": 0.01})
-        except urllib.error.HTTPError as e:
-            act_status = e.code
-        log_test("Lockdown Outbound Mutation Shield", act_status == 403, "HTTP 403 Forbidden verified on outbound trade action")
+        # post() reports the status code rather than raising, so read it
+        # directly instead of relying on an exception being thrown.
+        act_status, act_body = action("finance", "execute_trade", {"symbol": "BTC", "side": "BUY", "amount": 0.01})
+        log_test("Lockdown Outbound Mutation Shield",
+                 act_status == 403 and act_body.get("error") == "LOCKDOWN_ACTIVE",
+                 f"HTTP {act_status} on outbound trade action while locked down")
     finally:
         s, lock_off = action("settings", "toggle_lockdown", {"enable": False, "confirmed": True})
         log_test("Emergency Lockdown Clean Disengagement", lock_off.get("success") and not lock_off.get("lockdown_active"), "Normal operations restored across all subsystems")
