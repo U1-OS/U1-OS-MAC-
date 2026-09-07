@@ -5,6 +5,11 @@ import urllib.request
 import urllib.error
 from services.base import BaseService
 from utils import agent_swarm
+from utils import code_debater
+from utils import vision_copilot
+from utils import arxiv_radar
+from utils import memory_graph
+from utils import ticket_swarm
 
 # Pricing per million tokens (USD)
 RATES = {
@@ -775,6 +780,60 @@ class AIWorkbenchService(BaseService):
         elif action == "get_swarm_history":
             history = agent_swarm.get_deliberation_history()
             return {"success": True, "history": history, "total_deliberations": len(history)}
+
+        # 7. Code Debater & Synthesizer
+        elif action == "debate_and_refine_code":
+            prompt = payload.get("prompt", "High-frequency triangular arbitrage routing")
+            lang = payload.get("language", "python")
+            rounds = int(payload.get("max_iterations", 3))
+            res = code_debater.debate_and_refine_code(prompt, language=lang, max_iterations=rounds)
+            self.add_event("code_debated_ratified", f"Ratified code synthesis for '{prompt[:28]}...' after {rounds} rounds")
+            return res
+
+        # 8. Local Vision Copilot
+        elif action == "inspect_visual_target":
+            media = payload.get("media_path")
+            prompt = payload.get("prompt", "Analyze interface")
+            res = vision_copilot.inspect_visual_target(media_path=media, prompt=prompt)
+            self.add_event("vision_copilot_inspected", f"Inspected {res.get('target_media')} via Metal NPU: {res.get('analysis', {}).get('layout_integrity')}")
+            return res
+
+        # 9. ArXiv Intelligence Radar
+        elif action == "scan_arxiv_radar":
+            res = arxiv_radar.scan_arxiv_radar()
+            return {"success": True, "radar": res, "papers": res.get("papers", [])}
+
+        elif action == "summarize_paper":
+            pid = payload.get("paper_id", "arxiv_2609_0142")
+            return arxiv_radar.summarize_paper(pid)
+
+        # 10. Memory Graph & Vector Retrieval
+        elif action == "store_memory":
+            concept = payload.get("concept", "Executive Directive")
+            content = payload.get("content", "Mandatory zero-trust security interlocks")
+            tags = payload.get("tags")
+            return memory_graph.store_memory(concept, content, tags)
+
+        elif action == "query_memory_graph":
+            q = payload.get("query", "security interlocks")
+            top_k = int(payload.get("top_k", 3))
+            return memory_graph.query_memory_graph(q, top_k=top_k)
+
+        elif action == "get_memory_stats":
+            return memory_graph.get_memory_stats()
+
+        # 11. Customer Support & Ticket Swarm
+        elif action == "get_support_tickets":
+            return ticket_swarm.get_support_tickets()
+
+        elif action == "resolve_support_ticket":
+            tid = payload.get("ticket_id", "tkt_8912")
+            reply = payload.get("customized_reply")
+            res = ticket_swarm.resolve_support_ticket(tid, reply)
+            if res.get("success"):
+                r = res.get("resolution", {})
+                self.add_event("ticket_resolved", f"Resolved ticket {r.get('ticket_id')} -> {r.get('sender')}")
+            return res
 
         return super().dispatch_action(action, payload)
 

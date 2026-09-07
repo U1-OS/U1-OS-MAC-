@@ -226,6 +226,15 @@ class AutomationScheduler:
             handler=self._job_flash_loan_triangular_watchdog
         )
 
+        # 15. Autonomous ArXiv Research Intelligence Radar
+        self.register_job(
+            "arxiv_intelligence_radar",
+            "ArXiv & Research Pre-Print Radar",
+            "Monitors AI, distributed systems, and quantitative finance papers, generating technical executive summaries",
+            interval_sec=3600,
+            handler=self._job_arxiv_intelligence_radar
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -422,6 +431,15 @@ class AutomationScheduler:
             summary = f"Flash Triangular Arb: {len(opps)} cyclic routes actionable (Top Spread: +{top}%)"
             return {"routes_count": len(opps), "top_spread_pct": top, "summary": summary}
         return {"summary": "Crypto service unavailable for flash triangular watchdog"}
+
+    def _job_arxiv_intelligence_radar(self, feeder):
+        if feeder and hasattr(feeder, "services") and "ai_workbench" in feeder.services:
+            ai_svc = feeder.services["ai_workbench"]
+            res = ai_svc.dispatch_action("scan_arxiv_radar", {})
+            papers = len(res.get("papers", []))
+            summary = f"ArXiv Research Radar: {papers} high-impact pre-prints distilled into executive intelligence"
+            return {"papers_count": papers, "summary": summary}
+        return {"summary": "AI Workbench service unavailable for ArXiv radar"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:

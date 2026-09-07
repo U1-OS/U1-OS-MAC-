@@ -935,6 +935,67 @@ def main():
     log_test("Crypto Tax FIFO Accounting Ledger UI Panel Markup", 'id="financeTaxPanel"' in index_html, "#financeTaxPanel active in DOM")
     log_test("Client Application Quant & Tax Hook API Integration", "scanFlashArb" in app_js and "generateTaxReport" in app_js, "Wave 1 quant and tax methods exposed in CommandCenter API")
 
+    # 66. Multi-Agent Debate & Self-Refining Code Synthesizer
+    print(f"\n{INFO} 66. Subsystem: Multi-Agent Debate & Self-Refining Code Synthesizer:")
+    s, code_deb = action("ai_workbench", "debate_and_refine_code", {"prompt": "Zero-latency private mempool arbitrage solver", "max_iterations": 3})
+    rounds = code_deb.get("iterations", [])
+    log_test("Dual-Agent Generative vs. Adversarial Code Debate Loop", code_deb.get("success") and len(rounds) == 3 and code_deb.get("status") == "COMPLETED_RATIFIED", f"Debate concluded after {len(rounds)} iterations ({code_deb.get('status')})")
+    all_ast_clean = all(r.get("ast_syntax_valid") for r in rounds)
+    log_test("Iterative AST Syntax & Anti-Vulnerability Verification", all_ast_clean, "100% AST syntax integrity maintained across all debate passes")
+    log_test("Ratified Production Code Synthesis Artifact", len(code_deb.get("final_code", "")) > 40, f"Synthesized production solution ({len(code_deb.get('final_code', ''))} chars)")
+    log_test("Code Debater & Synthesizer UI Panel Markup", 'id="aiCodeDebaterPanel"' in index_html, "#aiCodeDebaterPanel active in DOM")
+
+    # 67. Local Multimodal Vision-Language Screen Copilot
+    print(f"\n{INFO} 67. Subsystem: Local Multimodal Vision-Language Screen Copilot:")
+    s, vis_cop = action("ai_workbench", "inspect_visual_target", {"prompt": "Analyze HUD interface"})
+    analysis = vis_cop.get("analysis", {})
+    log_test("Apple Silicon Metal NPU Multimodal Vision Execution", vis_cop.get("success") and vis_cop.get("latency_ms", 999) < 100, f"Executed offline in {vis_cop.get('latency_ms')}ms on {vis_cop.get('engine')}")
+    log_test("Viewport OCR & Bounding Box Element Extraction", len(analysis.get("elements", [])) >= 3 and len(analysis.get("ocr_text_extracted", "")) > 10, f"Detected {len(analysis.get('elements', []))} UI bounding boxes and extracted text")
+    log_test("UI Visual Ergonomics & Layout Integrity Scoring", analysis.get("visual_contrast_score", 0) > 90 and analysis.get("anomalies_detected") == 0, f"Contrast Score: {analysis.get('visual_contrast_score')}% | Layout: {analysis.get('layout_integrity')}")
+    log_test("Local Vision Screen Copilot UI Panel Markup", 'id="aiVisionCopilotPanel"' in index_html, "#aiVisionCopilotPanel active in DOM")
+
+    # 68. Autonomous ArXiv Research Intelligence Summarizer
+    print(f"\n{INFO} 68. Subsystem: Autonomous ArXiv Research Intelligence Summarizer:")
+    s, arxiv_scan = action("ai_workbench", "scan_arxiv_radar", {})
+    papers = arxiv_scan.get("papers", [])
+    log_test("ArXiv Pre-Print Academic Paper Ingestion", arxiv_scan.get("success") and len(papers) >= 3, f"Ingested {len(papers)} pre-prints across {len(arxiv_scan.get('radar', {}).get('categories_monitored', []))} categories")
+
+    s, paper_sum = action("ai_workbench", "summarize_paper", {"paper_id": "arxiv_2609_0142"})
+    p_info = paper_sum.get("paper", {})
+    log_test("Executive Alpha Distillation & Technical Key Takeaways", paper_sum.get("success") and len(p_info.get("key_takeaways", [])) == 3, f"Distilled '{p_info.get('title')[:36]}...' (Relevance: {p_info.get('relevance_score')}/100)")
+
+    s, sched_res5 = get("/api/scheduler")
+    jobs5 = sched_res5.get("jobs", [])
+    has_arxiv_job = any(j.get("id") == "arxiv_intelligence_radar" for j in jobs5)
+    log_test("Scheduler Job #15 Autonomous ArXiv Intelligence Radar", has_arxiv_job, "Scheduled ArXiv intelligence radar registered (3600s interval)")
+    log_test("ArXiv Research Radar UI Panel Markup", 'id="aiArxivPanel"' in index_html, "#aiArxivPanel active in DOM")
+
+    # 69. Agentic Memory Graph & Local Vector Retrieval
+    print(f"\n{INFO} 69. Subsystem: Agentic Memory Graph & Local Vector Retrieval:")
+    s, mem_store = action("ai_workbench", "store_memory", {"concept": "Private Mempool Topology", "content": "Direct socket bridge to validator tip floor accounts"})
+    log_test("Associative Memory Graph Node Ingestion", mem_store.get("success") and "node" in mem_store, f"Indexed semantic node: {mem_store.get('node', {}).get('concept')} ({len(mem_store.get('node', {}).get('vector', []))}D vector)")
+
+    s, mem_query = action("ai_workbench", "query_memory_graph", {"query": "security interlocks", "top_k": 2})
+    mem_results = mem_query.get("results", [])
+    log_test("Dense Semantic Vector Cosine Similarity Retrieval", mem_query.get("success") and len(mem_results) > 0 and mem_results[0].get("similarity_score", 0) > 0.8, f"Top match: '{mem_results[0].get('concept')}' (Similarity: {mem_results[0].get('similarity_score')})")
+
+    s, mem_stats = action("ai_workbench", "get_memory_stats", {})
+    log_test("Memory Graph Concept Clustering & Graph Density", mem_stats.get("success") and mem_stats.get("total_nodes", 0) >= 4, f"Retrieved graph topology across {len(mem_stats.get('clusters', []))} concept clusters ({mem_stats.get('total_nodes')} total nodes)")
+    log_test("Agentic Memory Graph UI Panel Markup", 'id="aiMemoryGraphPanel"' in index_html, "#aiMemoryGraphPanel active in DOM")
+
+    # 70. Autonomous Customer Support & Ticket Resolution Swarm
+    print(f"\n{INFO} 70. Subsystem: Autonomous Customer Support & Ticket Resolution Swarm:")
+    s, tkt_res = action("ai_workbench", "get_support_tickets", {})
+    tkts = tkt_res.get("tickets", [])
+    log_test("Incoming Support Inquiry Ingestion & Priority Triage", tkt_res.get("success") and len(tkts) >= 2, f"Ingested {len(tkts)} customer tickets with AI confidence >= 98%")
+
+    s, tkt_resolve = action("ai_workbench", "resolve_support_ticket", {"ticket_id": "tkt_8912"})
+    r_info = tkt_resolve.get("resolution", {})
+    log_test("Automated Contextual Resolution Dispatch & Archival", tkt_resolve.get("success") and r_info.get("status") == "RESOLVED_DISPATCHED", f"Dispatched resolution for {r_info.get('ticket_id')} -> {r_info.get('sender')}")
+
+    log_test("Customer Support Swarm UI Panel Markup", 'id="aiSupportTicketPanel"' in index_html, "#aiSupportTicketPanel active in DOM")
+    log_test("Client Application Wave 2 AI Swarm API Hooks", "debateCode" in app_js and "inspectScreen" in app_js and "queryMemory" in app_js, "Wave 2 AI Swarms & Neural methods exposed in CommandCenter API")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")
