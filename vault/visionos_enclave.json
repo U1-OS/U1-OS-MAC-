@@ -65,6 +65,17 @@
       "anchored_windows_count": 2,
       "status": "ACTIVE_SPATIAL_SESSION",
       "created_at": 1788762639
+    },
+    "visionos-sess-d38104a0": {
+      "session_id": "visionos-sess-d38104a0",
+      "device_id": "Apple-Vision-Pro-Spatial-Enclave",
+      "frame_rate_fps": 90,
+      "foveation_level": "high",
+      "color_space": "p3-d65",
+      "tracking_mode": "HAND_AND_EYE_GAZE",
+      "anchored_windows_count": 2,
+      "status": "ACTIVE_SPATIAL_SESSION",
+      "created_at": 1788763251
     }
   },
   "anchored_windows": [
@@ -93,7 +104,7 @@
     },
     {
       "window_id": "c2_primary_hud",
-      "session_id": "visionos-sess-c25db45d",
+      "session_id": "visionos-sess-d38104a0",
       "transform": {
         "translation": [
           0.0,
@@ -112,10 +123,22 @@
         ]
       },
       "status": "ANCHORED_6DOF",
-      "anchored_at": 1788762639
+      "anchored_at": 1788763251
     }
   ],
   "audio_events": [
+    {
+      "event_id": "audio-fcedc147",
+      "sound_id": "haptic_pulse",
+      "position": [
+        0.4,
+        0.0,
+        -0.6
+      ],
+      "rolloff": "logarithmic",
+      "session_id": "visionos-sess-d38104a0",
+      "timestamp": 1788763251
+    },
     {
       "event_id": "audio-a008787a",
       "sound_id": "haptic_pulse",

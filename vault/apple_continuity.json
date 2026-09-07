@@ -1,0 +1,61 @@
+{
+  "devices": [
+    {
+      "device_id": "dev-mac-studio",
+      "device_name": "Mac Studio M2 Ultra (Host C2)",
+      "os": "macOS Darwin 24.3",
+      "paired": true,
+      "rssi_dbm": -32
+    },
+    {
+      "device_id": "dev-iphone-16p",
+      "device_name": "iPhone 16 Pro (Mobile TMA)",
+      "os": "iOS 18.2",
+      "paired": true,
+      "rssi_dbm": -48
+    },
+    {
+      "device_id": "dev-vision-pro",
+      "device_name": "Apple Vision Pro (Spatial HUD)",
+      "os": "visionOS 2.2",
+      "paired": true,
+      "rssi_dbm": -52
+    }
+  ],
+  "handoff_sessions": [
+    {
+      "success": true,
+      "session_id": "handoff-28447ce2",
+      "target_device_id": "dev-iphone-16p",
+      "target_device_name": "iPhone 16 Pro (Mobile TMA)",
+      "payload_checksum": "80effdc8dd79cb02",
+      "context_transferred": {
+        "current_tab": "crypto_desk",
+        "active_token": "SOL",
+        "timestamp": 1788763280,
+        "lockdown_status": "SECURE"
+      },
+      "status": "HANDOFF_ESTABLISHED",
+      "protocol": "Apple Continuity AWDL + BLE Mesh Enclave",
+      "created_at": 1788763280
+    },
+    {
+      "success": true,
+      "session_id": "handoff-8400cbfe",
+      "target_device_id": "dev-iphone-16p",
+      "target_device_name": "iPhone 16 Pro (Mobile TMA)",
+      "payload_checksum": "1ca028c7cd5728ad",
+      "context_transferred": {
+        "current_tab": "crypto_desk",
+        "active_token": "SOL",
+        "lockdown": "SECURE"
+      },
+      "status": "HANDOFF_ESTABLISHED",
+      "protocol": "Apple Continuity AWDL + BLE Mesh Enclave",
+      "created_at": 1788763255
+    }
+  ],
+  "clipboard_buffer": "U1-OS-SESSION-TOKEN-PQC-ARMED",
+  "total_handoffs_completed": 2,
+  "clipboard_updated_at": 1788763280
+}

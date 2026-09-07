@@ -1,0 +1,29 @@
+{
+  "enclave_hardware": "Apple Silicon M-Series Secure Enclave Processor (SEP)",
+  "keyrings": {
+    "sep-426491b4b0ca": {
+      "success": true,
+      "key_id": "sep-426491b4b0ca",
+      "key_label": "production-master-sep",
+      "hardware_uuid_bound": "7AA62279-2963-5EB9...",
+      "algorithm": "HKDF-HMAC-SHA256 (SEP Enclave Bound)",
+      "key_length_bits": 256,
+      "key_fingerprint": "426491b4b0ca63b98ef234bc36910b68f6f0f1ef7121123e86ee1f0b978baee4",
+      "biometric_touch_id_interlocked": true,
+      "created_at": 1788763257
+    },
+    "sep-c67662d0cc6f": {
+      "success": true,
+      "key_id": "sep-c67662d0cc6f",
+      "key_label": "demo-root-key",
+      "hardware_uuid_bound": "7AA62279-2963-5EB9...",
+      "algorithm": "HKDF-HMAC-SHA256 (SEP Enclave Bound)",
+      "key_length_bits": 256,
+      "key_fingerprint": "c67662d0cc6fe5f6a571411838ec4a271df8e1f3b65635410acefe9bc1495fbf",
+      "biometric_touch_id_interlocked": true,
+      "created_at": 1788763281
+    }
+  },
+  "total_keys_derived": 2,
+  "tamper_status": "HARDWARE_INTACT_VERIFIED"
+}

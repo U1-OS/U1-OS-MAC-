@@ -1342,6 +1342,41 @@ def main():
     log_test("Post-Quantum Cryptography PQC Vault UI Panel Markup", 'id="settingsPqcVaultPanel"' in index_html, "#settingsPqcVaultPanel active in DOM")
     log_test("Client Application Wave 7 Social, Sentinel & PQC Vault API Hooks", "generateSocialBroadcast" in app_js and "auditRepoSyntax" in app_js and "generatePqcKeypair" in app_js, "Wave 7 Apex Sovereign methods exposed in CommandCenter client API")
 
+    # 96. Multi-Model LLM Consensus Mesh
+    print(f"\n{INFO} 96. Subsystem: Multi-Model LLM Consensus Mesh:")
+    s, llm_res = action("settings", "evaluate_llm_consensus", {
+        "prompt": "Evaluate sovereign quantum hardening and zero-pip boundary integrity"
+    })
+    log_test("Multi-Model Neural Consensus Quorum Evaluation", llm_res.get("success") and llm_res.get("quorum_passed") is True, f"Consensus score: {llm_res.get('consensus_score')}% across {len(llm_res.get('votes', []))} local models (Quorum: {llm_res.get('quorum_passed')})")
+    s, llm_tel = action("settings", "get_llm_consensus_telemetry", {})
+    log_test("LLM Consensus Mesh Telemetry & Active Model Weight Accounting", llm_tel.get("success") and llm_tel.get("active_models_count", 0) >= 3, f"Mesh active: {llm_tel.get('active_models_count')} local weights registered (Avg Score: {llm_tel.get('avg_consensus_score')}%)")
+    log_test("Multi-Model LLM Consensus UI Panel Markup", 'id="settingsLlmConsensusPanel"' in index_html, "#settingsLlmConsensusPanel active in DOM")
+
+    # 97. Cross-Device Apple Continuity & AirDrop Handoff
+    print(f"\n{INFO} 97. Subsystem: Cross-Device Apple Continuity & AirDrop Handoff:")
+    s, handoff_res = action("settings", "initiate_apple_handoff", {
+        "target_device_id": "dev-iphone-16p",
+        "active_context": {"current_tab": "crypto_desk", "active_token": "SOL", "lockdown": "SECURE"}
+    })
+    log_test("Encrypted AWDL / Bluetooth LE Handoff Session Establishment", handoff_res.get("success") and handoff_res.get("status") == "HANDOFF_ESTABLISHED", f"Handoff {handoff_res.get('session_id')} -> {handoff_res.get('target_device_name')} (Checksum: {handoff_res.get('payload_checksum')})")
+    s, clip_res = action("settings", "sync_universal_clipboard", {"text": "U1-OS-QUANTUM-MASTER-BEACON"})
+    log_test("Universal Enclave Encrypted Clipboard Synchronization", clip_res.get("success") and clip_res.get("bytes_synced", 0) > 0, f"Synced {clip_res.get('bytes_synced')} bytes to universal clipboard buffer")
+    s, cont_tel = action("settings", "get_continuity_telemetry", {})
+    log_test("Apple Continuity Mesh Peer Discovery & Device Roster", cont_tel.get("success") and cont_tel.get("connected_devices_count", 0) >= 3, f"Tracked {cont_tel.get('connected_devices_count')} Apple ecosystem devices (Latest: {cont_tel.get('latest_handoff', {}).get('session_id')})")
+    log_test("Cross-Device Apple Continuity UI Panel Markup", 'id="settingsAppleContinuityPanel"' in index_html, "#settingsAppleContinuityPanel active in DOM")
+
+    # 98. Hardware Secure Enclave (SEP) Key Derivation
+    print(f"\n{INFO} 98. Subsystem: Hardware Secure Enclave (SEP) Key Derivation:")
+    s, sep_key = action("settings", "derive_enclave_key", {"key_label": "production-master-sep", "context_info": "U1-OS-Root-Enclave"})
+    sep_kid = sep_key.get("key_id")
+    log_test("Apple Silicon Secure Enclave Processor (SEP) HKDF Key Derivation", sep_key.get("success") and sep_key.get("key_length_bits") == 256, f"Derived hardware key ID: {sep_kid} bound to UUID {sep_key.get('hardware_uuid_bound')}")
+    s, sep_sig = action("settings", "sign_enclave_challenge", {"key_id": sep_kid, "challenge": "U1-Darwin-Auth-Challenge-42"})
+    log_test("Hardware Enclave Cryptographic Signature Challenge Attestation", sep_sig.get("success") and sep_sig.get("verified_hardware") is True, f"Hardware signature generated: {sep_sig.get('enclave_signature')[:16]}... (Hardware Verified: {sep_sig.get('verified_hardware')})")
+    s, sep_tel = action("settings", "get_enclave_telemetry", {})
+    log_test("SEP Hardware Keyring Registry & Tamper Posture Telemetry", sep_tel.get("success") and sep_tel.get("tamper_status") == "HARDWARE_INTACT_VERIFIED", f"Enclave: {sep_tel.get('enclave_hardware')} | Tamper Posture: {sep_tel.get('tamper_status')}")
+    log_test("Hardware Secure Enclave UI Panel Markup", 'id="settingsSecureEnclavePanel"' in index_html, "#settingsSecureEnclavePanel active in DOM")
+    log_test("Client Application Wave 8 Consensus, Continuity & SEP API Hooks", "evaluateLlmConsensus" in app_js and "initiateAppleHandoff" in app_js and "deriveEnclaveKey" in app_js, "Wave 8 Planetary Autonomous Matrix methods exposed in CommandCenter client API")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

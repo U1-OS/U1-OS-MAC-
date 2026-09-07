@@ -35,6 +35,9 @@ from utils import bci_telemetry
 from utils import social_distributor
 from utils import repo_sentinel
 from utils import pqc_vault
+from utils import llm_consensus
+from utils import apple_continuity
+from utils import secure_enclave
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -461,6 +464,9 @@ class SettingsService(BaseService):
                 "social_distributor": social_distributor.get_social_telemetry(),
                 "repo_sentinel": repo_sentinel.get_repo_sentinel_telemetry(),
                 "pqc_vault": pqc_vault.pqc_vault.get_telemetry(),
+                "llm_consensus": llm_consensus.get_consensus_telemetry(),
+                "apple_continuity": apple_continuity.get_continuity_telemetry(),
+                "secure_enclave": secure_enclave.get_enclave_telemetry(),
                 "server_environment": {
                     "binding": "127.0.0.1:8787 (Strict Local Only)",
                     "config_path": self.config_path,
@@ -1688,6 +1694,56 @@ class SettingsService(BaseService):
 
         elif action == "get_pqc_telemetry":
             return pqc_vault.pqc_vault.get_telemetry()
+
+        # Wave 8: Feature 37 - Multi-Model LLM Consensus Mesh
+        elif action == "evaluate_llm_consensus":
+            prompt_q = str(payload.get("prompt", "Verify sovereign zero-pip compliance and lattice readiness"))
+            ctx = payload.get("context")
+            res = llm_consensus.evaluate_consensus(prompt=prompt_q, context=ctx)
+            ledger.log_audit("llm_mesh", "consensus_evaluated", f"Consensus score: {res.get('consensus_score')}% across {len(res.get('votes', []))} models", actor="llm_consensus", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_llm_consensus_telemetry":
+            return llm_consensus.get_consensus_telemetry()
+
+        # Wave 8: Feature 38 - Cross-Device Apple Continuity & AirDrop Handoff
+        elif action == "initiate_apple_handoff":
+            target_dev = str(payload.get("target_device_id", "dev-iphone-16p"))
+            ctx_data = payload.get("active_context")
+            res = apple_continuity.initiate_handoff(target_device_id=target_dev, active_context=ctx_data)
+            ledger.log_audit("continuity", "handoff_initiated", f"Initiated state handoff to {res.get('target_device_name')} (Session: {res.get('session_id')})", actor="apple_continuity", status="OK")
+            self.poll()
+            return res
+
+        elif action == "sync_universal_clipboard":
+            text_str = str(payload.get("text", ""))
+            res = apple_continuity.sync_universal_clipboard(text=text_str)
+            ledger.log_audit("continuity", "clipboard_synced", f"Synced {res.get('bytes_synced')} bytes to universal clipboard", actor="apple_continuity", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_continuity_telemetry":
+            return apple_continuity.get_continuity_telemetry()
+
+        # Wave 8: Feature 39 - Hardware Secure Enclave (SEP) Key Derivation
+        elif action == "derive_enclave_key":
+            label = str(payload.get("key_label", "root-master-key"))
+            info = str(payload.get("context_info", "U1-OS-Root"))
+            res = secure_enclave.derive_enclave_key(key_label=label, context_info=info)
+            ledger.log_audit("sep", "key_derived", f"Derived hardware-bound SEP key {res.get('key_id')} ({label})", actor="secure_enclave", status="OK")
+            self.poll()
+            return res
+
+        elif action == "sign_enclave_challenge":
+            kid = str(payload.get("key_id", ""))
+            chall = str(payload.get("challenge", "U1-Auth-Challenge-1"))
+            res = secure_enclave.sign_enclave_challenge(key_id=kid, challenge=chall)
+            ledger.log_audit("sep", "challenge_signed", f"Signed SEP challenge with key {kid}", actor="secure_enclave", status="OK")
+            return res
+
+        elif action == "get_enclave_telemetry":
+            return secure_enclave.get_enclave_telemetry()
 
         return super().dispatch_action(action, payload)
 

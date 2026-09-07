@@ -14,14 +14,16 @@
 **A futuristic, self-contained macOS command center.**  
 AI trading bots · Crypto desk · OSINT engine · Cyber terminal · Executive dossier — all running locally at `127.0.0.1:8787`.
 
-[![Tests](https://img.shields.io/badge/tests-95%2F95%20passing-10b981?style=flat-square&logo=checkmarx)](https://github.com/U1-OS/U1-OS-MAC-)
-[![Subsystems](https://img.shields.io/badge/subsystems-32%20active-00f0ff?style=flat-square)](https://github.com/U1-OS/U1-OS-MAC-)
-[![Python](https://img.shields.io/badge/python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Release](https://img.shields.io/badge/release-v2.4.0%20Apex%20Quantum-ff0055?style=flat-square&logo=apple)](https://github.com/U1-OS/U1-OS-MAC-/releases/tag/v2.4.0)
+[![Tests](https://img.shields.io/badge/tests-342%2F342%20passing-10b981?style=flat-square&logo=checkmarx)](https://github.com/U1-OS/U1-OS-MAC-)
+[![Subsystems](https://img.shields.io/badge/subsystems-36%20active-00f0ff?style=flat-square)](https://github.com/U1-OS/U1-OS-MAC-)
+[![PQC](https://img.shields.io/badge/crypto-NIST%20FIPS%20203%2F204%20PQC-a855f7?style=flat-square)](WHITEPAPER.md)
+[![Zero-Pip](https://img.shields.io/badge/dependencies-zero%20pip%20packages-00ff88?style=flat-square)](WHITEPAPER.md)
+[![Python](https://img.shields.io/badge/python-3.9%2B%20stdlib-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square)](LICENSE)
-[![GitHub Pages](https://img.shields.io/badge/site-live-10b981?style=flat-square&logo=github)](https://u1-os.github.io/U1-OS-MAC-)
 [![Localhost](https://img.shields.io/badge/binding-127.0.0.1%3A8787-e9b44c?style=flat-square)](http://127.0.0.1:8787)
 
-[🌐 Live Site](https://u1-os.github.io/U1-OS-MAC-) · [📖 Docs](#quick-start) · [🚀 Features](#features) · [⚡ Install](#quick-start)
+[🌐 Live Site](https://u1-os.github.io/U1-OS-MAC-) · [📑 Technical Whitepaper](WHITEPAPER.md) · [📦 Homebrew Tap](#installation) · [⚡ Quick Start](#quick-start)
 
 </div>
 
@@ -29,13 +31,18 @@ AI trading bots · Crypto desk · OSINT engine · Cyber terminal · Executive do
 
 ## What is U1 OS?
 
-U1 OS is a **fully autonomous, localhost-bound business operating system** built for macOS. It replaces dozens of SaaS dashboards with a single, neon-lit command center that runs entirely on your machine — no cloud, no subscriptions, no data leaving your device.
+U1 OS is a **fully autonomous, localhost-bound business operating system and sovereign command matrix** built for macOS on Apple Silicon. It unifies 36 mission-critical enterprise and cryptographic subsystems — spanning autonomous AI swarms, algorithmic trading, duplex voice C2, multi-node P2P cluster sync, BCI neural focus HUD, and NIST FIPS 203/204 Post-Quantum Cryptography — running 100% locally with zero external pip packages.
 
+### ⚡ 1-Line Sovereign Install
 ```bash
-git clone https://github.com/U1-OS/U1-OS-MAC-.git
-cd U1-OS-MAC-
-./command-center start
-# → http://127.0.0.1:8787
+curl -fsSL https://raw.githubusercontent.com/U1-OS/U1-OS-MAC-/main/install.sh | bash
+```
+
+### 🍺 Homebrew Tap Install
+```bash
+brew install U1-OS/tap/command-center
+command-center start
+# → Opens http://127.0.0.1:8787 & launches CommandCenter.app
 ```
 
 ---

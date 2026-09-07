@@ -43,6 +43,16 @@
       "speaker": "c2_agent",
       "text": "Current MRR is $28,600 with $343,200 ARR. All Stripe and LemonSqueezy payment webhooks are healthy.",
       "timestamp": 1788762641
+    },
+    {
+      "speaker": "operator",
+      "text": "What is our current MRR velocity?",
+      "timestamp": 1788763251
+    },
+    {
+      "speaker": "c2_agent",
+      "text": "Current MRR is $28,600 with $343,200 ARR. All Stripe and LemonSqueezy payment webhooks are healthy.",
+      "timestamp": 1788763252
     }
   ]
 }

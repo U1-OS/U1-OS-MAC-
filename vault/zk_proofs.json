@@ -1,6 +1,22 @@
 {
   "solvency_proofs": [
     {
+      "proof_id": "zk-solv-c0b0d873458c",
+      "type": "zk_solvency_proof",
+      "asset": "USDC",
+      "threshold": 25000.0,
+      "is_solvent": true,
+      "commitment": "22c813b5722f38496db00ca98ec14bc543ede96a566abb4565673e993a6546c9",
+      "delta_commitment": "4c11adea5747863da23bfd822254f1c9a96147318d097d1eba9766e0d6a1e3de",
+      "challenge": "4716b2b707c2ee996980742d4b2af823a9ba7650388a034a47479f532acd6fe6",
+      "response": "2838d03d5c204ed4f592202e7f8d789c3c66b5b52ee5560489cf5b275926c1f7",
+      "nullifier": "103a01a1e3c9096e8e5957c1f79e1825deca83ed808f687b035232af91688c1d",
+      "timestamp": 1788763242,
+      "algorithm": "ZK-FiatShamir-Pedersen-SHA256",
+      "curve": "secp256k1-simulated",
+      "verified": true
+    },
+    {
       "proof_id": "zk-solv-36c817babd3a",
       "type": "zk_solvency_proof",
       "asset": "USDC",
@@ -130,6 +146,19 @@
     }
   ],
   "credential_proofs": [
+    {
+      "proof_id": "zk-cred-492380fb644e",
+      "type": "zk_credential_proof",
+      "identity_id": "operator_admin",
+      "scope": "root_terminal",
+      "commitment": "82275c04ffc331f1047f7dc95fc3fa443026e0bfb14204037a982c07a2c2a45a",
+      "nonce": "bc56aa9c18a65cf071b8be7ae0a8808c",
+      "challenge": "e945666528ba0424531c1b7f7582d7498815157de9e53b363da48da51ced1287",
+      "zk_signature": "76b58960c7f80e9fc8cedf4fc9cfafb9553fc4d794596f1e4162f2d2f2e6c12e",
+      "nullifier": "9f9a1dac6368db7e66adf6b1091ccb30396c6c863907083d51ff7eafaf30204f",
+      "timestamp": 1788763242,
+      "expires_in_sec": 3600
+    },
     {
       "proof_id": "zk-cred-db612de7dc0e",
       "type": "zk_credential_proof",

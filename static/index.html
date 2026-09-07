@@ -3007,6 +3007,115 @@
               <span class="footer-meta mono">STANDARDS: NIST FIPS 203 (ML-KEM-768) &bull; NIST FIPS 204 (ML-DSA-65) &bull; SHAKE-256</span>
             </footer>
           </article>
+
+          <!-- Widget 37: Multi-Model LLM Consensus Mesh [Span 12] -->
+          <article class="slab-panel span-12" id="settingsLlmConsensusPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-purple);">CONSENSUS // 37 &bull; MULTI-MODEL NEURAL MESH</span>
+                <h2 class="slab-title">MULTI-MODEL LLM CONSENSUS MESH &bull; LOCAL WEIGHT VOTING</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="llmConsensusBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:2px 8px; font-size:10px;">CONSENSUS: 94.2%</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.evaluateLlmConsensus()">EVALUATE CONSENSUS</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsConsensusContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:10px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">LLAMA-3 70B (METAL NPU)</div>
+                  <div class="mono" id="consensusModel1Val" style="color:var(--neon-cyan); font-weight:600; font-size:12px; margin-top:4px;">Affirmative (95.4%)</div>
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">General Reasoning</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">MISTRAL LARGE (LOCAL)</div>
+                  <div class="mono" id="consensusModel2Val" style="color:var(--gold); font-weight:600; font-size:12px; margin-top:4px;">Affirmative (92.8%)</div>
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">Analytical Logic</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">DEEPSEEK CODER (GGUF)</div>
+                  <div class="mono" id="consensusModel3Val" style="color:var(--neon-green); font-weight:600; font-size:12px; margin-top:4px;">Affirmative (96.1%)</div>
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">Verification &amp; AST</div>
+                </div>
+              </div>
+              <div id="consensusRecentLog" class="mono" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:4px; padding:10px; font-size:10px; max-height:80px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center;">Multi-model consensus mesh active across 3 on-device neural weights. Click 'EVALUATE CONSENSUS' to test asynchronous quorum.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">VOTING: ASYNCHRONOUS WEIGHTED QUORUM &bull; ZERO CLOUD EGRESS &bull; SEMANTIC CONCORDANCE</span>
+            </footer>
+          </article>
+
+          <!-- Widget 38: Cross-Device Apple Continuity & AirDrop Handoff [Span 6] -->
+          <article class="slab-panel span-6" id="settingsAppleContinuityPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">CONTINUITY // 38 &bull; AIRDROP &amp; HANDOFF</span>
+                <h2 class="slab-title">CROSS-DEVICE CONTINUITY ENCLAVE</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="continuityStatusBadge" style="background:rgba(0,229,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,229,255,0.3); padding:2px 8px; font-size:10px;">3 DEVICES PAIRED</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.initiateAppleHandoff()">HANDOFF</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsContinuityContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">TARGET DEVICE</div>
+                  <div class="mono" id="continuityTargetVal" style="color:var(--neon-cyan); font-weight:600; font-size:10px;">iPhone 16 Pro (TMA)</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">UNIVERSAL CLIPBOARD</div>
+                  <div class="mono" id="continuityClipVal" style="color:var(--neon-green); font-weight:600; font-size:10px;">ENCRYPTED SYNCED</div>
+                </div>
+              </div>
+              <div id="continuityDevicesList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">AWDL &bull; BLE Mesh Beacon &bull; Mac Studio &bull; iPhone 16 Pro &bull; Apple Vision Pro</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROTOCOL: APPLE AWDL &bull; BLE ADVERTISEMENT &bull; SHA-256 CHECKSUM HANDOFF</span>
+            </footer>
+          </article>
+
+          <!-- Widget 39: Hardware Secure Enclave (SEP) Key Derivation [Span 6] -->
+          <article class="slab-panel span-6" id="settingsSecureEnclavePanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--gold);">HARDWARE // 39 &bull; APPLE SECURE ENCLAVE</span>
+                <h2 class="slab-title">HARDWARE SECURE ENCLAVE (SEP)</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="secureEnclaveStatusBadge" style="background:rgba(233,180,76,0.1); color:var(--gold); border:1px solid rgba(233,180,76,0.3); padding:2px 8px; font-size:10px;">SEP: ARMED</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.deriveEnclaveKey()">DERIVE KEY</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsEnclaveContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">ENCLAVE HARDWARE</div>
+                  <div class="mono" id="enclaveHwVal" style="color:var(--gold); font-weight:600; font-size:10px;">Apple Silicon M-Series</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">TAMPER POSTURE</div>
+                  <div class="mono" id="enclaveTamperVal" style="color:var(--neon-green); font-weight:600; font-size:10px;">HARDWARE INTACT</div>
+                </div>
+              </div>
+              <div id="enclaveKeyringsList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">HKDF-HMAC-SHA256 hardware seed bound to Darwin system UUID and Touch ID.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">SECURITY: APPLE SEP CO-PROCESSOR &bull; SYSTEM UUID HKDF &bull; HARDWARE ENCLAVE</span>
+            </footer>
+          </article>
         </section>
 
 
