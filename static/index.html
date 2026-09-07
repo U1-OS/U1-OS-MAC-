@@ -115,6 +115,18 @@
           <span>TERMINAL</span>
         </button>
 
+        <!-- Voice Command HUD ("Hey U1") Trigger -->
+        <button class="bezel-widget btn-palette-trigger mono" id="voiceHudButton" title="Voice Command HUD (Hey U1)" onclick="CommandCenter.toggleVoiceHUD()" style="padding:0 10px; font-size:10.5px; font-weight:700; color:#00F0FF; display:inline-flex; align-items:center; gap:5px;">
+          <span>🎙️</span>
+          <span>VOICE HUD</span>
+        </button>
+
+        <!-- Telegram Mini App Link -->
+        <a href="/tma" target="_blank" class="bezel-widget btn-palette-trigger mono" title="Open Telegram Mini App GUI Mirror" style="padding:0 10px; font-size:10.5px; font-weight:700; color:#2AABEE; display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
+          <span>📱</span>
+          <span>TMA</span>
+        </a>
+
         <!-- Tactile Audio Feedback Toggle -->
         <button class="bezel-widget btn-audio-toggle" id="btnToggleAudio" title="Toggle Tactile Audio Feedback" onclick="CommandCenter.toggleAudioFeedback()">
           <svg class="w-icon" id="audioIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -865,6 +877,27 @@
               <span class="footer-meta mono" id="launchpadLastAudit">SECURITY ENGINE: STRICT</span>
             </footer>
           </article>
+
+          <!-- Widget 12: Multi-Chain EVM & Bitcoin Desk [Span 12] -->
+          <article class="slab-panel span-12" id="cryptoMultiChainPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--gold);">MULTI-CHAIN // 12 &bull; EVM &amp; BITCOIN DESK</span>
+                <h2 class="slab-title">CROSS-CHAIN TREASURY MATRIX &bull; ETHEREUM &bull; BASE &bull; ARBITRUM &bull; BTC</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="gasTrackerBadge" style="background:rgba(255,179,0,0.1); color:var(--gold); border:1px solid rgba(255,179,0,0.3); padding:3px 10px; font-size:11px;">GAS: ETH -- GWEI | BASE -- GWEI</span>
+                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.refreshMultiChainPortfolio()">SYNC MULTI-CHAIN</button>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoMultiChainContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">CROSS-CHAIN RPC &bull; UNISWAP / AERODROME ROUTER &bull; MEMPOOL FEE MONITOR</span>
+              <span class="footer-meta mono" id="multichainTotalUsd">TOTAL CROSS-CHAIN: $0.00</span>
+            </footer>
+          </article>
         </section>
 
         <!-- ======================================================== -->
@@ -1396,6 +1429,27 @@
               <span class="footer-meta mono">NATIVE LSOF TCP LISTEN &bull; WAN EXPOSURE SENTINEL</span>
             </footer>
           </article>
+
+          <!-- Widget 7: Autonomous Threat Intel & Dark Web Leak Watchdog [Span 12] -->
+          <article class="slab-panel span-12" id="networkThreatIntelPanel" data-service="osint">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-crimson);">THREAT INTEL // 07 &bull; LEAK SENTINEL</span>
+                <h2 class="slab-title">AUTONOMOUS THREAT INTELLIGENCE &bull; SECRET LEAK &amp; SSL WATCHDOG</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="threatPostureBadge" style="background:rgba(0,230,118,0.1); color:var(--neon-emerald); border:1px solid rgba(0,230,118,0.3); padding:3px 10px; font-size:11px;">POSTURE: 100/100 SECURE</span>
+                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.runThreatScan()">RUN THREAT AUDIT</button>
+              </div>
+            </header>
+            <div class="slab-body" id="networkThreatIntelContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PORT 443 TLS EXPIRIES &bull; REPO SECRET LEAK AUDIT &bull; CRITICAL SIREN DISPATCH</span>
+              <span class="footer-meta mono" id="threatScanLastRun">WATCHDOG: CONTINUOUS SCHEDULER ACTIVE</span>
+            </footer>
+          </article>
         </section>
 
         <!-- ======================================================== -->
@@ -1863,6 +1917,64 @@
       <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary mono" onclick="CommandCenter.closeTokenAuditModal()">CLOSE</button>
         <button class="btn btn-emerald mono" id="btnAuditSnipe" onclick="">SNIPE TOKEN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Command HUD Overlay Modal ("Hey U1") -->
+  <div class="modal-overlay" id="voiceHudModal" aria-hidden="true" style="display:none;">
+    <div class="modal-card" style="max-width: 500px; text-align:center;">
+      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+      <div class="modal-header" style="justify-content:center; text-align:center;">
+        <span class="modal-kicker mono" style="color:var(--neon-cyan);">VOICE COMMAND HUD &bull; WAKE-WORD LISTENER</span>
+        <h3 class="modal-title" style="margin-top:6px;">"HEY U1" AUDIO INTERACTION</h3>
+      </div>
+      <div class="modal-body" style="margin: 20px 0; display:flex; flex-direction:column; align-items:center; gap:16px;">
+        <div class="voice-soundwave" style="display:flex; align-items:center; justify-content:center; gap:6px; height:50px;">
+          <span class="wave-bar" style="width:5px; height:22px; background:var(--neon-cyan); border-radius:3px;"></span>
+          <span class="wave-bar" style="width:5px; height:42px; background:var(--neon-cyan); border-radius:3px;"></span>
+          <span class="wave-bar" style="width:5px; height:32px; background:var(--neon-cyan); border-radius:3px;"></span>
+          <span class="wave-bar" style="width:5px; height:48px; background:var(--gold); border-radius:3px;"></span>
+          <span class="wave-bar" style="width:5px; height:26px; background:var(--neon-cyan); border-radius:3px;"></span>
+        </div>
+        <p class="mono" id="voiceHudTranscript" style="font-size:14px; color:var(--text-main); line-height:1.5; min-height:42px;">
+          Say "Hey U1, swap 0.1 SOL for BONK" or "Hey U1, generate briefing"...
+        </p>
+        <div class="mono" id="voiceHudStatus" style="font-size:11px; color:var(--neon-cyan);">
+          LISTENING ACTIVE // MIC INPUT STREAMING
+        </div>
+      </div>
+      <div class="modal-actions" style="justify-content:center; gap:12px;">
+        <button class="btn btn-secondary mono" onclick="CommandCenter.closeVoiceHUD()">DISMISS</button>
+        <button class="btn btn-cyan mono" id="btnPushToTalk" onclick="CommandCenter.togglePushToTalk()">PUSH TO TALK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Physical YubiKey FIDO2 Hardware Key Interlock Modal -->
+  <div class="modal-overlay" id="yubikeyModal" aria-hidden="true" style="display:none;">
+    <div class="modal-card" style="max-width: 480px; text-align:center;">
+      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+      <div class="modal-header" style="justify-content:center; text-align:center;">
+        <span class="modal-kicker mono" style="color:var(--gold);">PHYSICAL HARDWARE INTERLOCK</span>
+        <h3 class="modal-title" style="margin-top:6px;">YUBIKEY FIDO2 VERIFICATION</h3>
+      </div>
+      <div class="modal-body" style="margin: 20px 0; display:flex; flex-direction:column; align-items:center; gap:16px;">
+        <div style="width:72px; height:72px; border-radius:50%; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; background:rgba(255,179,0,0.08); box-shadow:0 0 20px rgba(255,179,0,0.25);">
+          <span style="font-size:32px;">🔑</span>
+        </div>
+        <p class="mono" id="yubikeyPromptText" style="font-size:13px; color:var(--text-main); line-height:1.5;">
+          Insert your YubiKey FIDO2 USB hardware dongle and touch the gold sensor contact.
+        </p>
+        <div class="mono" id="yubikeyChallengeStatus" style="font-size:11px; color:var(--gold);">
+          AWAITING PHYSICAL HARDWARE USER PRESENCE (TOUCH)...
+        </div>
+      </div>
+      <div class="modal-actions" style="justify-content:center; gap:12px;">
+        <button class="btn btn-secondary mono" onclick="CommandCenter.cancelYubikeyPrompt()">CANCEL</button>
+        <button class="btn btn-gold mono" id="btnTriggerYubikey" onclick="CommandCenter.triggerYubikeyAuth()">TOUCH YUBIKEY CONTACT</button>
       </div>
     </div>
   </div>

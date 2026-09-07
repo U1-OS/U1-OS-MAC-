@@ -16,6 +16,7 @@ from utils import jupiter
 from utils import nitter
 from utils import solana
 from utils import browser_crawler
+from utils import evm_btc
 
 SOL_CA_REGEX = re.compile(r'\b[1-9A-HJ-NP-Za-km-z]{32,44}\b')
 EVM_CA_REGEX = re.compile(r'\b0x[a-fA-F0-9]{40}\b')
@@ -835,6 +836,28 @@ class CryptoService(BaseService):
                 locked = sett_svc.lockdown_active if sett_svc else False
                 return {"success": True, "output": f"Lockdown Status: {'ENGAGED' if locked else 'DISENGAGED'}", "command": cmd_str}
 
+        elif cmd in ["multichain", "chains"]:
+            mc = evm_btc.get_multichain_portfolio()
+            lines = [f"=== MULTI-CHAIN TREASURY MATRIX (Total: ${mc['total_multichain_usd']:,.2f}) ==="]
+            for w in mc.get("wallets", []):
+                lines.append(f"[{w['chain'].upper()}] {w['name']}: {w['balance']} {w['asset']} (${w['usd_value']:,.2f})")
+            lines.append(f"\nGAS: ETH {mc['gas_matrix']['ethereum_gwei']} Gwei | Base {mc['gas_matrix']['base_gwei']} Gwei | BTC Fast {mc['gas_matrix']['btc_fees']['fast']} sat/vB")
+            return {"success": True, "output": "\n".join(lines), "command": cmd_str}
+
+        elif cmd == "gas":
+            eth_g = evm_btc.query_evm_gas_price("ethereum")
+            base_g = evm_btc.query_evm_gas_price("base")
+            arb_g = evm_btc.query_evm_gas_price("arbitrum")
+            btc_f = evm_btc.get_mempool_fee_rates()
+            out = (
+                f"⛽ CROSS-CHAIN GAS & MEMPOOL TRACKER:\n"
+                f"• Ethereum L1: {eth_g} Gwei\n"
+                f"• Base L2:     {base_g} Gwei\n"
+                f"• Arbitrum:    {arb_g} Gwei\n"
+                f"• Bitcoin:     {btc_f['fast']} sat/vB (Fast), {btc_f['medium']} sat/vB (Med), {btc_f['slow']} sat/vB (Eco)"
+            )
+            return {"success": True, "output": out, "command": cmd_str}
+
         elif cmd == "status":
             out = f"U1 OS v1.0 Feeder: ONLINE\nBinding: 127.0.0.1:8787 (Strict Localhost)\nServices: 10 Subsystems Active\nBot Engine: {self.bot_state['status']}"
             return {"success": True, "output": out, "command": cmd_str}
@@ -1313,5 +1336,26 @@ class CryptoService(BaseService):
                 "auto_sniper_active": self.auto_sniper_active,
                 "config": self.sniper_config
             }
+
+        elif action == "get_multichain_portfolio":
+            res = evm_btc.get_multichain_portfolio()
+            return res
+
+        elif action == "get_gas_tracker":
+            return {
+                "success": True,
+                "ethereum_gwei": evm_btc.query_evm_gas_price("ethereum"),
+                "base_gwei": evm_btc.query_evm_gas_price("base"),
+                "arbitrum_gwei": evm_btc.query_evm_gas_price("arbitrum"),
+                "btc_fees": evm_btc.get_mempool_fee_rates()
+            }
+
+        elif action == "execute_evm_swap":
+            from_token = payload.get("from_token", "ETH")
+            to_token = payload.get("to_token", "USDC")
+            amt = float(payload.get("amount", 0.5))
+            chain = payload.get("chain", "base")
+            res = evm_btc.execute_evm_swap(from_token, to_token, amt, chain=chain)
+            return res
 
         return super().dispatch_action(action, payload)

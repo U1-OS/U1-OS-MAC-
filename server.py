@@ -394,9 +394,23 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.send_json(cfg)
             return
 
+        if path == "/api/telegram/tma-config":
+            bot_token = feeder.config.get("integrations", {}).get("telegram", {}).get("bot_token", "")
+            bot_id = bot_token.split(":")[0] if ":" in bot_token else "u1_os_bot"
+            self.send_json({
+                "success": True,
+                "tma_enabled": True,
+                "tma_url": "http://127.0.0.1:8787/tma",
+                "bot_id": bot_id,
+                "short_name": "u1_c2"
+            })
+            return
+
         # Serve frontend files
         if path == "/" or path == "/index.html":
             file_path = os.path.join(STATIC_DIR, "index.html")
+        elif path == "/tma":
+            file_path = os.path.join(STATIC_DIR, "tma.html")
         else:
             rel_path = path.lstrip("/")
             if rel_path.startswith("static/"):
@@ -486,6 +500,33 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
                 self.send_json(res)
             else:
                 self.send_json({"success": False, "error": "Settings service unavailable"}, 500)
+            return
+
+        if path == "/api/auth/yubikey-challenge":
+            settings_svc = feeder.services.get("settings")
+            if settings_svc:
+                res = settings_svc.dispatch_action("generate_yubikey_challenge", payload)
+                self.send_json(res)
+            else:
+                self.send_json({"success": False, "error": "Settings service unavailable"}, 500)
+            return
+
+        if path == "/api/auth/yubikey-verify":
+            settings_svc = feeder.services.get("settings")
+            if settings_svc:
+                res = settings_svc.dispatch_action("verify_yubikey_response", payload)
+                self.send_json(res)
+            else:
+                self.send_json({"success": False, "error": "Settings service unavailable"}, 500)
+            return
+
+        if path == "/api/voice/process":
+            ai_svc = feeder.services.get("ai_workbench")
+            if ai_svc:
+                res = ai_svc.dispatch_action("process_voice_command", payload)
+                self.send_json(res)
+            else:
+                self.send_json({"success": False, "error": "AI Workbench service unavailable"}, 500)
             return
 
         if path == "/api/action":

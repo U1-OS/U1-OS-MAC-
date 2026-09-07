@@ -172,6 +172,15 @@ class AutomationScheduler:
             handler=self._job_daily_broadcast
         )
 
+        # 9. Autonomous Threat Intel & Dark Web Leak Watchdog
+        self.register_job(
+            "threat_intel_watchdog",
+            "Threat Intel & Secret Leak Watchdog",
+            "Audits workspace files for exposed API keys/secrets and verifies SSL expirations across infrastructure",
+            interval_sec=3600,
+            handler=self._job_threat_intel_watchdog
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -289,6 +298,17 @@ class AutomationScheduler:
             summary = f"Daily Broadcast produced: {bcast.get('title')} ({bcast.get('duration_sec')}s)"
             return {"broadcast": bcast, "summary": summary}
         return {"summary": "Studio service unavailable for daily broadcast"}
+
+    def _job_threat_intel_watchdog(self, feeder):
+        if feeder and hasattr(feeder, "services") and "osint" in feeder.services:
+            osint_svc = feeder.services["osint"]
+            res = osint_svc.dispatch_action("scan_threat_intelligence", {"domains": ["apple.com"]})
+            posture = res.get("threat_intel", {}).get("posture_score", 100)
+            leaks = len(res.get("threat_intel", {}).get("leaks_detected", []))
+            status = res.get("threat_intel", {}).get("status", "SECURE")
+            summary = f"Threat Intel Watchdog: Posture {posture}/100 ({status}) - {leaks} secret exposures detected"
+            return {"posture_score": posture, "leaks_count": leaks, "status": status, "summary": summary}
+        return {"summary": "OSINT service unavailable for threat watchdog"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:

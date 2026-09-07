@@ -412,6 +412,12 @@ class OSINTService(BaseService):
             except Exception as e:
                 return {"success": False, "error": f"Network info query failed: {str(e)}"}
 
+        elif action in ["scan_threat_intelligence", "threat_scan"]:
+            target_domains = payload.get("domains", ["apple.com"]) if payload else ["apple.com"]
+            res = self._execute_threat_intelligence_scan(target_domains)
+            self.add_event("threat_scan_completed", f"Threat Intel Scan: Posture {res['posture_score']}/100, Leaks: {len(res['leaks_detected'])}")
+            return {"success": True, "threat_intel": res, **res}
+
         return super().dispatch_action(action, payload)
 
     def _inspect_ssl_cert(self, domain):
@@ -555,5 +561,67 @@ class OSINTService(BaseService):
             "default_gateway": gateway,
             "hostname": socket.gethostname(),
             "timestamp": time.time()
+        }
+
+    def _execute_threat_intelligence_scan(self, domains=None):
+        domains = domains or ["apple.com"]
+        ssl_audits = []
+        for d in domains:
+            try:
+                cert = self._inspect_ssl_cert(d)
+                ssl_audits.append(cert)
+            except Exception as e:
+                ssl_audits.append({"domain": d, "error": str(e), "days_left": 0, "risk_level": "UNKNOWN"})
+
+        # Workspace secret leak scanner
+        import re, glob
+        LEAK_PATTERNS = {
+            "AWS Secret Key": re.compile(r'\b(AKIA[0-9A-Z]{16})\b'),
+            "GitHub PAT": re.compile(r'\b(ghp_[0-9a-zA-Z]{36})\b'),
+            "Private RSA Key": re.compile(r'-----BEGIN (?:RSA )?PRIVATE KEY-----'),
+            "Slack Bot Token": re.compile(r'\b(xoxb-[0-9]{11}-[0-9]{11}-[a-zA-Z0-9]{24})\b')
+        }
+        
+        leaks_found = []
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        for ext in ["*.py", "*.json", "*.html"]:
+            for fpath in glob.glob(os.path.join(root_dir, ext)) + glob.glob(os.path.join(root_dir, "services", ext)):
+                if ".git" in fpath or "node_modules" in fpath or "config.json" in fpath:
+                    continue
+                try:
+                    with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
+                        for leak_type, pat in LEAK_PATTERNS.items():
+                            matches = pat.findall(content)
+                            if matches:
+                                leaks_found.append({
+                                    "type": leak_type,
+                                    "file": os.path.basename(fpath),
+                                    "count": len(matches),
+                                    "sample": matches[0][:8] + "••••"
+                                })
+                except Exception:
+                    pass
+
+        posture_score = 100
+        if leaks_found:
+            posture_score -= min(50, len(leaks_found) * 25)
+        for s in ssl_audits:
+            if s.get("risk_level") == "CRITICAL":
+                posture_score -= 20
+            elif s.get("risk_level") == "EXPIRING_SOON":
+                posture_score -= 10
+
+        posture_score = max(10, min(100, posture_score))
+        status = "SECURE" if posture_score >= 80 else ("WARNING" if posture_score >= 50 else "CRITICAL_DEFICIT")
+
+        return {
+            "posture_score": posture_score,
+            "status": status,
+            "ssl_audits": ssl_audits,
+            "leaks_detected": leaks_found,
+            "monitored_domains_count": len(domains),
+            "scan_timestamp": time.time(),
+            "airgap_shield": True
         }
 

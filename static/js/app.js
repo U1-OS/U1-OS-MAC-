@@ -2495,6 +2495,25 @@ const CommandCenter = (() => {
         `;
       }
     }
+
+    // 12. Multi-Chain EVM & Bitcoin Desk Panel
+    const mcEl = document.getElementById('cryptoMultiChainContainer');
+    if (mcEl) {
+      if (!window._mcPortfolioData) {
+        fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ service: 'crypto', action: 'get_multichain_portfolio', payload: {} })
+        }).then(r => r.json()).then(d => {
+          if (d.success) {
+            window._mcPortfolioData = d;
+            renderMultiChainDesk(d);
+          }
+        }).catch(() => {});
+      } else {
+        renderMultiChainDesk(window._mcPortfolioData);
+      }
+    }
   }
 
   function selectCryptoToken(symbol) {
@@ -5672,6 +5691,25 @@ const CommandCenter = (() => {
       `;
     }
 
+    // 8. Render Widget 7: Autonomous Threat Intel & Dark Web Leak Watchdog
+    const threatContainer = document.getElementById('networkThreatIntelContainer');
+    if (threatContainer) {
+      if (!window._threatIntelData) {
+        fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ service: 'osint', action: 'scan_threat_intelligence', payload: { domains: ['apple.com'] } })
+        }).then(r => r.json()).then(d => {
+          if (d.success) {
+            window._threatIntelData = d.threat_intel || d;
+            renderThreatIntelDesk(window._threatIntelData);
+          }
+        }).catch(() => {});
+      } else {
+        renderThreatIntelDesk(window._threatIntelData);
+      }
+    }
+
     osintLocalState.initialized = true;
   }
 
@@ -7978,6 +8016,316 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     activeBiometricCallback = null;
   }
 
+  // --- Multi-Chain Desk ---
+  function renderMultiChainDesk(data) {
+    const el = document.getElementById('cryptoMultiChainContainer');
+    const badge = document.getElementById('gasTrackerBadge');
+    const totalUsdEl = document.getElementById('multichainTotalUsd');
+    if (!el || !data) return;
+
+    if (totalUsdEl) totalUsdEl.textContent = `TOTAL CROSS-CHAIN: $${formatNumber(data.total_multichain_usd || 0)}`;
+    if (badge && data.gas_matrix) {
+      badge.textContent = `GAS: ETH ${data.gas_matrix.ethereum_gwei} GWEI | BASE ${data.gas_matrix.base_gwei} GWEI | BTC ${data.gas_matrix.btc_fees?.fast || 20} SAT/VB`;
+    }
+
+    const wallets = data.wallets || [];
+    el.innerHTML = `
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+        ${wallets.map(w => `
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="badge mono" style="font-size:10px; background:rgba(255,179,0,0.1); color:var(--gold); border:1px solid rgba(255,179,0,0.3); padding:1px 6px;">
+                ${escapeHtml(w.chain.toUpperCase())}
+              </span>
+              <span class="mono" style="font-size:13px; font-weight:700; color:var(--text-main);">$${formatNumber(w.usd_value)}</span>
+            </div>
+            <div>
+              <div class="mono" style="font-size:12px; font-weight:700; color:var(--text-primary);">${escapeHtml(w.name)}</div>
+              <div class="mono" style="font-size:10px; color:var(--text-muted); margin-top:2px;">${escapeHtml(w.address.slice(0, 8))}...${escapeHtml(w.address.slice(-6))}</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-family:var(--font-mono); font-size:11px;">
+              <span style="color:var(--neon-cyan);">${w.balance} ${w.asset}</span>
+              <a href="${escapeHtml(w.explorer_url)}" target="_blank" style="color:var(--text-muted); text-decoration:none; font-size:10px;">EXPLORER &rarr;</a>
+            </div>
+            <button class="btn btn-sm btn-secondary mono" style="font-size:10px; padding:4px;" onclick="CommandCenter.executeEvmSwap('ETH', 'USDC', 0.1, '${escapeHtml(w.chain)}')">SWAP 0.1 ETH ON ${escapeHtml(w.chain.toUpperCase())}</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  async function refreshMultiChainPortfolio() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service: 'crypto', action: 'get_multichain_portfolio', payload: {} })
+      });
+      const d = await res.json();
+      if (d.success) {
+        window._mcPortfolioData = d;
+        renderMultiChainDesk(d);
+        showNotification('Multi-chain portfolio synced via RPC.');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function executeEvmSwap(fromToken, toToken, amount, chain) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.haptic();
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'crypto',
+          action: 'execute_evm_swap',
+          payload: { from_token: fromToken, to_token: toToken, amount: amount, chain: chain }
+        })
+      });
+      const d = await res.json();
+      if (d.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showNotification(`Swap Confirmed on ${d.chain.toUpperCase()}: ${amount} ${fromToken} -> ${d.amount_out} ${toToken} (${d.dex})`);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // --- Threat Intel Watchdog ---
+  function renderThreatIntelDesk(data) {
+    const el = document.getElementById('networkThreatIntelContainer');
+    const badge = document.getElementById('threatPostureBadge');
+    if (!el || !data) return;
+
+    const score = data.posture_score !== undefined ? data.posture_score : 100;
+    const isGood = score >= 80;
+    const color = isGood ? 'var(--neon-emerald)' : (score >= 50 ? 'var(--gold)' : 'var(--neon-crimson)');
+    if (badge) {
+      badge.textContent = `POSTURE: ${score}/100 ${data.status || 'SECURE'}`;
+      badge.style.color = color;
+      badge.style.borderColor = color;
+    }
+
+    const sslList = data.ssl_audits || [];
+    const leaks = data.leaks_detected || [];
+
+    el.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); padding:10px; border-radius:4px;">
+            <div class="mono" style="font-size:10px; color:var(--text-muted);">SECURITY POSTURE SCORE</div>
+            <div class="mono" style="font-size:20px; font-weight:800; color:${color}; margin-top:2px;">${score} / 100</div>
+            <div class="mono" style="font-size:10px; color:var(--text-secondary);">${escapeHtml(data.status || 'SECURE')}</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); padding:10px; border-radius:4px;">
+            <div class="mono" style="font-size:10px; color:var(--text-muted);">EXPOSED CREDENTIALS / LEAKS</div>
+            <div class="mono" style="font-size:20px; font-weight:800; color:${leaks.length === 0 ? 'var(--neon-emerald)' : 'var(--neon-crimson)'}; margin-top:2px;">${leaks.length} DETECTED</div>
+            <div class="mono" style="font-size:10px; color:var(--text-secondary);">${leaks.length === 0 ? 'Workspace Clean & Guarded' : 'Action Required'}</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); padding:10px; border-radius:4px;">
+            <div class="mono" style="font-size:10px; color:var(--text-muted);">TLS / SSL CERTIFICATE EXPIRIES</div>
+            <div class="mono" style="font-size:20px; font-weight:800; color:var(--gold); margin-top:2px;">${sslList.length} MONITORED</div>
+            <div class="mono" style="font-size:10px; color:var(--text-secondary);">Avg Expiry: ${sslList[0]?.days_left || 60} Days</div>
+          </div>
+        </div>
+
+        ${leaks.length > 0 ? `
+          <div style="background:rgba(255,51,102,0.1); border:1px solid rgba(255,51,102,0.4); border-radius:4px; padding:10px;">
+            <div class="mono" style="font-size:11px; font-weight:700; color:var(--neon-crimson);">⚠️ SENSITIVE CREDENTIAL LEAK ALERT:</div>
+            ${leaks.map(l => `<div class="mono" style="font-size:10.5px; color:var(--text-main); margin-top:4px;">&bull; [${escapeHtml(l.type)}] in ${escapeHtml(l.file)} (${l.count} occurrences)</div>`).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  async function runThreatScan() {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service: 'osint', action: 'scan_threat_intelligence', payload: { domains: ['apple.com'] } })
+      });
+      const d = await res.json();
+      if (d.success) {
+        window._threatIntelData = d.threat_intel || d;
+        renderThreatIntelDesk(window._threatIntelData);
+        showNotification('Threat Intelligence scan completed.');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // --- Voice HUD ("Hey U1") ---
+  let voiceRecognition = null;
+  let voiceListening = false;
+
+  function toggleVoiceHUD() {
+    const modal = document.getElementById('voiceHudModal');
+    if (!modal) return;
+    if (modal.style.display === 'flex') {
+      closeVoiceHUD();
+    } else {
+      modal.style.display = 'flex';
+      initVoiceRecognition();
+    }
+  }
+
+  function closeVoiceHUD() {
+    const modal = document.getElementById('voiceHudModal');
+    if (modal) modal.style.display = 'none';
+    if (voiceRecognition && voiceListening) {
+      voiceRecognition.stop();
+      voiceListening = false;
+    }
+  }
+
+  function initVoiceRecognition() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const statusEl = document.getElementById('voiceHudStatus');
+    const transcriptEl = document.getElementById('voiceHudTranscript');
+    if (!SpeechRec) {
+      if (statusEl) statusEl.textContent = 'Web Speech API not supported in this browser. Use Push-To-Talk.';
+      return;
+    }
+
+    if (!voiceRecognition) {
+      voiceRecognition = new SpeechRec();
+      voiceRecognition.continuous = true;
+      voiceRecognition.interimResults = true;
+      voiceRecognition.lang = 'en-US';
+
+      voiceRecognition.onresult = (event) => {
+        let text = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          text += event.results[i][0].transcript;
+        }
+        if (transcriptEl) transcriptEl.textContent = text;
+        if (event.results[event.results.length - 1].isFinal) {
+          handleVoiceCommand(text);
+        }
+      };
+
+      voiceRecognition.onerror = (e) => {
+        if (statusEl) statusEl.textContent = `Speech error: ${e.error}`;
+      };
+    }
+
+    try {
+      voiceRecognition.start();
+      voiceListening = true;
+      if (statusEl) statusEl.textContent = 'LISTENING ACTIVE // MIC INPUT STREAMING ("Hey U1" armed)';
+    } catch (e) {}
+  }
+
+  function togglePushToTalk() {
+    const promptText = prompt('Enter or dictate voice command (e.g. "Hey U1, swap 0.1 SOL for BONK"):');
+    if (promptText) {
+      const transcriptEl = document.getElementById('voiceHudTranscript');
+      if (transcriptEl) transcriptEl.textContent = promptText;
+      handleVoiceCommand(promptText);
+    }
+  }
+
+  async function handleVoiceCommand(transcript) {
+    const statusEl = document.getElementById('voiceHudStatus');
+    if (statusEl) statusEl.textContent = 'PROCESSING DIRECTIVE VIA AI COPILOT...';
+    try {
+      const res = await fetch('/api/voice/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: transcript, speak: true })
+      });
+      const d = await res.json();
+      if (d.success) {
+        if (statusEl) statusEl.textContent = `COMPLETED: ${d.speech_feedback || 'Directive executed.'}`;
+        if (d.audio_file) {
+          const audio = new Audio(`/briefings/${d.audio_file}`);
+          audio.play();
+        }
+        showNotification(`Voice Command: ${d.speech_feedback || 'Executed'}`);
+      } else {
+        if (statusEl) statusEl.textContent = `Error: ${d.error || 'Failed'}`;
+      }
+    } catch (e) {
+      if (statusEl) statusEl.textContent = `Error: ${e.message}`;
+    }
+  }
+
+  // --- Physical YubiKey FIDO2 Interlock ---
+  let activeYubikeyChallenge = null;
+  let activeYubikeyCallback = null;
+
+  async function requestYubikeyAuth(actionName, onVerified) {
+    activeYubikeyCallback = onVerified;
+    const modal = document.getElementById('yubikeyModal');
+    const promptText = document.getElementById('yubikeyPromptText');
+    const statusText = document.getElementById('yubikeyChallengeStatus');
+
+    if (promptText) promptText.textContent = `Physical YubiKey touch required to authorize: ${actionName.replace(/_/g, ' ')}`;
+    if (statusText) statusText.textContent = 'INITIALIZING FIDO2 CRYPTOGRAPHIC CHALLENGE...';
+    if (modal) modal.style.display = 'flex';
+
+    try {
+      const res = await fetch('/api/auth/yubikey-challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action_name: actionName })
+      });
+      const data = await res.json();
+      if (data.success && data.challenge) {
+        activeYubikeyChallenge = data.challenge;
+        if (statusText) statusText.textContent = 'TOUCH GOLD CONTACT ON YUBIKEY TO VERIFY...';
+      } else {
+        if (statusText) statusText.textContent = `Challenge failed: ${data.error || 'Unknown'}`;
+      }
+    } catch (err) {
+      if (statusText) statusText.textContent = `Connection error: ${err.message}`;
+    }
+  }
+
+  async function triggerYubikeyAuth() {
+    const statusText = document.getElementById('yubikeyChallengeStatus');
+    if (!activeYubikeyChallenge) {
+      if (statusText) statusText.textContent = 'No active challenge found. Please retry.';
+      return;
+    }
+
+    try {
+      const verifyRes = await fetch('/api/auth/yubikey-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challenge: activeYubikeyChallenge, user_present: true })
+      });
+      const verifyData = await verifyRes.json();
+      if (verifyData.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        cancelYubikeyPrompt();
+        if (activeYubikeyCallback) {
+          activeYubikeyCallback(verifyData.yubikey_token);
+        }
+        showNotification('Physical YubiKey FIDO2 hardware verified.');
+      } else {
+        if (statusText) statusText.textContent = `Verification failed: ${verifyData.error || verifyData.message}`;
+      }
+    } catch (err) {
+      if (statusText) statusText.textContent = `YubiKey error: ${err.message}`;
+    }
+  }
+
+  function cancelYubikeyPrompt() {
+    const modal = document.getElementById('yubikeyModal');
+    if (modal) modal.style.display = 'none';
+    activeYubikeyChallenge = null;
+    activeYubikeyCallback = null;
+  }
+
   // Expose API
   return {
     init,
@@ -8133,7 +8481,19 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     dispatchLocalInference,
     requestBiometricAuth,
     triggerTouchIDAuth,
-    cancelBiometricPrompt
+    cancelBiometricPrompt,
+    renderMultiChainDesk,
+    refreshMultiChainPortfolio,
+    executeEvmSwap,
+    renderThreatIntelDesk,
+    runThreatScan,
+    toggleVoiceHUD,
+    closeVoiceHUD,
+    togglePushToTalk,
+    handleVoiceCommand,
+    requestYubikeyAuth,
+    triggerYubikeyAuth,
+    cancelYubikeyPrompt
   };
 })();
 

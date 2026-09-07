@@ -721,6 +721,43 @@ class AIWorkbenchService(BaseService):
                 **res_obj
             }
 
+        elif action == "process_voice_command":
+            transcript = (payload.get("transcript") or payload.get("prompt") or payload.get("command") or "").strip()
+            if not transcript:
+                return {"success": False, "error": "Voice command transcript cannot be empty"}
+
+            clean_cmd = transcript
+            for prefix in ["hey u1", "u1", "hey you one", "hey computer", "computer"]:
+                if clean_cmd.lower().startswith(prefix):
+                    clean_cmd = clean_cmd[len(prefix):].lstrip(",. :")
+                    break
+
+            action_res = self._orchestrate_agent_action(clean_cmd)
+            speech_feedback = action_res.get("summary") or f"Directive '{clean_cmd}' acknowledged and executed."
+
+            speak_audio = payload.get("speak", True)
+            audio_fn = None
+            if speak_audio:
+                try:
+                    import subprocess, secrets
+                    audio_fn = f"voice_reply_{secrets.token_hex(4)}.aiff"
+                    audio_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "briefings", audio_fn)
+                    os.makedirs(os.path.dirname(audio_path), exist_ok=True)
+                    subprocess.run(["/usr/bin/say", "-v", "Daniel", "-o", audio_path, speech_feedback[:150]], timeout=6)
+                except Exception:
+                    pass
+
+            return {
+                "success": True,
+                "command": clean_cmd,
+                "raw_transcript": transcript,
+                "action_result": action_res,
+                "speech_feedback": speech_feedback,
+                "audio_file": audio_fn,
+                "wake_word_detected": True,
+                "timestamp": time.time()
+            }
+
         return super().dispatch_action(action, payload)
 
     def _orchestrate_agent_action(self, prompt, provider="auto"):

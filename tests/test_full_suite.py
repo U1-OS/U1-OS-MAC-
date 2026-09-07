@@ -601,6 +601,86 @@ def main():
     # Restore gate to false for normal tests
     action("settings", "toggle_biometric_gate", {"enable": False})
 
+    # 45. Telegram Mini App (TMA) & WebApp Full GUI Mirror
+    print(f"\n{INFO} 45. Subsystem: Telegram Mini App (TMA) & WebApp Full GUI Mirror:")
+    tma_req = urllib.request.Request(f"{BASE_URL}/tma", headers={"User-Agent": "CC-TestRunner/1.0"})
+    with urllib.request.urlopen(tma_req, timeout=5) as tma_resp:
+        tma_code = tma_resp.status
+        tma_body = tma_resp.read().decode("utf-8")
+    log_test("Telegram Mini App Static Endpoint (/tma)", tma_code == 200 and "telegram-web-app.js" in tma_body, f"HTTP {tma_code} - TMA SDK integrated")
+
+    s, tma_cfg = get("/api/telegram/tma-config")
+    log_test("Telegram Mini App Config API", s == 200 and tma_cfg.get("tma_enabled") and "/tma" in tma_cfg.get("tma_url", ""), f"TMA URL: {tma_cfg.get('tma_url')}")
+
+    s, tg_app_cmd = action("telegram", "execute_command", {"command": "/app"})
+    log_test("Telegram Bot /app Command Dispatch", tg_app_cmd.get("success") and "TELEGRAM MINI APP" in tg_app_cmd.get("output", ""), "TMA launch directive returned")
+
+    s, tma_meta = action("telegram", "get_tma_metadata", {})
+    log_test("Telegram TMA Metadata & Haptic Verification", tma_meta.get("success") and tma_meta.get("haptics_supported"), f"Title: {tma_meta.get('app_title')}")
+
+    # 46. Voice Command HUD & Audio Wake-Word Interface ("Hey U1")
+    print(f"\n{INFO} 46. Subsystem: Voice Command HUD & Audio Wake-Word Interface:")
+    s, voice_res1 = post("/api/voice/process", {"transcript": "Hey U1, swap 0.1 SOL for BONK", "speak": True})
+    log_test("Voice Command API Endpoint (/api/voice/process)", voice_res1.get("success"), f"Processed: '{voice_res1.get('command')}'")
+    log_test("Wake-Word Strip & Copilot Directive Routing", voice_res1.get("wake_word_detected") and voice_res1.get("command") == "swap 0.1 SOL for BONK", "Wake-word 'Hey U1' stripped and passed to Copilot")
+    log_test("Voice Audio Speech Feedback Synthesis", bool(voice_res1.get("speech_feedback")), f"Speech Output: {voice_res1.get('speech_feedback')[:45]}...")
+
+    # 47. Multi-Chain EVM & Bitcoin Desk
+    print(f"\n{INFO} 47. Subsystem: Multi-Chain EVM & Bitcoin Desk:")
+    s, mc_data = action("crypto", "get_multichain_portfolio", {})
+    log_test("Multi-Chain Portfolio Ingestion (EVM + BTC)", mc_data.get("success") and len(mc_data.get("wallets", [])) >= 4, f"Tracked {len(mc_data.get('wallets', []))} cross-chain vaults, Total: ${mc_data.get('total_multichain_usd'):,.2f}")
+
+    s, gas_data = action("crypto", "get_gas_tracker", {})
+    log_test("Cross-Chain Gas & Mempool Tracker", gas_data.get("success") and "ethereum_gwei" in gas_data, f"ETH: {gas_data.get('ethereum_gwei')} Gwei, Base: {gas_data.get('base_gwei')} Gwei, BTC: {gas_data.get('btc_fees', {}).get('fast')} sat/vB")
+
+    s, evm_swap = action("crypto", "execute_evm_swap", {"from_token": "ETH", "to_token": "USDC", "amount": 0.1, "chain": "base"})
+    log_test("Instant On-Chain EVM Swap Execution", evm_swap.get("success") and evm_swap.get("chain") == "base", f"Swap TX: {evm_swap.get('tx_hash')[:14]}... ({evm_swap.get('dex')})")
+
+    s, term_mc = action("crypto", "execute_terminal_command", {"command": "multichain"})
+    log_test("Cyber Terminal Multi-Chain Command (multichain)", term_mc.get("success") and "MULTI-CHAIN TREASURY MATRIX" in term_mc.get("output", ""), "Multi-chain matrix rendered in cyber console")
+
+    s, term_gas = action("crypto", "execute_terminal_command", {"command": "gas"})
+    log_test("Cyber Terminal Gas Tracker Command (gas)", term_gas.get("success") and "CROSS-CHAIN GAS" in term_gas.get("output", ""), "Gas matrix rendered in cyber console")
+
+    # 48. Autonomous Threat Intel & Dark Web Leak Watchdog
+    print(f"\n{INFO} 48. Subsystem: Autonomous Threat Intel & Dark Web Leak Watchdog:")
+    s, threat_scan = action("osint", "scan_threat_intelligence", {"domains": ["apple.com"]})
+    t_intel = threat_scan.get("threat_intel", {})
+    log_test("Threat Intelligence Security Posture Audit", threat_scan.get("success") and t_intel.get("posture_score") is not None, f"Posture Score: {t_intel.get('posture_score')}/100 ({t_intel.get('status')})")
+    log_test("Workspace Secret & Credential Leak Audit", "leaks_detected" in t_intel, f"Repository leaks scanned: {len(t_intel.get('leaks_detected', []))} exposures")
+
+    s, sched_res = get("/api/scheduler")
+    jobs = sched_res.get("jobs", [])
+    has_threat_job = any(j.get("id") == "threat_intel_watchdog" for j in jobs)
+    log_test("Scheduler Job #9 Threat Intel Watchdog Daemon", has_threat_job, "Scheduled threat intel watchdog job registered")
+
+    # 49. Physical YubiKey FIDO2 Hardware Key Interlock
+    print(f"\n{INFO} 49. Subsystem: Physical YubiKey FIDO2 Hardware Key Interlock:")
+    s, y_challenge_res = post("/api/auth/yubikey-challenge", {"action_name": "cold_vault_release"})
+    y_challenge = y_challenge_res.get("challenge")
+    log_test("YubiKey FIDO2 Hardware Challenge Generation", y_challenge_res.get("success") and bool(y_challenge), f"Challenge: {y_challenge[:16]}...")
+
+    s, y_verify_res = post("/api/auth/yubikey-verify", {"challenge": y_challenge, "user_present": True})
+    y_token = y_verify_res.get("yubikey_token")
+    log_test("YubiKey Physical Touch Verification & Token Issue", y_verify_res.get("success") and bool(y_token), f"Hardware Token: {y_token[:16]}...")
+
+    s, y_gate_toggle = action("settings", "toggle_yubikey_interlock", {"enable": True})
+    log_test("Enforce Physical YubiKey Hardware Interlock", y_gate_toggle.get("success") and y_gate_toggle.get("yubikey_interlock_enforced"), "YubiKey physical interlock armed")
+
+    # Verify lockdown disengage is blocked without YubiKey token
+    s, y_lock_on = action("settings", "toggle_lockdown", {"enable": True, "confirmed": True, "reason": "YubiKey Interlock Drill"})
+    s, y_lock_off_fail = action("settings", "toggle_lockdown", {"enable": False, "confirmed": True})
+    log_test("Lockdown Disengage Blocked Without YubiKey Token", not y_lock_off_fail.get("success") and y_lock_off_fail.get("error") == "YUBIKEY_INTERLOCK_REQUIRED", "Lockdown release blocked: YUBIKEY_INTERLOCK_REQUIRED")
+
+    # Issue fresh challenge and token to disengage
+    s, y_ch2 = post("/api/auth/yubikey-challenge", {"action_name": "disengage_lockdown"})
+    s, y_vf2 = post("/api/auth/yubikey-verify", {"challenge": y_ch2.get("challenge"), "user_present": True})
+    s, y_lock_off_ok = action("settings", "toggle_lockdown", {"enable": False, "confirmed": True, "yubikey_token": y_vf2.get("yubikey_token")})
+    log_test("Lockdown Disengaged With Physical YubiKey Token", y_lock_off_ok.get("success"), "Lockdown successfully disengaged via YubiKey hardware token")
+
+    # Restore YubiKey gate to false
+    action("settings", "toggle_yubikey_interlock", {"enable": False})
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

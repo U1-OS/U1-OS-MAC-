@@ -11,3 +11,5 @@ sandboxes/
 .command-center.pid
 backups/*.ccvault
 data/*.db
+briefings/
+*.aiff

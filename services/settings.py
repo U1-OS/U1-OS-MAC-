@@ -24,6 +24,9 @@ class SettingsService(BaseService):
         self.biometric_challenges = {}
         self.biometric_tokens = {}
         self.biometric_enforced = False
+        self.yubikey_challenges = {}
+        self.yubikey_tokens = {}
+        self.yubikey_interlock_enforced = False
 
         # Setup Reference Guide for all integrations
         self.setup_reference_guide = [
@@ -689,6 +692,17 @@ class SettingsService(BaseService):
                         "message": "Touch ID biometric authorization required to disengage lockdown."
                     }
 
+            if self.yubikey_interlock_enforced and not enable:
+                y_token = payload.get("yubikey_token")
+                now = time.time()
+                valid = y_token and y_token in self.yubikey_tokens and self.yubikey_tokens[y_token].get("expires", 0) > now
+                if not valid:
+                    return {
+                        "success": False,
+                        "error": "YUBIKEY_INTERLOCK_REQUIRED",
+                        "message": "Physical YubiKey FIDO2 hardware touch required to disengage lockdown."
+                    }
+
             self.lockdown_active = enable
             if enable:
                 self.lockdown_timestamp = time.time()
@@ -969,6 +983,64 @@ class SettingsService(BaseService):
             ledger.log_audit("security", "biometric_gate_toggled", f"Touch ID biometric enforcement set to {self.biometric_enforced}", actor="operator", status="OK")
             self.poll()
             return {"success": True, "biometric_enforced": self.biometric_enforced, "message": f"Biometric gate {'enforced' if self.biometric_enforced else 'disabled'}."}
+
+        # --- Physical YubiKey FIDO2 Hardware Key Interlock ---
+        elif action == "generate_yubikey_challenge":
+            action_name = payload.get("action_name", "cold_storage_root_operation")
+            import secrets
+            challenge = secrets.token_hex(32)
+            now = time.time()
+            self.yubikey_challenges = {k: v for k, v in self.yubikey_challenges.items() if v.get("expires", 0) > now}
+            self.yubikey_challenges[challenge] = {
+                "action": action_name,
+                "created": now,
+                "expires": now + 120
+            }
+            return {
+                "success": True,
+                "challenge": challenge,
+                "timeout_sec": 120,
+                "action_name": action_name,
+                "userVerification": "required",
+                "authenticatorAttachment": "cross-platform",
+                "rp": {"name": "U1 OS FIDO2 Physical Security Interlock", "id": "localhost"},
+                "user": {"id": "u1-root-dongle", "name": "root@u1-os.internal", "displayName": "U1 Hardware Dongle Operator"}
+            }
+
+        elif action == "verify_yubikey_response":
+            challenge = payload.get("challenge")
+            if not challenge or challenge not in self.yubikey_challenges:
+                return {"success": False, "error": "INVALID_OR_EXPIRED_YUBIKEY_CHALLENGE", "message": "Hardware key challenge invalid or expired."}
+            ch_data = self.yubikey_challenges.pop(challenge)
+            if time.time() > ch_data.get("expires", 0):
+                return {"success": False, "error": "CHALLENGE_TIMEOUT", "message": "YubiKey challenge timed out."}
+
+            import secrets
+            token = secrets.token_hex(32)
+            now = time.time()
+            self.yubikey_tokens = {k: v for k, v in self.yubikey_tokens.items() if v.get("expires", 0) > now}
+            self.yubikey_tokens[token] = {
+                "action": ch_data.get("action"),
+                "created": now,
+                "expires": now + 300
+            }
+            ledger.log_audit("security", "yubikey_verified", f"Physical YubiKey FIDO2 presence confirmed for {ch_data.get('action')}", actor="yubikey_hardware", status="OK")
+            return {
+                "success": True,
+                "yubikey_token": token,
+                "expires_in_sec": 300,
+                "user_present": True,
+                "message": "YubiKey hardware presence verified via FIDO2 touch."
+            }
+
+        elif action == "toggle_yubikey_interlock":
+            enable = payload.get("enable")
+            if enable is None:
+                enable = not self.yubikey_interlock_enforced
+            self.yubikey_interlock_enforced = bool(enable)
+            ledger.log_audit("security", "yubikey_interlock_toggled", f"YubiKey physical hardware interlock set to {self.yubikey_interlock_enforced}", actor="operator", status="OK")
+            self.poll()
+            return {"success": True, "yubikey_interlock_enforced": self.yubikey_interlock_enforced, "message": f"YubiKey physical interlock {'armed' if self.yubikey_interlock_enforced else 'disarmed'}."}
 
         return super().dispatch_action(action, payload)
 

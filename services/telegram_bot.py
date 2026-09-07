@@ -137,10 +137,21 @@ class TelegramService(BaseService):
                 "• <code>/bot start</code> — Activate autonomous buying\n"
                 "• <code>/bot stop</code> — Pause autonomous buying\n"
                 "• <code>/browse &lt;url&gt;</code> — Headless Chrome web inspection\n"
+                "• <code>/app</code> — Open U1 OS Telegram Mini App (TMA)\n"
                 "• <code>/lockdown</code> — Trigger immediate emergency killswitch\n"
                 "• <code>/unlock</code> — Disengage emergency lockdown\n"
                 "━━━━━━━━━━━━━━━━━━\n"
                 "<i>All operations execute with real on-chain parameters.</i>"
+            )
+
+        # 1.1 /app or /webapp or /tma (Telegram Mini App)
+        elif cmd in ["/app", "/webapp", "/tma"]:
+            return (
+                "📱 <b>U1 OS TELEGRAM MINI APP (TMA)</b>\n"
+                "━━━━━━━━━━━━━━━━━━\n"
+                "Launch the full mobile C2 GUI mirror directly inside Telegram:\n\n"
+                "🔗 <b>WebApp URL:</b> <code>http://127.0.0.1:8787/tma</code>\n"
+                "⚡ <i>Haptic touch controls, live PnL, 1-tap snipes & audio player ready.</i>"
             )
 
         # 2. /status
@@ -379,5 +390,14 @@ class TelegramService(BaseService):
             cmd_line = payload.get("command", "/help")
             output = self.execute_telegram_command(cmd_line)
             return {"success": True, "command": cmd_line, "output": output}
+
+        elif action == "get_tma_metadata":
+            return {
+                "success": True,
+                "tma_url": "http://127.0.0.1:8787/tma",
+                "app_title": "U1 OS Mobile C2",
+                "haptics_supported": True,
+                "bot_configured": self.configured
+            }
 
         return super().dispatch_action(action, payload)
