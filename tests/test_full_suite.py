@@ -1295,6 +1295,53 @@ def main():
     log_test("Cognitive Focus BCI Telemetry UI Panel Markup", 'id="settingsBciPanel"' in index_html, "#settingsBciPanel active in DOM")
     log_test("Client Application Wave 6 Voice C2, Cluster & BCI API Hooks", "triggerVoiceTurn" in app_js and "syncClusterNodes" in app_js and "sampleBciNeuralStream" in app_js, "Wave 6 Next-Frontier methods exposed in CommandCenter client API")
 
+    # 93. Multi-Network Social Distribution Engine
+    print(f"\n{INFO} 93. Subsystem: Multi-Network Social Distribution Engine:")
+    s, soc_camp = action("settings", "generate_social_broadcast", {
+        "topic": "U1-OS v2.4.0 Apex Quantum Zero-Pip Launch",
+        "tags": ["PostQuantum", "macOS", "ZeroPip", "AutonomousAI"],
+        "tone": "visionary"
+    })
+    c_data = soc_camp.get("campaign", {})
+    log_test("Multi-Channel Syndicated Social Campaign Synthesis", soc_camp.get("success") and "nostr" in c_data and "twitter_x" in c_data and "farcaster" in c_data, f"Campaign #{c_data.get('campaign_id')} generated across 5 channels (Nostr NIP-01, X Thread, Farcaster, LinkedIn, Telegram)")
+    s, soc_stat = action("settings", "get_social_telemetry", {})
+    log_test("Multi-Network Social Broadcaster Telemetry & State Cache", soc_stat.get("total_campaigns_created", 0) >= 1, f"Total campaigns created: {soc_stat.get('total_campaigns_created')} | Active channels: {len(soc_stat.get('channels_supported', []))}")
+    log_test("Multi-Network Social Broadcaster UI Panel Markup", 'id="settingsSocialDistributorPanel"' in index_html, "#settingsSocialDistributorPanel active in DOM")
+
+    # 94. Autonomous Self-Auditing Repo Sentinel & Auto-PR Synthesizer
+    print(f"\n{INFO} 94. Subsystem: Autonomous Self-Auditing Repo Sentinel & Auto-PR Synthesizer:")
+    s, repo_aud = action("settings", "audit_repo_syntax", {})
+    log_test("Pure Python AST & Bytecode Syntax Validation Scanner", repo_aud.get("success") and repo_aud.get("clean") is True, f"Audited {repo_aud.get('audited_files_count')} repository files with 0 AST errors. Clean: {repo_aud.get('clean')}")
+    s, repo_pr = action("settings", "synthesize_auto_pr", {
+        "title": "Quantum Hardening & FIPS 203 Lattice Integration",
+        "modified_files": ["services/settings.py", "utils/pqc_vault.py"],
+        "summary": "Integration of ML-KEM-768 and ML-DSA-65 post-quantum primitives"
+    })
+    pr_num = repo_pr.get("pr_number")
+    log_test("Zero-Dependency Autonomous PR & Patch Synthesis", repo_pr.get("success") and pr_num is not None, f"Auto-PR #{pr_num} synthesized: '{repo_pr.get('title')}' with {len(repo_pr.get('modified_files', []))} files")
+    log_test("Repo Sentinel & Auto-PR UI Panel Markup", 'id="settingsRepoSentinelPanel"' in index_html, "#settingsRepoSentinelPanel active in DOM")
+
+    # 95. Sovereign Post-Quantum Cryptography (PQC NIST FIPS 203/204) Vault
+    print(f"\n{INFO} 95. Subsystem: Sovereign Post-Quantum Cryptography (PQC NIST FIPS 203/204) Vault:")
+    s, kem_kp = action("settings", "generate_pqc_kem_keypair", {"label": "test-kem-suite"})
+    kem_id = kem_kp.get("key_id")
+    log_test("NIST FIPS 203 ML-KEM-768 Lattice Keypair Generation", kem_kp.get("success") and kem_kp.get("algorithm") == "ML-KEM-768", f"Generated ML-KEM-768 Key ID: {kem_id} ({kem_kp.get('security_category')})")
+    s, kem_enc = action("settings", "encapsulate_pqc_secret", {"public_key_full": kem_kp.get("public_key_full")})
+    log_test("ML-KEM-768 256-bit Shared Secret Encapsulation", kem_enc.get("success") and kem_enc.get("shared_secret_hex") is not None, f"Encapsulated secret (Session: {kem_enc.get('session_id')}) -> Ciphertext length: {kem_enc.get('ciphertext_len_bytes')} bytes")
+    s, dsa_kp = action("settings", "generate_pqc_dsa_keypair", {"label": "test-dsa-suite"})
+    dsa_id = dsa_kp.get("key_id")
+    log_test("NIST FIPS 204 ML-DSA-65 Digital Signature Key Generation", dsa_kp.get("success") and dsa_kp.get("algorithm") == "ML-DSA-65", f"Generated ML-DSA-65 Signing Key ID: {dsa_id}")
+    s, dsa_sig = action("settings", "sign_pqc_payload", {"key_id": dsa_id, "message": "Sovereign Quantum Transaction #1"})
+    log_test("ML-DSA-65 Lattice Rejection Sampling Message Signing", dsa_sig.get("success") and dsa_sig.get("signature_len_bytes") == 3309, f"Generated signature ({dsa_sig.get('signature_len_bytes')} bytes) over digest {dsa_sig.get('message_digest')[:16]}...")
+    s, dsa_ver = action("settings", "verify_pqc_signature", {
+        "public_key_full": dsa_kp.get("public_key_full"),
+        "message": "Sovereign Quantum Transaction #1",
+        "signature_full": dsa_sig.get("signature_full")
+    })
+    log_test("ML-DSA-65 Post-Quantum Signature Verification", dsa_ver.get("success") and dsa_ver.get("valid") is True, f"Signature commitment verified: {dsa_ver.get('commitment_verified')} ({dsa_ver.get('algorithm')})")
+    log_test("Post-Quantum Cryptography PQC Vault UI Panel Markup", 'id="settingsPqcVaultPanel"' in index_html, "#settingsPqcVaultPanel active in DOM")
+    log_test("Client Application Wave 7 Social, Sentinel & PQC Vault API Hooks", "generateSocialBroadcast" in app_js and "auditRepoSyntax" in app_js and "generatePqcKeypair" in app_js, "Wave 7 Apex Sovereign methods exposed in CommandCenter client API")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

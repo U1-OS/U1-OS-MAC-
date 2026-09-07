@@ -1,28 +1,28 @@
 {
-  "onion_address": "mb7d5jdyivstxfmy4gxqxxva6rppwag4uqc72a6424hpa3je5j5qizad.onion",
-  "private_key_b64": "L82YDogZndkWj6HsUqVEVonyxTpLLEDV9byvOvo5Yx4HbbUACrXgyvyR/0OFzlm8DSqa6Ex4rtXkhEE0MjJ2qQ==",
+  "onion_address": "zwz2mmklfrzqjaziug7u7th52tgdpiwt2t55crl242y3oierp4bwjqad.onion",
+  "private_key_b64": "QvB+cuK/i+ymyZrpnPO6s0yq8n5B6kMYqV7Ohy5UptU6H+hKRma68hKtH8QSQAmrRpjPT62KLAxMefMFmq1CHg==",
   "target_local_port": 8787,
   "service_version": 3,
   "status": "RUNNING",
   "created_at": 1788749533,
-  "last_rotated_at": 1788761595,
+  "last_rotated_at": 1788762632,
   "circuits": [
     {
-      "circuit_id": "circ-9756b4",
+      "circuit_id": "circ-61dfc9",
       "guard": {
-        "node": "GuardRelay-EU-540c",
+        "node": "GuardRelay-EU-66c1",
         "ip": "185.220.103.88",
         "country": "SE",
         "latency_ms": 82.4
       },
       "middle": {
-        "node": "MiddleRelay-EU-f7ed",
+        "node": "MiddleRelay-EU-e19b",
         "ip": "195.176.3.22",
         "country": "DE",
         "latency_ms": 128.1
       },
       "rendezvous": {
-        "node": "Rendezvous-SG-b346",
+        "node": "Rendezvous-SG-57c3",
         "ip": "139.162.24.11",
         "country": "SG",
         "latency_ms": 189.7

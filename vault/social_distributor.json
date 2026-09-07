@@ -1,0 +1,85 @@
+{
+  "networks_connected": [
+    "X/Twitter",
+    "LinkedIn",
+    "Farcaster",
+    "Bluesky"
+  ],
+  "scheduled_queue": [],
+  "published_posts": [
+    {
+      "post_id": "post-x-3381",
+      "platform": "X/Twitter",
+      "hook": "We just open-sourced Command Center OS: 33 subsystems in pure Python on Apple Silicon.",
+      "impressions": 48200,
+      "engagements": 3410,
+      "status": "PUBLISHED_VIRAL",
+      "timestamp": 1788758770
+    },
+    {
+      "post_id": "post-fc-9102",
+      "platform": "Farcaster",
+      "hook": "Zero external pip dependencies. 100% on-device Metal NPU copilot for macOS.",
+      "impressions": 18400,
+      "engagements": 1280,
+      "status": "PUBLISHED",
+      "timestamp": 1788755170
+    }
+  ],
+  "total_impressions": 66600,
+  "avg_engagement_pct": 7.04,
+  "campaigns": [
+    {
+      "campaign_id": "a1489e35",
+      "topic": "U1-OS v2.4.0 Apex Quantum Zero-Pip Launch",
+      "tags": [
+        "PostQuantum",
+        "macOS",
+        "ZeroPip",
+        "AutonomousAI"
+      ],
+      "tone": "visionary",
+      "nostr": {
+        "id": "66c725e3c34bf281002bc9503f8edf42a77046804ec0b287cbc06f13f83c5e88",
+        "pubkey": "npub1b89d34b762c4a871744a01f18309ca49",
+        "kind": 1,
+        "content": "\u26a1 U1-OS v2.4.0 Apex Quantum Zero-Pip Launch\n\nRunning 100% locally on Apple Silicon. Zero pip packages, pure Python stdlib, NIST FIPS 203 PQC.\n\n#PostQuantum #macOS #ZeroPip #AutonomousAI",
+        "preview": "\u26a1 U1-OS v2.4.0 Apex Quantum Zero-Pip Launch\n\nRunning 100% locally on Apple Silic...",
+        "created_at": 1788762641,
+        "sig": "b713be2722dbe062ba7d18244a8572a5d3cbf1011d57b46e11941b65d4fde04fd2b5b783b76086d6b4e7879905e71ac50bc1f330f787a8221e21803eb050715a"
+      },
+      "twitter_x": {
+        "thread_length": 4,
+        "tweets": [
+          "1/4 \ud83d\ude80 Introducing U1-OS v2.4.0 Apex Quantum Zero-Pip Launch: The autonomous, sovereign business OS built entirely for macOS Darwin.",
+          "2/4 \ud83d\udee1\ufe0f Zero external pip packages. 36 core subsystems, full-duplex voice C2, and NIST FIPS 203/204 post-quantum lattice cryptography.",
+          "3/4 \u26a1 Built-in Apple Silicon Metal acceleration, multi-node P2P cluster sync, and zero cloud lock-in.",
+          "4/4 \ud83d\udce6 Open-source and 1-click installable. Code: github.com/U1-OS/U1-OS-MAC- #PostQuantum #macOS #ZeroPip #AutonomousAI"
+        ],
+        "preview": "1/4 \ud83d\ude80 Introducing U1-OS v2.4.0 Apex Quantum Zero-Pip Launch: The autonomous, sov...",
+        "estimated_impressions": 45000
+      },
+      "farcaster": {
+        "channel": "dev",
+        "cast_text": "\ud83c\udf10 U1-OS v2.4.0 Apex Quantum Zero-Pip Launch\n\n100% sovereign macOS command matrix. Zero cloud egress. Post-quantum cryptographic vault.\n\n#PostQuantum #macOS #ZeroPip #AutonomousAI",
+        "preview": "\ud83c\udf10 U1-OS v2.4.0 Apex Quantum Zero-Pip Launch\n\n100% sovereign macOS command matrix...",
+        "mentions": [
+          "@warpcast",
+          "@u1os"
+        ]
+      },
+      "linkedin": {
+        "title": "Architecting U1-OS v2.4.0 Apex Quantum Zero-Pip Launch - The Zero-Pip Frontier",
+        "content": "Announcing the architecture of U1-OS v2.4.0 Apex Quantum Zero-Pip Launch.\n\nIn modern systems engineering, dependency bloat is technical debt and vulnerability. Command Center OS achieves complete sovereign parity using only Python 3.9+ standard library and native macOS Darwin APIs.\n\nTags: #PostQuantum #macOS #ZeroPip #AutonomousAI",
+        "preview": "Announcing the architecture of U1-OS v2.4.0 Apex Quantum Zero-Pip Launch.\n\nIn mo..."
+      },
+      "telegram": {
+        "parse_mode": "MarkdownV2",
+        "content": "\ud83d\udce2 *U1-OS v2.4.0 Apex Quantum Zero-Pip Launch*\n\nStatus: *DEPLOYED*\nSecurity: *PQC ARMED*\nChannels: *5-WAY SYNC*\n\n#PostQuantum #macOS #ZeroPip #AutonomousAI",
+        "preview": "\ud83d\udce2 *U1-OS v2.4.0 Apex Quantum Zero-Pip Launch*\n\nStatus: *DEPLOYED*\nSecurity: *PQC..."
+      },
+      "created_at": 1788762641
+    }
+  ],
+  "total_campaigns_created": 1
+}

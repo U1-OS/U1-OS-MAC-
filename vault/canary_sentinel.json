@@ -1,6 +1,26 @@
 {
   "tokens": [
     {
+      "token_id": "canary-api-896f05e1",
+      "type": "API_KEY",
+      "label": "Decoy Stripe Production Key",
+      "token_value": "u1_live_canary_6575482d42aca1a0b50d893b634294ca",
+      "created_at": 1788762633,
+      "trigger_count": 1,
+      "memo": "",
+      "active": true
+    },
+    {
+      "token_id": "canary-api-8be1c86c",
+      "type": "API_KEY",
+      "label": "Decoy Stripe Production Key",
+      "token_value": "u1_live_canary_4de89a5d68d4ca8dd53ce5581580bb8a",
+      "created_at": 1788762439,
+      "trigger_count": 1,
+      "memo": "",
+      "active": true
+    },
+    {
       "token_id": "canary-api-54af8a0b",
       "type": "API_KEY",
       "label": "Decoy Stripe Production Key",
@@ -96,7 +116,7 @@
     {
       "path": "/Users/u1/.gemini/antigravity-ide/scratch/command-center/vault/.decoy_admin_keys.env",
       "expected_sha256": "c1904aa94bd83bf61eb2f5ec6d62aee8d844c95f1ad28f7f28beacdc910fae47",
-      "last_checked": 1788761596,
+      "last_checked": 1788762633,
       "status": "UNTOUCHED"
     }
   ]

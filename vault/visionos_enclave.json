@@ -43,6 +43,28 @@
       "anchored_windows_count": 2,
       "status": "ACTIVE_SPATIAL_SESSION",
       "created_at": 1788761602
+    },
+    "visionos-sess-3cdd3f23": {
+      "session_id": "visionos-sess-3cdd3f23",
+      "device_id": "Apple-Vision-Pro-Spatial-Enclave",
+      "frame_rate_fps": 90,
+      "foveation_level": "high",
+      "color_space": "p3-d65",
+      "tracking_mode": "HAND_AND_EYE_GAZE",
+      "anchored_windows_count": 2,
+      "status": "ACTIVE_SPATIAL_SESSION",
+      "created_at": 1788762445
+    },
+    "visionos-sess-c25db45d": {
+      "session_id": "visionos-sess-c25db45d",
+      "device_id": "Apple-Vision-Pro-Spatial-Enclave",
+      "frame_rate_fps": 90,
+      "foveation_level": "high",
+      "color_space": "p3-d65",
+      "tracking_mode": "HAND_AND_EYE_GAZE",
+      "anchored_windows_count": 2,
+      "status": "ACTIVE_SPATIAL_SESSION",
+      "created_at": 1788762639
     }
   },
   "anchored_windows": [
@@ -71,7 +93,7 @@
     },
     {
       "window_id": "c2_primary_hud",
-      "session_id": "visionos-sess-86af3bc0",
+      "session_id": "visionos-sess-c25db45d",
       "transform": {
         "translation": [
           0.0,
@@ -90,10 +112,34 @@
         ]
       },
       "status": "ANCHORED_6DOF",
-      "anchored_at": 1788761602
+      "anchored_at": 1788762639
     }
   ],
   "audio_events": [
+    {
+      "event_id": "audio-a008787a",
+      "sound_id": "haptic_pulse",
+      "position": [
+        0.4,
+        0.0,
+        -0.6
+      ],
+      "rolloff": "logarithmic",
+      "session_id": "visionos-sess-c25db45d",
+      "timestamp": 1788762640
+    },
+    {
+      "event_id": "audio-079526bf",
+      "sound_id": "haptic_pulse",
+      "position": [
+        0.4,
+        0.0,
+        -0.6
+      ],
+      "rolloff": "logarithmic",
+      "session_id": "visionos-sess-3cdd3f23",
+      "timestamp": 1788762446
+    },
     {
       "event_id": "audio-398246e1",
       "sound_id": "haptic_pulse",

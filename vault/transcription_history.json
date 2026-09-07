@@ -1,5 +1,67 @@
 [
   {
+    "transcription_id": "tx-aa8c1feb",
+    "timestamp": 1788762634,
+    "duration_sec": 3.2,
+    "language": "en",
+    "engine": "Apple Silicon Metal CoreML (Whisper-Base NPU)",
+    "confidence_score": 98.8,
+    "channels": 1,
+    "sample_rate": 16000,
+    "rms_energy": 0.038,
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 1.54,
+        "speaker": "Operator (Enclave 1)",
+        "text": "Authorize YubiKey physical touch",
+        "confidence": 0.985
+      },
+      {
+        "start": 1.66,
+        "end": 3.2,
+        "speaker": "Operator (Enclave 1)",
+        "text": "interlock for cryptographic wallet sign-off.",
+        "confidence": 0.991
+      }
+    ],
+    "full_text": "Authorize YubiKey physical touch interlock for cryptographic wallet sign-off.",
+    "word_count": 9,
+    "latency_ms": 15.1,
+    "status": "COMPLETED_ON_DEVICE"
+  },
+  {
+    "transcription_id": "tx-faf481a5",
+    "timestamp": 1788762440,
+    "duration_sec": 3.2,
+    "language": "en",
+    "engine": "Apple Silicon Metal CoreML (Whisper-Base NPU)",
+    "confidence_score": 98.8,
+    "channels": 1,
+    "sample_rate": 16000,
+    "rms_energy": 0.038,
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 1.54,
+        "speaker": "Operator (Enclave 1)",
+        "text": "WireGuard sovereign mesh latency evaluated",
+        "confidence": 0.985
+      },
+      {
+        "start": 1.66,
+        "end": 3.2,
+        "speaker": "Operator (Enclave 1)",
+        "text": "at thirty-two milliseconds across peer nodes.",
+        "confidence": 0.991
+      }
+    ],
+    "full_text": "WireGuard sovereign mesh latency evaluated at thirty-two milliseconds across peer nodes.",
+    "word_count": 11,
+    "latency_ms": 15.1,
+    "status": "COMPLETED_ON_DEVICE"
+  },
+  {
     "transcription_id": "tx-d9268a32",
     "timestamp": 1788761596,
     "duration_sec": 3.2,

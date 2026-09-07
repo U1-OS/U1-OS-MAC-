@@ -32,6 +32,9 @@ from utils import visionos_bridge
 from utils import duplex_voice
 from utils import cluster_sync
 from utils import bci_telemetry
+from utils import social_distributor
+from utils import repo_sentinel
+from utils import pqc_vault
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -455,6 +458,9 @@ class SettingsService(BaseService):
                 "duplex_voice": duplex_voice.get_voice_c2_telemetry(),
                 "cluster_sync": cluster_sync.get_cluster_telemetry(),
                 "bci_telemetry": bci_telemetry.get_bci_telemetry(),
+                "social_distributor": social_distributor.get_social_telemetry(),
+                "repo_sentinel": repo_sentinel.get_repo_sentinel_telemetry(),
+                "pqc_vault": pqc_vault.pqc_vault.get_telemetry(),
                 "server_environment": {
                     "binding": "127.0.0.1:8787 (Strict Local Only)",
                     "config_path": self.config_path,
@@ -1599,6 +1605,89 @@ class SettingsService(BaseService):
 
         elif action == "get_bci_telemetry":
             return bci_telemetry.get_bci_telemetry()
+
+        # Wave 7: Feature 34 - Multi-Network Social Distribution Engine
+        elif action == "generate_social_broadcast":
+            topic = str(payload.get("topic", "U1-OS v2.4.0 Apex Quantum Release"))
+            tags = payload.get("tags", ["Quantum", "ZeroPip", "SovereignAI", "macOS"])
+            tone = str(payload.get("tone", "visionary"))
+            res = social_distributor.generate_multichannel_campaign(topic=topic, tags=tags, tone=tone)
+            ledger.log_audit("social", "broadcast_synthesized", f"Generated campaign for '{topic}' across 5 sovereign channels", actor="social_distributor", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_social_telemetry":
+            return social_distributor.get_social_telemetry()
+
+        # Wave 7: Feature 35 - Autonomous Self-Auditing Repo Sentinel & Auto-PR Synthesizer
+        elif action == "audit_repo_syntax":
+            res = repo_sentinel.audit_entire_repository()
+            ledger.log_audit("repo_sentinel", "audit_complete", f"Audited {res.get('audited_files_count')} files. Clean: {res.get('clean')}", actor="repo_sentinel", status="OK")
+            self.poll()
+            return res
+
+        elif action == "synthesize_auto_pr":
+            title = str(payload.get("title", "Hardening and Zero-Pip Architecture Enforcement"))
+            files = payload.get("modified_files", ["services/settings.py", "utils/pqc_vault.py"])
+            summary = str(payload.get("summary", "Complete integration of NIST FIPS 203/204 PQC lattice cryptosystems"))
+            res = repo_sentinel.synthesize_auto_pr(title=title, modified_files=files, summary=summary)
+            ledger.log_audit("repo_sentinel", "pr_synthesized", f"Synthesized Auto-PR #{res.get('pr_number')}: {title}", actor="repo_sentinel", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_repo_sentinel_telemetry":
+            return repo_sentinel.get_repo_sentinel_telemetry()
+
+        # Wave 7: Feature 36 - Sovereign Post-Quantum Cryptography (PQC NIST FIPS 203/204) Vault
+        elif action == "generate_pqc_kem_keypair":
+            lbl = str(payload.get("label", "production-kem-768"))
+            res = pqc_vault.pqc_vault.generate_ml_kem_keypair(label=lbl)
+            ledger.log_audit("pqc", "ml_kem_generated", f"Generated ML-KEM-768 keypair {res.get('key_id')} ({lbl})", actor="pqc_vault", status="OK")
+            self.poll()
+            return res
+
+        elif action == "generate_pqc_dsa_keypair":
+            lbl = str(payload.get("label", "production-dsa-65"))
+            res = pqc_vault.pqc_vault.generate_ml_dsa_keypair(label=lbl)
+            ledger.log_audit("pqc", "ml_dsa_generated", f"Generated ML-DSA-65 keypair {res.get('key_id')} ({lbl})", actor="pqc_vault", status="OK")
+            self.poll()
+            return res
+
+        elif action == "encapsulate_pqc_secret":
+            pk_hex = str(payload.get("public_key_full", ""))
+            if not pk_hex:
+                kp = pqc_vault.pqc_vault.generate_ml_kem_keypair()
+                pk_hex = kp["public_key_full"]
+            res = pqc_vault.pqc_vault.encapsulate_secret(pk_hex)
+            ledger.log_audit("pqc", "secret_encapsulated", f"Encapsulated 256-bit secret via ML-KEM (Session: {res.get('session_id')})", actor="pqc_vault", status="OK")
+            self.poll()
+            return res
+
+        elif action == "decapsulate_pqc_secret":
+            kid = str(payload.get("key_id", ""))
+            ctxt = str(payload.get("ciphertext_full", ""))
+            res = pqc_vault.pqc_vault.decapsulate_secret(kid, ctxt)
+            ledger.log_audit("pqc", "secret_decapsulated", f"Decapsulated secret for key {kid}", actor="pqc_vault", status="OK")
+            self.poll()
+            return res
+
+        elif action == "sign_pqc_payload":
+            kid = str(payload.get("key_id", ""))
+            msg = str(payload.get("message", "Sovereign U1-OS PQC Transaction"))
+            res = pqc_vault.pqc_vault.sign_message(kid, msg)
+            ledger.log_audit("pqc", "payload_signed", f"Signed payload with ML-DSA-65 key {kid}", actor="pqc_vault", status="OK")
+            self.poll()
+            return res
+
+        elif action == "verify_pqc_signature":
+            pk_hex = str(payload.get("public_key_full", ""))
+            msg = str(payload.get("message", ""))
+            sig_hex = str(payload.get("signature_full", ""))
+            res = pqc_vault.pqc_vault.verify_signature(pk_hex, msg, sig_hex)
+            return res
+
+        elif action == "get_pqc_telemetry":
+            return pqc_vault.pqc_vault.get_telemetry()
 
         return super().dispatch_action(action, payload)
 

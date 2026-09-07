@@ -1,5 +1,195 @@
 [
   {
+    "scan_id": "scan-1788762631",
+    "timestamp": 1788762631,
+    "target_host": "127.0.0.1",
+    "elapsed_sec": 0.003,
+    "hardening_score": 92,
+    "rating": "SOVEREIGN_A+",
+    "open_ports_count": 1,
+    "open_ports": [
+      {
+        "port": 8787,
+        "service": "CommandCenter",
+        "desc": "U1 Command Center Server",
+        "state": "OPEN"
+      }
+    ],
+    "total_checks": 9,
+    "findings": [
+      {
+        "id": "SEC-PORT-21",
+        "severity": "PASS",
+        "check": "Dangerous Port 21 (FTP)",
+        "status": "CLOSED",
+        "description": "Unused dangerous port 21 is closed.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-PORT-23",
+        "severity": "PASS",
+        "check": "Dangerous Port 23 (Telnet)",
+        "status": "CLOSED",
+        "description": "Unused dangerous port 23 is closed.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-PORT-3306",
+        "severity": "PASS",
+        "check": "Dangerous Port 3306 (MySQL)",
+        "status": "CLOSED",
+        "description": "Unused dangerous port 3306 is closed.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-PORT-6379",
+        "severity": "PASS",
+        "check": "Dangerous Port 6379 (Redis)",
+        "status": "CLOSED",
+        "description": "Unused dangerous port 6379 is closed.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-PORT-8787",
+        "severity": "PASS",
+        "check": "Authorized Service Port 8787 (CommandCenter)",
+        "status": "ONLINE",
+        "description": "Valid service CommandCenter running on port 8787.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-HDR-01",
+        "severity": "MEDIUM",
+        "check": "Content-Security-Policy",
+        "status": "MISSING",
+        "description": "CSP header missing on HTTP response.",
+        "remediation": "Inject 'Content-Security-Policy: default-src \\'self\\'' into API responses."
+      },
+      {
+        "id": "SEC-HDR-02",
+        "severity": "PASS",
+        "check": "X-Frame-Options",
+        "status": "ENFORCED",
+        "description": "X-Frame-Options is set to DENY.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-HDR-03",
+        "severity": "PASS",
+        "check": "X-Content-Type-Options",
+        "status": "ENFORCED",
+        "description": "nosniff directive active.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-FS-VAULT",
+        "severity": "PASS",
+        "check": "Vault Directory Enclave",
+        "status": "HARDENED",
+        "description": "Vault storage enclave permissions are 755.",
+        "remediation": "chmod 700 vault/"
+      }
+    ],
+    "critical_issues": [],
+    "high_issues": [],
+    "remediation_count": 2
+  },
+  {
+    "scan_id": "scan-1788762438",
+    "timestamp": 1788762438,
+    "target_host": "127.0.0.1",
+    "elapsed_sec": 0.003,
+    "hardening_score": 92,
+    "rating": "SOVEREIGN_A+",
+    "open_ports_count": 1,
+    "open_ports": [
+      {
+        "port": 8787,
+        "service": "CommandCenter",
+        "desc": "U1 Command Center Server",
+        "state": "OPEN"
+      }
+    ],
+    "total_checks": 9,
+    "findings": [
+      {
+        "id": "SEC-PORT-21",
+        "severity": "PASS",
+        "check": "Dangerous Port 21 (FTP)",
+        "status": "CLOSED",
+        "description": "Unused dangerous port 21 is closed.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-PORT-23",
+        "severity": "PASS",
+        "check": "Dangerous Port 23 (Telnet)",
+        "status": "CLOSED",
+        "description": "Unused dangerous port 23 is closed.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-PORT-3306",
+        "severity": "PASS",
+        "check": "Dangerous Port 3306 (MySQL)",
+        "status": "CLOSED",
+        "description": "Unused dangerous port 3306 is closed.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-PORT-6379",
+        "severity": "PASS",
+        "check": "Dangerous Port 6379 (Redis)",
+        "status": "CLOSED",
+        "description": "Unused dangerous port 6379 is closed.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-PORT-8787",
+        "severity": "PASS",
+        "check": "Authorized Service Port 8787 (CommandCenter)",
+        "status": "ONLINE",
+        "description": "Valid service CommandCenter running on port 8787.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-HDR-01",
+        "severity": "MEDIUM",
+        "check": "Content-Security-Policy",
+        "status": "MISSING",
+        "description": "CSP header missing on HTTP response.",
+        "remediation": "Inject 'Content-Security-Policy: default-src \\'self\\'' into API responses."
+      },
+      {
+        "id": "SEC-HDR-02",
+        "severity": "PASS",
+        "check": "X-Frame-Options",
+        "status": "ENFORCED",
+        "description": "X-Frame-Options is set to DENY.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-HDR-03",
+        "severity": "PASS",
+        "check": "X-Content-Type-Options",
+        "status": "ENFORCED",
+        "description": "nosniff directive active.",
+        "remediation": null
+      },
+      {
+        "id": "SEC-FS-VAULT",
+        "severity": "PASS",
+        "check": "Vault Directory Enclave",
+        "status": "HARDENED",
+        "description": "Vault storage enclave permissions are 755.",
+        "remediation": "chmod 700 vault/"
+      }
+    ],
+    "critical_issues": [],
+    "high_issues": [],
+    "remediation_count": 2
+  },
+  {
     "scan_id": "scan-1788761594",
     "timestamp": 1788761594,
     "target_host": "127.0.0.1",

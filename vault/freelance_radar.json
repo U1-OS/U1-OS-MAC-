@@ -64,6 +64,24 @@
   ],
   "proposals": [
     {
+      "proposal_id": "bid-5cce8737",
+      "gig_id": "gig_solana_mev_01",
+      "title": "Architect Private Mempool & Jito Bundle Arbitrage Engine",
+      "bid_amount": 35000.0,
+      "timeline_days": 14,
+      "cover_letter": "Hi team, we specialize in pure Python zero-dependency systems engineering for 'Architect Private Mempool & Jito Bundle Arbitrage Engine'. Zero-dependency pure Python architecture with macOS hardware-level acceleration.",
+      "generated_at": 1788762638
+    },
+    {
+      "proposal_id": "bid-89e66679",
+      "gig_id": "gig_solana_mev_01",
+      "title": "Architect Private Mempool & Jito Bundle Arbitrage Engine",
+      "bid_amount": 35000.0,
+      "timeline_days": 14,
+      "cover_letter": "Hi team, we specialize in pure Python zero-dependency systems engineering for 'Architect Private Mempool & Jito Bundle Arbitrage Engine'. Zero-dependency pure Python architecture with macOS hardware-level acceleration.",
+      "generated_at": 1788762445
+    },
+    {
       "proposal_id": "bid-8217bee0",
       "gig_id": "gig_solana_mev_01",
       "title": "Architect Private Mempool & Jito Bundle Arbitrage Engine",
