@@ -7,6 +7,7 @@ import urllib.request
 import urllib.parse
 import json
 from services.base import BaseService
+from utils import competitor_radar
 
 DOMAIN_REGEX = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)+$")
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
@@ -417,6 +418,26 @@ class OSINTService(BaseService):
             res = self._execute_threat_intelligence_scan(target_domains)
             self.add_event("threat_scan_completed", f"Threat Intel Scan: Posture {res['posture_score']}/100, Leaks: {len(res['leaks_detected'])}")
             return {"success": True, "threat_intel": res, **res}
+
+        elif action == "scan_competitor_radar":
+            res = competitor_radar.scan_competitor_radar()
+            self.add_event("competitor_radar_scanned", f"Scanned {res.get('targets_count')} competitor domains, {res.get('deltas_detected_count')} pricing deltas active")
+            return {"success": True, "radar": res, **res}
+
+        elif action == "add_competitor_target":
+            raw_url = payload.get("url", "")
+            raw_dom = payload.get("domain", "")
+            domain = raw_dom or raw_url.replace("https://", "").replace("http://", "").split("/")[0] or "v0.dev"
+            p_url = payload.get("pricing_url") or (raw_url if "pricing" in raw_url else f"https://{domain}/pricing")
+            name = payload.get("name")
+            tier = payload.get("tier")
+            res = competitor_radar.add_competitor_target(domain, p_url, name=name, tier=tier)
+            self.add_event("competitor_target_added", f"Added {domain} to competitor radar surveillance")
+            return res
+
+        elif action == "get_competitor_deltas":
+            deltas = competitor_radar.get_competitor_deltas()
+            return {"success": True, "deltas": deltas, "total_deltas": len(deltas)}
 
         return super().dispatch_action(action, payload)
 

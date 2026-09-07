@@ -9,6 +9,7 @@ from utils import vault
 from utils import briefing
 from utils import ledger
 from utils import process_watchdog
+from utils import decentralized_storage
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -1041,6 +1042,26 @@ class SettingsService(BaseService):
             ledger.log_audit("security", "yubikey_interlock_toggled", f"YubiKey physical hardware interlock set to {self.yubikey_interlock_enforced}", actor="operator", status="OK")
             self.poll()
             return {"success": True, "yubikey_interlock_enforced": self.yubikey_interlock_enforced, "message": f"YubiKey physical interlock {'armed' if self.yubikey_interlock_enforced else 'disarmed'}."}
+
+        elif action == "pin_vault_to_ipfs":
+            vault_file = os.path.join(self.root_dir, "vault", "latest_snapshot.ccvault")
+            res = decentralized_storage.pin_to_ipfs(file_path=vault_file if os.path.exists(vault_file) else None)
+            res["pin_record"] = dict(res)
+            ledger.log_audit("vault", "ipfs_pinned", f"Pinned encrypted snapshot to IPFS: {res.get('cid')}", actor="operator", status="OK")
+            self.add_event("vault_ipfs_pinned", f"Pinned vault snapshot to IPFS ({res.get('cid')[:16]}...)")
+            return res
+
+        elif action == "archive_to_arweave":
+            vault_file = os.path.join(self.root_dir, "vault", "latest_snapshot.ccvault")
+            res = decentralized_storage.archive_to_arweave(file_path=vault_file if os.path.exists(vault_file) else None)
+            res["archive_record"] = dict(res)
+            ledger.log_audit("vault", "arweave_archived", f"Archived encrypted snapshot to Arweave: {res.get('tx_id')}", actor="operator", status="OK")
+            self.add_event("vault_arweave_archived", f"Archived vault snapshot to Arweave ({res.get('tx_id')[:16]}...)")
+            return res
+
+        elif action == "get_decentralized_backups":
+            records = decentralized_storage.get_decentralized_backups()
+            return {"success": True, "records": records, "history": records, "total_records": len(records)}
 
         return super().dispatch_action(action, payload)
 

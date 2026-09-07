@@ -18,6 +18,7 @@ from utils import solana
 from utils import browser_crawler
 from utils import evm_btc
 from utils import jito
+from utils import prediction_markets
 
 SOL_CA_REGEX = re.compile(r'\b[1-9A-HJ-NP-Za-km-z]{32,44}\b')
 EVM_CA_REGEX = re.compile(r'\b0x[a-fA-F0-9]{40}\b')
@@ -969,6 +970,22 @@ class CryptoService(BaseService):
             else:
                 return {"success": True, "output": f"Jito MEV usage: 'jito tips' or 'jito send [lamports]'", "command": cmd_str}
 
+        elif cmd in ["predict", "poly", "kalshi"]:
+            sub = args[0].lower() if args else "arb"
+            if sub in ["arb", "spreads", "scan"]:
+                scan_res = prediction_markets.scan_prediction_arbitrage()
+                opps = scan_res.get("opportunities", [])
+                lines = [f"=== PREDICTION MARKET STATISTICAL ARBITRAGE RADAR ({len(opps)} Opportunities) ==="]
+                for o in opps:
+                    lines.append(f"• [{o['platform'].upper()}] {o['title'][:32]}... | Edge: +{o['guaranteed_edge_pct']}% | Implied Sum: {o['implied_sum']}")
+                lines.append(f"Optimal Kelly sizing active. Status: {scan_res.get('status')}")
+                return {"success": True, "output": "\n".join(lines), "command": cmd_str}
+            else:
+                trade_res = prediction_markets.execute_prediction_trade("pm_fed_cut_nov", "25 bps Cut", 250.0)
+                t = trade_res.get("trade", {})
+                out = f"🎯 PREDICTION ORDER EXECUTED:\nMarket: {t.get('title')}\nOutcome: {t.get('outcome')} @ ${t.get('entry_price')} | Stake: ${t.get('amount_usd')} -> Payout: ${t.get('payout_if_win_usd')}"
+                return {"success": True, "output": out, "command": cmd_str}
+
         return {"success": True, "output": f"Executed command: {cmd_str}", "command": cmd_str}
 
     def dispatch_action(self, action, payload=None):
@@ -1412,5 +1429,27 @@ class CryptoService(BaseService):
         elif action == "get_jito_bundle_status":
             bundle_id = payload.get("bundle_id", "")
             return jito.get_bundle_status(bundle_id)
+
+        elif action == "get_prediction_markets":
+            markets = prediction_markets.get_prediction_markets()
+            return {"success": True, "markets": markets, "total_markets": len(markets)}
+
+        elif action == "scan_prediction_arbitrage":
+            arb_res = prediction_markets.scan_prediction_arbitrage()
+            return {
+                "success": True, 
+                "arbitrage": arb_res,
+                "arbitrage_opportunities": arb_res.get("opportunities", [])
+            }
+
+        elif action == "execute_prediction_trade":
+            market_id = payload.get("market_id", "pm_fed_cut_nov")
+            outcome = payload.get("outcome", "25 bps Cut")
+            amount = float(payload.get("amount_usd", payload.get("stake_usd", 250.0)))
+            res = prediction_markets.execute_prediction_trade(market_id, outcome, amount)
+            if res.get("success"):
+                t = res.get("trade", {})
+                self.add_event("prediction_trade_executed", f"Executed ${amount:.2f} on {t.get('title')} ({outcome})")
+            return res
 
         return super().dispatch_action(action, payload)

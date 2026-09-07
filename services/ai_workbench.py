@@ -4,6 +4,7 @@ import time
 import urllib.request
 import urllib.error
 from services.base import BaseService
+from utils import agent_swarm
 
 # Pricing per million tokens (USD)
 RATES = {
@@ -757,6 +758,23 @@ class AIWorkbenchService(BaseService):
                 "wake_word_detected": True,
                 "timestamp": time.time()
             }
+
+        elif action == "deliberate_swarm_proposal":
+            title = payload.get("proposal_title") or payload.get("title", "High-Stakes Treasury Allocation")
+            desc = payload.get("description") or payload.get("domain", "Deploy 15% bankroll into negative-risk prediction market arbitrage spread")
+            params = payload.get("action_payload") or payload.get("parameters", {})
+            res = agent_swarm.deliberate_swarm_proposal(title, desc, parameters=params)
+            res["session"] = res.get("deliberation", {})
+            self.add_event("swarm_council_deliberated", f"Swarm council voted: {res.get('consensus_verdict')} ({res.get('consensus_score')})")
+            return res
+
+        elif action == "get_swarm_agents":
+            agents = agent_swarm.get_swarm_personas()
+            return {"success": True, "agents": agents, "personas": agents, "total_agents": len(agents)}
+
+        elif action == "get_swarm_history":
+            history = agent_swarm.get_deliberation_history()
+            return {"success": True, "history": history, "total_deliberations": len(history)}
 
         return super().dispatch_action(action, payload)
 

@@ -767,6 +767,85 @@ def main():
     s, app_js = get_text("/js/app.js")
     log_test("Client Application 3D Engine Hooks", "openHologramRoom" in app_js and "closeHologramRoom" in app_js, "3D room controls exposed in CommandCenter API")
 
+    # 55. Autonomous Polymarket & Kalshi Prediction Market Arbitrageur
+    print(f"\n{INFO} 55. Subsystem: Autonomous Polymarket & Kalshi Prediction Market Arbitrageur:")
+    s, poly_markets = action("crypto", "get_prediction_markets", {})
+    m_list = poly_markets.get("markets", [])
+    log_test("Prediction Market Multi-Platform Ingestion", poly_markets.get("success") and len(m_list) >= 4, f"Ingested {len(m_list)} probability order books across Polymarket & Kalshi")
+
+    s, poly_arb = action("crypto", "scan_prediction_arbitrage", {})
+    arbs = poly_arb.get("arbitrage_opportunities", [])
+    top_spread = arbs[0].get("profit_margin_pct", 0) if arbs else 0
+    log_test("Cross-Platform Statistical Arbitrage & Negative-Risk Scanner", poly_arb.get("success") and len(arbs) > 0 and top_spread > 0, f"Identified {len(arbs)} arb pairs (Top Spread: {top_spread}%)")
+
+    s, poly_trade = action("crypto", "execute_prediction_trade", {"market_id": "poly-fed-rate-cut-2026", "outcome": "YES", "stake_usd": 250})
+    t_rec = poly_trade.get("trade", {})
+    log_test("Kelly-Criterion Automated Position Sizing & Execution", poly_trade.get("success") and t_rec.get("status") == "FILLED", f"Order {t_rec.get('order_id')[:18]}... Filled at ${t_rec.get('price')} (Stake: ${t_rec.get('stake_usd')})")
+
+    s, term_pred = action("crypto", "execute_terminal_command", {"command": "predict"})
+    log_test("Cyber Terminal Prediction Arbitrage Radar Console Integration", term_pred.get("success") and "PREDICTION MARKET STATISTICAL ARBITRAGE RADAR" in term_pred.get("output", ""), "Prediction arb matrix rendered in cyber console")
+
+    # 56. Apple Silicon Metal CoreML Real-Time Video Face Anonymizer & Deepfake Shield
+    print(f"\n{INFO} 56. Subsystem: Apple Silicon Metal Face Anonymizer & Deepfake Shield:")
+    s, face_anon = action("studio", "anonymize_video_faces", {"video_filename": "interview_source.mp4", "anonymize_mode": "blur"})
+    log_test("Metal / CoreML On-Device Biometric Face Obfuscation", face_anon.get("success") and face_anon.get("faces_detected", 0) > 0, f"Detected & anonymized {face_anon.get('faces_detected')} biometric faces across {face_anon.get('frames_processed')} frames ({face_anon.get('anonymize_mode')})")
+
+    s, df_audit = action("studio", "audit_deepfake_authenticity", {"media_filename": "interview_source.mp4"})
+    a_res = df_audit.get("analysis", {})
+    log_test("Synthetic Artifact Deepfake Authenticity & Glitch Telemetry Audit", df_audit.get("success") and a_res.get("authenticity_score", 0) > 0, f"Authenticity: {a_res.get('authenticity_score')}% | Verdict: {a_res.get('verdict')} (Freq Inconsistency: {a_res.get('frequency_domain_inconsistency')})")
+
+    log_test("Face Shield & Deepfake Sentinel Studio Panel Markup", 'id="studioDeepfakePanel"' in index_html, "#studioDeepfakePanel active in DOM")
+    log_test("Client Application Biometric Defense Action Handlers", "triggerFaceAnonymization" in app_js and "renderFaceShield" in app_js, "Face shield functions exposed in CommandCenter API")
+
+    # 57. Decentralized IPFS & Arweave Permanent Cold Storage Vault
+    print(f"\n{INFO} 57. Subsystem: Decentralized IPFS & Arweave Permanent Cold Storage Vault:")
+    s, ipfs_pin = action("settings", "pin_vault_to_ipfs", {})
+    p_info = ipfs_pin.get("pin_record", {})
+    log_test("Cryptographic Multihash CIDv1 Synthesis & IPFS Vault Pinning", ipfs_pin.get("success") and p_info.get("cid", "").startswith("bafkreib"), f"CIDv1: {p_info.get('cid')} ({p_info.get('size_bytes')} bytes pinned)")
+
+    s, arweave_archive = action("settings", "archive_to_arweave", {})
+    ar_info = arweave_archive.get("archive_record", {})
+    log_test("Arweave Blockweave Permanent Immutable Cold Storage Archival", arweave_archive.get("success") and len(ar_info.get("tx_id", "")) == 43, f"Arweave TX: {ar_info.get('tx_id')} (Reward: {ar_info.get('ar_reward')} AR)")
+
+    s, de_history = action("settings", "get_decentralized_backups", {})
+    b_history = de_history.get("history", [])
+    log_test("Decentralized Multi-Network Backup Manifest Synchronization", de_history.get("success") and len(b_history) >= 2, f"Retrieved {len(b_history)} immutable decentralized backup manifests")
+
+    log_test("Decentralized Storage Settings Panel Markup", 'id="settingsIpfsPanel"' in index_html, "#settingsIpfsPanel active in DOM")
+
+    # 58. Autonomous AI Competitor OSINT Scraper & Pricing Radar
+    print(f"\n{INFO} 58. Subsystem: Autonomous AI Competitor OSINT Scraper & Pricing Radar:")
+    s, comp_scan = action("osint", "scan_competitor_radar", {})
+    c_audits = comp_scan.get("competitor_audits", [])
+    log_test("Headless Competitor Reconnaissance & Pricing Delta Radar", comp_scan.get("success") and len(c_audits) >= 3, f"Scanned {len(c_audits)} competitor landing pages & changelogs")
+
+    s, comp_add = action("osint", "add_competitor_target", {"name": "v0 by Vercel", "url": "https://v0.dev", "tier": "Tier-1 Competitor"})
+    log_test("Dynamic Competitor Target Onboarding & Watchlist Expansion", comp_add.get("success") and len(comp_add.get("targets", [])) >= 4, "New competitor onboarded to autonomous OSINT spider")
+
+    s, sched_res3 = get("/api/scheduler")
+    jobs3 = sched_res3.get("jobs", [])
+    has_comp_job = any(j.get("id") == "competitor_pricing_radar" for j in jobs3)
+    has_poly_job = any(j.get("id") == "prediction_market_arb_watchdog" for j in jobs3)
+    log_test("Scheduler Job #12 & #13 Prediction Arb & Competitor Radar Watchdogs", has_comp_job and has_poly_job, "Scheduled jobs #12 & #13 registered in autonomous background scheduler")
+
+    log_test("Competitor OSINT Intelligence Panel Markup", 'id="osintCompetitorPanel"' in index_html, "#osintCompetitorPanel active in DOM")
+
+    # 59. Multi-Agent Swarm Arena & Collaborative Deliberation Matrix
+    print(f"\n{INFO} 59. Subsystem: Multi-Agent Swarm Arena & Collaborative Deliberation Matrix:")
+    s, swarm_roster = action("ai_workbench", "get_swarm_agents", {})
+    personas = swarm_roster.get("personas", [])
+    log_test("Swarm Council Persona Roster Initialization", swarm_roster.get("success") and len(personas) == 4, f"4 specialized agents loaded: {', '.join([p.get('title') for p in personas])}")
+
+    s, swarm_delib = action("ai_workbench", "deliberate_swarm_proposal", {"proposal_title": "Deploy Institutional Autonomous Arbitrage Engine", "domain": "QUANT_FINANCE", "action_payload": {"engine": "prediction_arb", "allocated_capital": 50000}})
+    d_session = swarm_delib.get("session", {})
+    log_test("Multi-Agent Council Deliberation Round & Consensus Score", swarm_delib.get("success") and d_session.get("consensus_score", 0) >= 0.75 and d_session.get("status") == "APPROVED", f"Consensus Score: {d_session.get('consensus_score')} | Outcome: {d_session.get('status')} ({len(d_session.get('deliberations', []))} agent ballots cast)")
+
+    s, swarm_hist = action("ai_workbench", "get_swarm_history", {})
+    s_hist = swarm_hist.get("history", [])
+    log_test("Swarm Deliberation Ledger & Historical Audit Trail", swarm_hist.get("success") and len(s_hist) > 0, f"Retrieved {len(s_hist)} permanent swarm deliberation records")
+
+    log_test("Multi-Agent Swarm Deliberation Panel Markup", 'id="aiSwarmPanel"' in index_html, "#aiSwarmPanel active in DOM")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

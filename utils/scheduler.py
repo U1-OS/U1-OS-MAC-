@@ -199,6 +199,24 @@ class AutomationScheduler:
             handler=self._job_self_healing_daemon
         )
 
+        # 12. Prediction Market Arbitrage Watchdog
+        self.register_job(
+            "prediction_market_arb_watchdog",
+            "Polymarket & Kalshi Arbitrage Watchdog",
+            "Monitors real-time prediction market probability orderbooks and identifies negative-risk arbitrage spreads",
+            interval_sec=300,
+            handler=self._job_prediction_arb_watchdog
+        )
+
+        # 13. Autonomous Competitor Pricing & Delta Radar
+        self.register_job(
+            "competitor_pricing_radar",
+            "Competitor Pricing & Changelog Radar",
+            "Scrapes competitor landing pages and GitHub tags, extracting stealth price changes and product updates",
+            interval_sec=3600,
+            handler=self._job_competitor_pricing_radar
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -365,6 +383,26 @@ class AutomationScheduler:
             summary = f"Self-Healing Daemon: Status {status} ({issues} issues detected across modules)"
             return {"health": health, "summary": summary}
         return {"summary": "Deploy service unavailable for self-healing daemon"}
+
+    def _job_prediction_arb_watchdog(self, feeder):
+        if feeder and hasattr(feeder, "services") and "crypto" in feeder.services:
+            crypto_svc = feeder.services["crypto"]
+            arb_res = crypto_svc.dispatch_action("scan_prediction_arbitrage", {})
+            opps = arb_res.get("arbitrage", {}).get("opportunities", [])
+            highest = arb_res.get("arbitrage", {}).get("highest_edge_pct", 0.0)
+            summary = f"Prediction Arb Watchdog: {len(opps)} opportunities detected (Max Edge: +{highest}%)"
+            return {"opportunities_count": len(opps), "highest_edge_pct": highest, "summary": summary}
+        return {"summary": "Crypto service unavailable for prediction arb watchdog"}
+
+    def _job_competitor_pricing_radar(self, feeder):
+        if feeder and hasattr(feeder, "services") and "osint" in feeder.services:
+            osint_svc = feeder.services["osint"]
+            res = osint_svc.dispatch_action("scan_competitor_radar", {})
+            deltas = len(res.get("deltas", []))
+            targets = len(res.get("targets", []))
+            summary = f"Competitor Radar: {targets} targets monitored, {deltas} pricing/product updates identified"
+            return {"targets_monitored": targets, "deltas_detected": deltas, "summary": summary}
+        return {"summary": "OSINT service unavailable for competitor radar"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:

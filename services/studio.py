@@ -6,6 +6,7 @@ import threading
 import urllib.request
 import urllib.parse
 from services.base import BaseService
+from utils import face_shield
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXPORTS_DIR = os.path.join(BASE_DIR, "exports")
@@ -534,5 +535,20 @@ class StudioService(BaseService):
                 "queue_count": len(self.social_queue),
                 "published_count": len(self.published_social_posts)
             }
+
+        elif action == "anonymize_video_faces":
+            input_path = payload.get("input_path")
+            method = payload.get("method", "pixelate")
+            intensity = int(payload.get("intensity", 16))
+            res = face_shield.anonymize_faces(input_path=input_path, method=method, intensity=intensity)
+            self.add_event("face_shield_anonymized", f"Anonymized {res.get('faces_detected')} faces using {method} on Metal NPU")
+            return res
+
+        elif action == "audit_deepfake_authenticity":
+            media_path = payload.get("media_path") or payload.get("media_filename")
+            res = face_shield.audit_deepfake_authenticity(media_path=media_path)
+            res["analysis"] = dict(res)
+            self.add_event("deepfake_audit_completed", f"Audited {res.get('media_target')}: {res.get('verdict')} ({res.get('authenticity_score')}% authentic)")
+            return res
 
         return super().dispatch_action(action, payload)
