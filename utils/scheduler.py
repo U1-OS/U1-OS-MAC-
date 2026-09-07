@@ -253,6 +253,15 @@ class AutomationScheduler:
             handler=self._job_sovereign_p2p_mesh_heartbeat
         )
 
+        # 18. Solopreneur SaaS Growth & High-Ticket Gig Radar
+        self.register_job(
+            "saas_growth_radar",
+            "Solopreneur SaaS Growth & High-Ticket Gig Radar",
+            "Calculates MRR/ARR retention velocity, audits cold outbound deliverability, checks SEO rankings, and evaluates freelance gigs",
+            interval_sec=1800,
+            handler=self._job_saas_growth_radar
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -481,6 +490,19 @@ class AutomationScheduler:
             summary = f"Sovereign P2P Mesh: {peers_count} BLE devices in range | LoRa 915MHz online ({nodes_count} nodes) | Matrix E2EE synced"
             return {"ble_peers": peers_count, "lora_nodes": nodes_count, "summary": summary}
         return {"summary": "Settings service unavailable for sovereign mesh heartbeat"}
+
+    def _job_saas_growth_radar(self, feeder):
+        if feeder and hasattr(feeder, "services") and "settings" in feeder.services:
+            settings_svc = feeder.services["settings"]
+            saas_res = settings_svc.dispatch_action("calculate_saas_metrics", {})
+            mrr = saas_res.get("mrr_end", 28600.0)
+            arr = saas_res.get("arr", 343200.0)
+            gigs_res = settings_svc.dispatch_action("fetch_freelance_gigs", {"min_budget": 5000})
+            gigs_count = gigs_res.get("count", 0)
+            settings_svc.dispatch_action("refresh_seo_rankings", {})
+            summary = f"SaaS Growth Radar: MRR ${mrr:,.2f} (ARR: ${arr:,.2f}) | {gigs_count} high-ticket gigs scanned | SEO rankings synchronized"
+            return {"mrr": mrr, "arr": arr, "gigs_count": gigs_count, "summary": summary}
+        return {"summary": "Settings service unavailable for SaaS growth radar"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:

@@ -12,11 +12,11 @@
       "name": "Operator MacBook Pro (M3 Max)",
       "device_type": "macOS",
       "ble_address": "E4:5F:01:9A:88:B2",
-      "rssi_dbm": -45,
+      "rssi_dbm": -46,
       "distance_meters": 1.2,
       "awdl_airdrop_capable": true,
       "public_key_fingerprint": "SHA256:7f83b165...m3max",
-      "last_seen_sec": 2,
+      "last_seen_sec": 1,
       "status": "PAIRED_IN_PROXIMITY"
     },
     {
@@ -24,11 +24,11 @@
       "name": "Operator iPhone 16 Pro (Secure Enclave)",
       "device_type": "iOS",
       "ble_address": "D2:11:44:98:A2:CC",
-      "rssi_dbm": -54,
+      "rssi_dbm": -55,
       "distance_meters": 2.8,
       "awdl_airdrop_capable": true,
       "public_key_fingerprint": "SHA256:39a8bc41...sep",
-      "last_seen_sec": 10,
+      "last_seen_sec": 13,
       "status": "DISCOVERED_AIRDROP_READY"
     },
     {
@@ -36,15 +36,37 @@
       "name": "YubiKey 5Ci FIDO2 Dongle",
       "device_type": "HardwareToken",
       "ble_address": "AA:BB:CC:11:22:33",
-      "rssi_dbm": -38,
+      "rssi_dbm": -37,
       "distance_meters": 0.5,
       "awdl_airdrop_capable": false,
       "public_key_fingerprint": "SHA256:fido2...key",
-      "last_seen_sec": 1,
+      "last_seen_sec": 3,
       "status": "AUTHENTICATED_HARDWARE_NEARBY"
     }
   ],
   "dispatched_transfers": [
+    {
+      "transfer_id": "awdl-5ae76a81",
+      "target_device": "Operator MacBook Pro (M3 Max)",
+      "device_id": "ble-peer-mbp-m3",
+      "payload_name": "vault_snapshot.ccvault",
+      "protocol": "Apple Wireless Direct Link (AWDL / AirDrop v2)",
+      "timestamp": 1788760880,
+      "status": "DELIVERED_AIRDROP_ACCEPTED",
+      "speed_mbps": 48.5,
+      "elapsed_sec": 0.82
+    },
+    {
+      "transfer_id": "awdl-fb615b0c",
+      "target_device": "Operator MacBook Pro (M3 Max)",
+      "device_id": "ble-peer-mbp-m3",
+      "payload_name": "vault_snapshot.ccvault",
+      "protocol": "Apple Wireless Direct Link (AWDL / AirDrop v2)",
+      "timestamp": 1788760743,
+      "status": "DELIVERED_AIRDROP_ACCEPTED",
+      "speed_mbps": 48.5,
+      "elapsed_sec": 0.82
+    },
     {
       "transfer_id": "awdl-01cd892a",
       "target_device": "Operator MacBook Pro (M3 Max)",

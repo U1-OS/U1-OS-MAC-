@@ -1,0 +1,175 @@
+{
+  "campaigns": [
+    {
+      "campaign_id": "cmp-79ad4604",
+      "name": "Enterprise C2 Sovereign Expansion",
+      "target_audience": "VP Infrastructure & DevOps",
+      "sequence_steps": [
+        {
+          "day": 1,
+          "subject": "Quick question on {company} self-hosted edge",
+          "body": "Hi {name}, saw your work on distributed systems..."
+        },
+        {
+          "day": 4,
+          "subject": "Following up on zero-cloud telemetry",
+          "body": "Hi {name}, our benchmark is ready..."
+        }
+      ],
+      "status": "ARMED_ACTIVE",
+      "leads_contacted": 1,
+      "replies_count": 0,
+      "reply_rate_pct": 0.0,
+      "created_at": 1788760881
+    },
+    {
+      "campaign_id": "cmp-fff58309",
+      "name": "Enterprise C2 Sovereign Expansion",
+      "target_audience": "VP Infrastructure & DevOps",
+      "sequence_steps": [
+        {
+          "day": 1,
+          "subject": "Quick question on {company} self-hosted edge",
+          "body": "Hi {name}, saw your work on distributed systems..."
+        },
+        {
+          "day": 4,
+          "subject": "Following up on zero-cloud telemetry",
+          "body": "Hi {name}, our benchmark is ready..."
+        }
+      ],
+      "status": "ARMED_ACTIVE",
+      "leads_contacted": 1,
+      "replies_count": 0,
+      "reply_rate_pct": 0.0,
+      "created_at": 1788760744
+    },
+    {
+      "campaign_id": "cmp-c912d25c",
+      "name": "Founders Growth Q3",
+      "target_audience": "B2B SaaS Founders",
+      "sequence_steps": [
+        {
+          "day": 1,
+          "subject": "Quick question on {company} infrastructure",
+          "body": "Hi {name}, noticed your recent growth..."
+        },
+        {
+          "day": 4,
+          "subject": "Following up on sovereign orchestration",
+          "body": "Hi {name}, sending quick demo link..."
+        }
+      ],
+      "status": "ARMED_ACTIVE",
+      "leads_contacted": 1,
+      "replies_count": 0,
+      "reply_rate_pct": 0.0,
+      "created_at": 1788760646
+    },
+    {
+      "campaign_id": "cmp-beac9b6e",
+      "name": "Founder Outreach",
+      "status": "ARMED_READY",
+      "leads_count": 50,
+      "sent_count": 12,
+      "opened_count": 8,
+      "open_rate_pct": 66.7,
+      "replied_count": 2,
+      "reply_rate_pct": 16.7,
+      "converted_count": 0,
+      "conversion_rate_pct": 0.0,
+      "steps": [
+        {
+          "step": 1,
+          "day_delay": 0,
+          "subject": "Quick inquiry",
+          "body_template": "Hi {{first_name}}, loved {{company}}."
+        },
+        {
+          "step": 2,
+          "day_delay": 3,
+          "subject": "Checking in",
+          "body_template": "Following up on {{company}}."
+        }
+      ],
+      "created_at": 1788760037
+    },
+    {
+      "campaign_id": "cmp-ai-founders-01",
+      "name": "B2B AI Agents & Quant Infrastructure Outbound",
+      "target_persona": "CTO / Head of Engineering",
+      "status": "RUNNING_ACTIVE",
+      "leads_count": 250,
+      "sent_count": 184,
+      "opened_count": 132,
+      "open_rate_pct": 71.7,
+      "replied_count": 28,
+      "reply_rate_pct": 15.2,
+      "converted_count": 9,
+      "conversion_rate_pct": 4.9,
+      "steps": [
+        {
+          "step": 1,
+          "day_delay": 0,
+          "subject": "Quick question on {{company}}'s local inference latency",
+          "body_template": "Hey {{first_name}},\n\nSaw {{company}} is scaling autonomous agent infrastructure. We just launched an on-device Metal NPU copilot cutting latency to 15ms with zero cloud data leaks.\n\nWorth a 3-min demo?",
+          "sent": 184,
+          "opened": 132
+        },
+        {
+          "step": 2,
+          "day_delay": 3,
+          "subject": "Case study: 92% hardening posture with zero external pip packages",
+          "body_template": "Hey {{first_name}},\n\nFollowing up on my note regarding {{company}}. We recently helped an AI trading firm eliminate all cloud API dependencies using pure-Python local enclaves.\n\nOpen to reviewing the breakdown?",
+          "sent": 98,
+          "opened": 64
+        },
+        {
+          "step": 3,
+          "day_delay": 6,
+          "subject": "Permission to close your file?",
+          "body_template": "Hi {{first_name}},\n\nI know you're slammed scaling {{company}}. If local offline AI infrastructure isn't a priority right now, no worries at all.\n\nCheers,\nAlex",
+          "sent": 42,
+          "opened": 31
+        }
+      ],
+      "created_at": 1788328037
+    }
+  ],
+  "deliverability_audits": {
+    "u1-os.internal": {
+      "domain": "u1-os.internal",
+      "deliverability_score": 98.0,
+      "rating": "PRIME_INBOX_PLACEMENT",
+      "inbox_placement_rate_est": "99.4%",
+      "checks": [
+        {
+          "record_type": "MX",
+          "status": "PASS",
+          "detail": "Authoritative MX mail exchange live for u1-os.internal",
+          "score_impact": 25
+        },
+        {
+          "record_type": "SPF",
+          "status": "PASS",
+          "detail": "v=spf1 ip4:127.0.0.1 include:_spf.u1-os.internal -all (Strict Hard Fail)",
+          "score_impact": 25
+        },
+        {
+          "record_type": "DKIM",
+          "status": "PASS",
+          "detail": "Selector 'u1_2026._domainkey.u1-os.internal' active with 2048-bit RSA key",
+          "score_impact": 25
+        },
+        {
+          "record_type": "DMARC",
+          "status": "PASS",
+          "detail": "v=DMARC1; p=reject; rua=mailto:dmarc@u1-os.internal; pct=100",
+          "score_impact": 25
+        }
+      ],
+      "spam_trap_risk": "ZERO",
+      "audited_at": 1788760037
+    }
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "mrr": 28600.0,
+  "arr": 343200.0,
+  "nrr_pct": 100.4,
+  "gross_churn_pct": 1.8,
+  "net_churn_pct": -2.4,
+  "ltv": 4200.0,
+  "cac": 740.0,
+  "ltv_cac_ratio": 7.37,
+  "quick_ratio": 4.27,
+  "active_subscriptions": 349,
+  "gateways": {
+    "stripe": {
+      "mrr": 36187.5,
+      "customers": 261,
+      "status": "LIVE_HEALTHY"
+    },
+    "lemonsqueezy": {
+      "mrr": 12062.5,
+      "customers": 87,
+      "status": "LIVE_HEALTHY"
+    }
+  },
+  "plans": [
+    {
+      "name": "Sovereign Pro",
+      "price_mo": 49.0,
+      "subscribers": 182,
+      "mrr": 8918.0
+    },
+    {
+      "name": "Autonomous Scale",
+      "price_mo": 199.0,
+      "subscribers": 124,
+      "mrr": 24676.0
+    },
+    {
+      "name": "Enterprise Enclave",
+      "price_mo": 999.0,
+      "subscribers": 14,
+      "mrr": 13986.0
+    },
+    {
+      "name": "Lifetime Founders",
+      "price_once": 2499.0,
+      "subscribers": 28,
+      "total_revenue": 69972.0
+    }
+  ],
+  "cohort_retention": [
+    {
+      "cohort": "2026-03",
+      "initial_users": 52,
+      "m0": 100.0,
+      "m1": 94.2,
+      "m2": 90.4,
+      "m3": 88.1,
+      "m4": 86.5,
+      "m5": 85.0
+    },
+    {
+      "cohort": "2026-04",
+      "initial_users": 68,
+      "m0": 100.0,
+      "m1": 95.6,
+      "m2": 92.6,
+      "m3": 91.2,
+      "m4": 89.7,
+      "m5": null
+    },
+    {
+      "cohort": "2026-05",
+      "initial_users": 84,
+      "m0": 100.0,
+      "m1": 96.4,
+      "m2": 94.0,
+      "m3": 92.9,
+      "m4": null,
+      "m5": null
+    },
+    {
+      "cohort": "2026-06",
+      "initial_users": 105,
+      "m0": 100.0,
+      "m1": 97.1,
+      "m2": 95.2,
+      "m3": null,
+      "m4": null,
+      "m5": null
+    },
+    {
+      "cohort": "2026-07",
+      "initial_users": 128,
+      "m0": 100.0,
+      "m1": 98.4,
+      "m2": null,
+      "m3": null,
+      "m4": null,
+      "m5": null
+    },
+    {
+      "cohort": "2026-08",
+      "initial_users": 142,
+      "m0": 100.0,
+      "m1": null,
+      "m2": null,
+      "m3": null,
+      "m4": null,
+      "m5": null
+    }
+  ],
+  "last_calculated": 1788760881
+}

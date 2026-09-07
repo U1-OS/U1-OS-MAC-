@@ -44,6 +44,32 @@
   ],
   "packets": [
     {
+      "packet_id": 881517,
+      "timestamp": 1788760880,
+      "sender": "U1-BaseStation-Gateway",
+      "destination": "^all",
+      "channel": "SovereignC2",
+      "text": "Off-grid telemetry broadcast nominal.",
+      "hop_limit": 3,
+      "hops_taken": 0,
+      "snr_db": 11.5,
+      "rssi_dbm": -48,
+      "status": "TRANSMITTED_ACKNOWLEDGED"
+    },
+    {
+      "packet_id": 986822,
+      "timestamp": 1788760743,
+      "sender": "U1-BaseStation-Gateway",
+      "destination": "^all",
+      "channel": "SovereignC2",
+      "text": "Off-grid telemetry broadcast nominal.",
+      "hop_limit": 3,
+      "hops_taken": 0,
+      "snr_db": 11.5,
+      "rssi_dbm": -48,
+      "status": "TRANSMITTED_ACKNOWLEDGED"
+    },
+    {
       "packet_id": 689498,
       "timestamp": 1788750528,
       "sender": "U1-BaseStation-Gateway",

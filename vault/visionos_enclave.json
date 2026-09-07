@@ -1,0 +1,123 @@
+{
+  "sessions": {
+    "visionos-sess-84b35619": {
+      "session_id": "visionos-sess-84b35619",
+      "device_id": "Apple-Vision-Pro-Spatial-Enclave",
+      "frame_rate_fps": 90,
+      "foveation_level": "high",
+      "color_space": "p3-d65",
+      "tracking_mode": "HAND_AND_EYE_GAZE",
+      "anchored_windows_count": 1,
+      "status": "ACTIVE_SPATIAL_SESSION",
+      "created_at": 1788760648
+    },
+    "visionos-sess-44b7f781": {
+      "session_id": "visionos-sess-44b7f781",
+      "device_id": "Apple-Vision-Pro-Spatial-Enclave",
+      "frame_rate_fps": 90,
+      "foveation_level": "high",
+      "color_space": "p3-d65",
+      "tracking_mode": "HAND_AND_EYE_GAZE",
+      "anchored_windows_count": 2,
+      "status": "ACTIVE_SPATIAL_SESSION",
+      "created_at": 1788760747
+    },
+    "visionos-sess-f200b4dc": {
+      "session_id": "visionos-sess-f200b4dc",
+      "device_id": "Apple-Vision-Pro-Spatial-Enclave",
+      "frame_rate_fps": 90,
+      "foveation_level": "high",
+      "color_space": "p3-d65",
+      "tracking_mode": "HAND_AND_EYE_GAZE",
+      "anchored_windows_count": 2,
+      "status": "ACTIVE_SPATIAL_SESSION",
+      "created_at": 1788760884
+    }
+  },
+  "anchored_windows": [
+    {
+      "window_id": "command_telemetry_hud",
+      "session_id": "default_session",
+      "transform": {
+        "translation": [
+          0.0,
+          0.0,
+          -1.2
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "status": "ANCHORED_6DOF",
+      "anchored_at": 1788760649
+    },
+    {
+      "window_id": "c2_primary_hud",
+      "session_id": "visionos-sess-f200b4dc",
+      "transform": {
+        "translation": [
+          0.0,
+          0.1,
+          -1.2
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "status": "ANCHORED_6DOF",
+      "anchored_at": 1788760884
+    }
+  ],
+  "audio_events": [
+    {
+      "event_id": "audio-296c6c86",
+      "sound_id": "haptic_pulse",
+      "position": [
+        0.4,
+        0.0,
+        -0.6
+      ],
+      "rolloff": "logarithmic",
+      "session_id": "visionos-sess-f200b4dc",
+      "timestamp": 1788760884
+    },
+    {
+      "event_id": "audio-2235af58",
+      "sound_id": "haptic_pulse",
+      "position": [
+        0.4,
+        0.0,
+        -0.6
+      ],
+      "rolloff": "logarithmic",
+      "session_id": "visionos-sess-44b7f781",
+      "timestamp": 1788760747
+    },
+    {
+      "event_id": "audio-56f14b9e",
+      "sound_id": "telemetry_pulse",
+      "position": [
+        0.5,
+        0.2,
+        -0.8
+      ],
+      "rolloff": "logarithmic",
+      "session_id": null,
+      "timestamp": 1788760649
+    }
+  ]
+}

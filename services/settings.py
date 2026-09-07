@@ -22,6 +22,13 @@ from utils import ble_airdrop
 from utils import yubikey_interlock
 from utils import lora_mesh
 from utils import sovereign_dns
+from utils import saas_metrics
+from utils import outbound_engine
+from utils import seo_tracker
+from utils import gig_radar
+from utils import pitch_deck
+from utils import spatial_globe
+from utils import visionos_bridge
 
 class SettingsService(BaseService):
     def __init__(self, config, config_path, service_registry):
@@ -435,6 +442,13 @@ class SettingsService(BaseService):
                 },
                 "lora_mesh": lora_mesh.get_lora_status(),
                 "sovereign_dns": sovereign_dns.get_dns_cache_stats(),
+                "saas_metrics": saas_metrics.get_saas_metrics_summary(),
+                "outbound_engine": outbound_engine.get_campaign_status(),
+                "seo_tracker": seo_tracker.get_seo_summary(),
+                "gig_radar": gig_radar.get_gig_feed_summary(),
+                "pitch_deck": pitch_deck.get_pitch_deck_summary(),
+                "spatial_globe": spatial_globe.get_globe_telemetry(),
+                "visionos_bridge": visionos_bridge.get_visionos_status(),
                 "server_environment": {
                     "binding": "127.0.0.1:8787 (Strict Local Only)",
                     "config_path": self.config_path,
@@ -1336,6 +1350,215 @@ class SettingsService(BaseService):
 
         elif action == "get_dns_cache_stats":
             return sovereign_dns.get_dns_cache_stats()
+
+        # Wave 5: Feature 24 - Stripe & LemonSqueezy SaaS MRR Analytics & Churn Cohort Engine
+        elif action == "calculate_saas_metrics":
+            mrr_start = float(payload.get("mrr_start", 25000.0))
+            new_mrr = float(payload.get("new_mrr", 3500.0))
+            expansion_mrr = float(payload.get("expansion_mrr", 1200.0))
+            churned_mrr = float(payload.get("churned_mrr", 800.0))
+            contraction_mrr = float(payload.get("contraction_mrr", 300.0))
+            cac = float(payload.get("cac", 420.0))
+            arpu = float(payload.get("arpu", 99.0))
+            res = saas_metrics.calculate_saas_metrics(
+                mrr_start=mrr_start,
+                new_mrr=new_mrr,
+                expansion_mrr=expansion_mrr,
+                churned_mrr=churned_mrr,
+                contraction_mrr=contraction_mrr,
+                cac=cac,
+                arpu=arpu
+            )
+            ledger.log_audit("saas", "metrics_calculated", f"MRR updated to ${res.get('mrr_end'):,.2f} (ARR: ${res.get('arr'):,.2f})", actor="saas_engine", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_cohort_retention":
+            return {"success": True, "cohorts": saas_metrics.get_cohort_retention_grid()}
+
+        elif action == "get_saas_summary":
+            return {"success": True, "summary": saas_metrics.get_saas_metrics_summary()}
+
+        # Wave 5: Feature 25 - Cold Email Campaign Outbound Automator with Deliverability & SPF/DKIM Scorer
+        elif action == "create_outbound_campaign":
+            name = str(payload.get("name", "Founders Growth Q3"))
+            audience = str(payload.get("target_audience", "B2B SaaS Founders"))
+            steps = payload.get("sequence_steps", [
+                {"day": 1, "subject": "Quick question on {company} infrastructure", "body": "Hi {name}, noticed your recent growth..."},
+                {"day": 4, "subject": "Following up on sovereign orchestration", "body": "Hi {name}, sending quick demo link..."}
+            ])
+            res = outbound_engine.create_campaign(name, audience, steps)
+            ledger.log_audit("outbound", "campaign_created", f"Campaign {name} created with {len(steps)} steps", actor="outbound_engine", status="OK")
+            self.poll()
+            return res
+
+        elif action == "dispatch_outbound_email":
+            lead = payload.get("lead", {
+                "name": str(payload.get("lead_name", "Alex")),
+                "email": str(payload.get("lead_email", "alex@enterprise-cloud.io")),
+                "company": str(payload.get("company", "Enterprise Cloud"))
+            })
+            subj = str(payload.get("template_subject", "{Hello|Hi} {name} - quick question for {company}"))
+            body = str(payload.get("template_body", "Saw your stack at {company}. Would love to share our benchmark."))
+            camp_id = payload.get("campaign_id")
+            res = outbound_engine.dispatch_email_to_lead(lead, subj, body, campaign_id=camp_id)
+            ledger.log_audit("outbound", "email_dispatched", f"Email dispatched to {lead.get('email')}", actor="smtp_engine", status="OK")
+            self.poll()
+            return res
+
+        elif action == "score_email_deliverability":
+            dom = str(payload.get("domain", "u1-os.internal"))
+            dns_recs = payload.get("dns_records")
+            return outbound_engine.score_deliverability(dom, dns_records=dns_recs)
+
+        elif action == "get_outbound_status":
+            return outbound_engine.get_campaign_status()
+
+        # Wave 5: Feature 26 - SEO Keyword Rank Tracker & Google Search Console Real-Time Monitor
+        elif action == "track_seo_keyword":
+            kw = str(payload.get("keyword", "sovereign cloud os"))
+            url = str(payload.get("target_url", "https://u1-os.internal/features"))
+            vol = int(payload.get("volume", 4800))
+            dev = str(payload.get("device", "desktop"))
+            res = seo_tracker.add_tracked_keyword(kw, url, volume=vol, device=dev)
+            ledger.log_audit("seo", "keyword_added", f"Tracking keyword '{kw}' (rank #{res.get('keyword', {}).get('rank')})", actor="seo_tracker", status="OK")
+            self.poll()
+            return res
+
+        elif action == "refresh_seo_rankings":
+            res = seo_tracker.refresh_keyword_rankings()
+            self.poll()
+            return res
+
+        elif action == "audit_page_seo":
+            url = str(payload.get("url", "https://u1-os.internal"))
+            html = str(payload.get("html_content", "<html><head><title>U1 Sovereign OS</title><meta name='description' content='Next-Gen Command Center'></head><body><h1>Command Center</h1><p>Running on Darwin arm64.</p></body></html>"))
+            return seo_tracker.audit_page_seo(url, html)
+
+        elif action == "get_seo_summary":
+            return seo_tracker.get_seo_summary()
+
+        # Wave 5: Feature 27 - Upwork & Freelance High-Ticket Job Feed Scraper & 1-Click Proposal Bidder
+        elif action == "fetch_freelance_gigs":
+            min_b = float(payload.get("min_budget", 5000.0))
+            kw_filter = payload.get("filter_keywords")
+            res = gig_radar.fetch_freelance_gigs(min_budget=min_b, filter_keywords=kw_filter)
+            self.poll()
+            return {"success": True, "count": len(res), "gigs": res}
+
+        elif action == "score_gig_opportunity":
+            gid = str(payload.get("gig_id", "gig_upwork_01"))
+            return gig_radar.score_gig_opportunity(gid)
+
+        elif action == "generate_gig_proposal":
+            gid = str(payload.get("gig_id", "gig_upwork_01"))
+            angle = str(payload.get("custom_angle", "Zero-dependency pure Python architecture with macOS hardware-level acceleration."))
+            res = gig_radar.generate_proposal(gid, custom_angle=angle)
+            ledger.log_audit("freelance", "proposal_synthesized", f"Generated high-ticket proposal for {gid} (Bid: ${res.get('proposal', {}).get('bid_amount'):,.2f})", actor="gig_radar", status="OK")
+            self.poll()
+            return res
+
+        elif action == "get_gig_feed_summary":
+            return gig_radar.get_gig_feed_summary()
+
+        # Wave 5: Feature 28 - Automated Pitch Deck Generator & Venture Investor Matchmaker
+        elif action == "generate_pitch_deck":
+            s_name = str(payload.get("startup_name", "U1 Sovereign OS"))
+            tag = str(payload.get("tagline", "The Autonomous Local-First Sovereign Operating Matrix"))
+            ask = float(payload.get("ask_amount", 5000000.0))
+            res = pitch_deck.generate_pitch_deck(
+                startup_name=s_name,
+                tagline=tag,
+                ask_amount=ask,
+                problem=payload.get("problem"),
+                solution=payload.get("solution"),
+                business_model=payload.get("business_model"),
+                market_size=payload.get("market_size")
+            )
+            ledger.log_audit("venture", "deck_generated", f"Generated institutional pitch deck for {s_name} (${ask:,.0f} raise)", actor="pitch_deck", status="OK")
+            self.poll()
+            return res
+
+        elif action == "match_venture_investors":
+            sec = str(payload.get("sector", "Autonomous Infrastructure / AI OS"))
+            stg = str(payload.get("stage", "Series A"))
+            chk = float(payload.get("check_size_k", 5000.0))
+            return pitch_deck.match_venture_investors(sector=sec, stage=stg, check_size_k=chk)
+
+        elif action == "export_pitch_deck_html":
+            deck = payload.get("deck")
+            return pitch_deck.export_deck_to_html(deck=deck)
+
+        elif action == "get_pitch_deck_summary":
+            return pitch_deck.get_pitch_deck_summary()
+
+        # Wave 5: Feature 29 - WebGL 3D Spatial Globe / Orbit Command Deck for Global Threat & Asset Telemetry
+        elif action == "project_globe_coordinates":
+            lat = float(payload.get("lat", 37.7749))
+            lon = float(payload.get("lon", -122.4194))
+            r = float(payload.get("radius", 6371.0))
+            coords = spatial_globe.project_spherical_to_cartesian(lat, lon, radius=r)
+            return {"success": True, "lat": lat, "lon": lon, "radius": r, "coordinates": coords}
+
+        elif action == "calculate_globe_distance":
+            lat1 = float(payload.get("lat1", 37.7749))
+            lon1 = float(payload.get("lon1", -122.4194))
+            lat2 = float(payload.get("lat2", 51.5074))
+            lon2 = float(payload.get("lon2", -0.1278))
+            km = spatial_globe.haversine_distance(lat1, lon1, lat2, lon2)
+            return {"success": True, "distance_km": km, "distance_miles": round(km * 0.621371, 2)}
+
+        elif action == "get_spatial_telemetry":
+            return spatial_globe.get_globe_telemetry()
+
+        elif action == "add_spatial_intel_marker":
+            m_name = str(payload.get("name", "New Tactical Asset"))
+            lat = float(payload.get("lat", 0.0))
+            lon = float(payload.get("lon", 0.0))
+            m_type = str(payload.get("type", "asset"))
+            threat = str(payload.get("threat_level", "low"))
+            res = spatial_globe.add_intel_marker(m_name, lat, lon, marker_type=m_type, threat_level=threat)
+            ledger.log_audit("spatial", "marker_added", f"Added spatial telemetry asset {m_name} at ({lat}, {lon})", actor="spatial_globe", status="OK")
+            self.poll()
+            return res
+
+        # Wave 5: Feature 30 - Apple Vision Pro (visionOS) Spatial Persona WebXR / WebGPU Enclave Bridge
+        elif action == "negotiate_visionos_session":
+            d_id = str(payload.get("device_id", "Apple-Vision-Pro-Spatial-Enclave"))
+            fov = str(payload.get("foveation_level", "high"))
+            cs = str(payload.get("color_space", "p3-d65"))
+            res = visionos_bridge.negotiate_spatial_session(device_id=d_id, foveation_level=fov, color_space=cs)
+            ledger.log_audit("visionos", "session_negotiated", f"Spatial WebXR session negotiated for {d_id} ({res.get('session', {}).get('session_id')})", actor="visionos_bridge", status="OK")
+            self.poll()
+            return res
+
+        elif action == "anchor_spatial_window":
+            sid = payload.get("session_id")
+            wid = str(payload.get("window_id", "command_telemetry_hud"))
+            t_vec = payload.get("translation", [0.0, 0.0, -1.2])
+            r_vec = payload.get("rotation", [0.0, 0.0, 0.0])
+            s_vec = payload.get("scale", [1.0, 1.0, 1.0])
+            res = visionos_bridge.anchor_spatial_window(
+                window_id=wid,
+                session_id=sid,
+                translation=t_vec,
+                rotation=r_vec,
+                scale=s_vec
+            )
+            ledger.log_audit("visionos", "window_anchored", f"Anchored 6DoF spatial window {wid}", actor="visionos_bridge", status="OK")
+            self.poll()
+            return res
+
+        elif action == "emit_spatial_audio":
+            sid = payload.get("session_id")
+            snd = str(payload.get("sound_id", "telemetry_pulse"))
+            pos = payload.get("position", [0.5, 0.2, -0.8])
+            roll = str(payload.get("rolloff", "logarithmic"))
+            res = visionos_bridge.emit_spatial_audio(sound_id=snd, position=pos, rolloff=roll, session_id=sid)
+            return res
+
+        elif action == "get_visionos_status":
+            return visionos_bridge.get_visionos_status()
 
         return super().dispatch_action(action, payload)
 

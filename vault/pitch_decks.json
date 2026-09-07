@@ -1,0 +1,472 @@
+{
+  "decks": [
+    {
+      "deck_id": "deck-d57a474d",
+      "startup_name": "U1 Sovereign OS",
+      "tagline": "The Autonomous Local-First Sovereign Operating Matrix",
+      "ask_amount": 5000000.0,
+      "total_slides": 10,
+      "slides": [
+        {
+          "slide": 1,
+          "title": "Vision & Frontier",
+          "content": "U1 Sovereign OS: The Autonomous Local-First Sovereign Operating Matrix"
+        },
+        {
+          "slide": 2,
+          "title": "The Problem",
+          "content": "Cloud dependency creates catastrophic latency, recurring subscription sprawl, and data leakage."
+        },
+        {
+          "slide": 3,
+          "title": "The Solution",
+          "content": "Pure Python zero-dependency local matrix accelerated by Apple Silicon Metal NPU and ZK enclaves."
+        },
+        {
+          "slide": 4,
+          "title": "Market Opportunity",
+          "content": "$84B TAM across autonomous AI infrastructure, quant finance, and cyber defense."
+        },
+        {
+          "slide": 5,
+          "title": "Product Architecture",
+          "content": "89 integrated subsystems, pure standard library, 100% test coverage."
+        },
+        {
+          "slide": 6,
+          "title": "Business Model",
+          "content": "High margin SaaS subscriptions ($49 - $999/mo) and lifetime enterprise sovereign node licenses."
+        },
+        {
+          "slide": 7,
+          "title": "Traction & Cohorts",
+          "content": "$28.6k MRR ($343k ARR), 103.6% Net Revenue Retention, 4.27 Quick Ratio."
+        },
+        {
+          "slide": 8,
+          "title": "Competitive Moat",
+          "content": "Zero external pip dependencies, off-grid LoRa radio mesh, physical YubiKey FIDO2 hardware gate."
+        },
+        {
+          "slide": 9,
+          "title": "Leadership Team",
+          "content": "Seasoned systems architects and cryptographic protocol engineers."
+        },
+        {
+          "slide": 10,
+          "title": "The Raise",
+          "content": "Seeking $5,000,000 Series A to expand international node infrastructure and visionOS spatial C2."
+        }
+      ],
+      "export_html_path": "/Users/u1/.gemini/antigravity-ide/scratch/command-center/exports/pitch_deck.html",
+      "created_at": 1788760883
+    },
+    {
+      "deck_id": "deck-fbe1841f",
+      "startup_name": "U1 Sovereign OS",
+      "tagline": "The Autonomous Local-First Sovereign Operating Matrix",
+      "ask_amount": 5000000.0,
+      "total_slides": 10,
+      "slides": [
+        {
+          "slide": 1,
+          "title": "Vision & Frontier",
+          "content": "U1 Sovereign OS: The Autonomous Local-First Sovereign Operating Matrix"
+        },
+        {
+          "slide": 2,
+          "title": "The Problem",
+          "content": "Cloud dependency creates catastrophic latency, recurring subscription sprawl, and data leakage."
+        },
+        {
+          "slide": 3,
+          "title": "The Solution",
+          "content": "Pure Python zero-dependency local matrix accelerated by Apple Silicon Metal NPU and ZK enclaves."
+        },
+        {
+          "slide": 4,
+          "title": "Market Opportunity",
+          "content": "$84B TAM across autonomous AI infrastructure, quant finance, and cyber defense."
+        },
+        {
+          "slide": 5,
+          "title": "Product Architecture",
+          "content": "89 integrated subsystems, pure standard library, 100% test coverage."
+        },
+        {
+          "slide": 6,
+          "title": "Business Model",
+          "content": "High margin SaaS subscriptions ($49 - $999/mo) and lifetime enterprise sovereign node licenses."
+        },
+        {
+          "slide": 7,
+          "title": "Traction & Cohorts",
+          "content": "$28.6k MRR ($343k ARR), 103.6% Net Revenue Retention, 4.27 Quick Ratio."
+        },
+        {
+          "slide": 8,
+          "title": "Competitive Moat",
+          "content": "Zero external pip dependencies, off-grid LoRa radio mesh, physical YubiKey FIDO2 hardware gate."
+        },
+        {
+          "slide": 9,
+          "title": "Leadership Team",
+          "content": "Seasoned systems architects and cryptographic protocol engineers."
+        },
+        {
+          "slide": 10,
+          "title": "The Raise",
+          "content": "Seeking $5,000,000 Series A to expand international node infrastructure and visionOS spatial C2."
+        }
+      ],
+      "export_html_path": "/Users/u1/.gemini/antigravity-ide/scratch/command-center/exports/pitch_deck.html",
+      "created_at": 1788760746
+    },
+    {
+      "deck_id": "deck-52709c3f",
+      "startup_name": "U1 Sovereign OS",
+      "tagline": "The Autonomous Local-First Sovereign Operating Matrix",
+      "ask_amount": 5000000.0,
+      "total_slides": 10,
+      "slides": [
+        {
+          "slide": 1,
+          "title": "Vision & Frontier",
+          "content": "U1 Sovereign OS: The Autonomous Local-First Sovereign Operating Matrix"
+        },
+        {
+          "slide": 2,
+          "title": "The Problem",
+          "content": "Cloud dependency creates catastrophic latency, recurring subscription sprawl, and data leakage."
+        },
+        {
+          "slide": 3,
+          "title": "The Solution",
+          "content": "Pure Python zero-dependency local matrix accelerated by Apple Silicon Metal NPU and ZK enclaves."
+        },
+        {
+          "slide": 4,
+          "title": "Market Opportunity",
+          "content": "$84B TAM across autonomous AI infrastructure, quant finance, and cyber defense."
+        },
+        {
+          "slide": 5,
+          "title": "Product Architecture",
+          "content": "89 integrated subsystems, pure standard library, 100% test coverage."
+        },
+        {
+          "slide": 6,
+          "title": "Business Model",
+          "content": "High margin SaaS subscriptions ($49 - $999/mo) and lifetime enterprise sovereign node licenses."
+        },
+        {
+          "slide": 7,
+          "title": "Traction & Cohorts",
+          "content": "$28.6k MRR ($343k ARR), 103.6% Net Revenue Retention, 4.27 Quick Ratio."
+        },
+        {
+          "slide": 8,
+          "title": "Competitive Moat",
+          "content": "Zero external pip dependencies, off-grid LoRa radio mesh, physical YubiKey FIDO2 hardware gate."
+        },
+        {
+          "slide": 9,
+          "title": "Leadership Team",
+          "content": "Seasoned systems architects and cryptographic protocol engineers."
+        },
+        {
+          "slide": 10,
+          "title": "The Raise",
+          "content": "Seeking $5,000,000 Series A to expand international node infrastructure and visionOS spatial C2."
+        }
+      ],
+      "export_html_path": "/Users/u1/.gemini/antigravity-ide/scratch/command-center/exports/pitch_deck.html",
+      "created_at": 1788760648
+    },
+    {
+      "deck_id": "deck-5990aec5",
+      "startup_name": "U1 Sovereign OS",
+      "tagline": "The Autonomous Local-First Sovereign Operating Matrix",
+      "ask_amount": 5000000.0,
+      "total_slides": 10,
+      "slides": [
+        {
+          "slide": 1,
+          "title": "Vision & Frontier",
+          "content": "U1 Sovereign OS: The Autonomous Local-First Sovereign Operating Matrix"
+        },
+        {
+          "slide": 2,
+          "title": "The Problem",
+          "content": "Cloud dependency creates catastrophic latency, recurring subscription sprawl, and data leakage."
+        },
+        {
+          "slide": 3,
+          "title": "The Solution",
+          "content": "Pure Python zero-dependency local matrix accelerated by Apple Silicon Metal NPU and ZK enclaves."
+        },
+        {
+          "slide": 4,
+          "title": "Market Opportunity",
+          "content": "$84B TAM across autonomous AI infrastructure, quant finance, and cyber defense."
+        },
+        {
+          "slide": 5,
+          "title": "Product Architecture",
+          "content": "89 integrated subsystems, pure standard library, 100% test coverage."
+        },
+        {
+          "slide": 6,
+          "title": "Business Model",
+          "content": "High margin SaaS subscriptions ($49 - $999/mo) and lifetime enterprise sovereign node licenses."
+        },
+        {
+          "slide": 7,
+          "title": "Traction & Cohorts",
+          "content": "$28.6k MRR ($343k ARR), 103.6% Net Revenue Retention, 4.27 Quick Ratio."
+        },
+        {
+          "slide": 8,
+          "title": "Competitive Moat",
+          "content": "Zero external pip dependencies, off-grid LoRa radio mesh, physical YubiKey FIDO2 hardware gate."
+        },
+        {
+          "slide": 9,
+          "title": "Leadership Team",
+          "content": "Seasoned systems architects and cryptographic protocol engineers."
+        },
+        {
+          "slide": 10,
+          "title": "The Raise",
+          "content": "Seeking $5,000,000 Series A to expand international node infrastructure and visionOS spatial C2."
+        }
+      ],
+      "export_html_path": "/Users/u1/.gemini/antigravity-ide/scratch/command-center/exports/pitch_deck.html",
+      "created_at": 1788760648
+    },
+    {
+      "deck_id": "deck-3aa4dda1",
+      "startup_name": "Command Center OS",
+      "industry": "Autonomous AI & Sovereign Systems",
+      "created_at": 1788760119,
+      "slides_count": 10,
+      "slides": [
+        {
+          "slide": 1,
+          "title": "Vision & Thesis",
+          "kicker": "THE SOVEREIGN FRONTIER",
+          "content": "Command Center OS: The institutional desktop operating system for solopreneurs, quant traders, and autonomous AI swarms."
+        },
+        {
+          "slide": 2,
+          "title": "The Problem",
+          "kicker": "CLOUD DEPENDENCY CRISIS",
+          "content": "Modern AI & crypto infrastructure suffers from massive cloud API latency, recurring vendor lock-in, and catastrophic data leakage."
+        },
+        {
+          "slide": 3,
+          "title": "The Solution",
+          "kicker": "LOCAL ACCELERATION",
+          "content": "100% on-device execution on Apple Silicon Metal NPU with pure Python zero-dependency architecture. Full cryptographic sovereignty."
+        },
+        {
+          "slide": 4,
+          "title": "Market Size",
+          "kicker": "TAM / SAM / SOM",
+          "content": "TAM: $84 Billion (Autonomous Dev & Quant Finance) | SAM: $16 Billion (High-Earning Solopreneurs) | SOM: $2.4 Billion."
+        },
+        {
+          "slide": 5,
+          "title": "Technical Moat",
+          "kicker": "PROVEN ARCHITECTURE",
+          "content": "82 integrated subsystems, 289+ passing end-to-end tests, sub-millisecond private mempools, and Zero-Knowledge solvency proofs."
+        },
+        {
+          "slide": 6,
+          "title": "Business Model",
+          "kicker": "HIGH MARGIN SAAS",
+          "content": "Hybrid revenue model: SaaS subscriptions ($49 - $999/mo), lifetime licenses, and 1-click enterprise enclave deployments."
+        },
+        {
+          "slide": 7,
+          "title": "Traction & Velocity",
+          "kicker": "RAPID EXPANSION",
+          "content": "Current Traction: $48.2k MRR ($579k ARR), +118.4% Net Revenue Retention, and 340+ active institutional nodes."
+        },
+        {
+          "slide": 8,
+          "title": "Competitive Landscape",
+          "kicker": "DEFENSIBLE ADVANTAGE",
+          "content": "Unlike web wrappers, Command Center OS operates natively on bare-metal Darwin with offline WireGuard and LoRa radio mesh failover."
+        },
+        {
+          "slide": 9,
+          "title": "Core Engineering Team",
+          "kicker": "WORLD-CLASS BUILDERS",
+          "content": "Deep domain architects with track records across distributed systems, cryptographic security, and low-latency financial engineering."
+        },
+        {
+          "slide": 10,
+          "title": "The Ask",
+          "kicker": "SEED CAPITAL ALLOCATION",
+          "content": "Raising $2.5 Million Seed to accelerate global hardware mesh expansion, enterprise sovereign sales, and visionOS spatial computing."
+        }
+      ],
+      "matched_investors": [
+        {
+          "fund": "Founders Fund",
+          "focus": "Deep Tech, Autonomous Systems, Defense, Sovereign Infra",
+          "check_size": "$1.5M - $5.0M",
+          "match_score": 97,
+          "lead_partner": "Brian Singerman / Trae Stephens",
+          "thesis_alignment": "Backing radical technological sovereignty and zero-cloud dependency architectures."
+        },
+        {
+          "fund": "Paradigm",
+          "focus": "Crypto, ZK-Proof Systems, MEV, Decentralized Protocols",
+          "check_size": "$2.0M - $10.0M",
+          "match_score": 95,
+          "lead_partner": "Matt Huang / Dan Robinson",
+          "thesis_alignment": "Deep technical excellence in private mempools, Jito bundle arbitrage, and ZK solvency."
+        },
+        {
+          "fund": "Andreessen Horowitz (a16z crypto & speedrun)",
+          "focus": "AI Swarms, Developer Tooling, Web3, Spatial Computing",
+          "check_size": "$1.0M - $4.0M",
+          "match_score": 93,
+          "lead_partner": "Chris Dixon / Marc Andreessen",
+          "thesis_alignment": "Supporting builders transforming solopreneur velocity with local neural engines."
+        }
+      ]
+    },
+    {
+      "deck_id": "deck-01182e95",
+      "startup_name": "Command Center OS",
+      "industry": "Autonomous AI & Sovereign Systems",
+      "created_at": 1788760109,
+      "slides_count": 10,
+      "slides": [
+        {
+          "slide": 1,
+          "title": "Vision & Thesis",
+          "kicker": "THE SOVEREIGN FRONTIER",
+          "content": "Command Center OS: The institutional desktop operating system for solopreneurs, quant traders, and autonomous AI swarms."
+        },
+        {
+          "slide": 2,
+          "title": "The Problem",
+          "kicker": "CLOUD DEPENDENCY CRISIS",
+          "content": "Modern AI & crypto infrastructure suffers from massive cloud API latency, recurring vendor lock-in, and catastrophic data leakage."
+        },
+        {
+          "slide": 3,
+          "title": "The Solution",
+          "kicker": "LOCAL ACCELERATION",
+          "content": "100% on-device execution on Apple Silicon Metal NPU with pure Python zero-dependency architecture. Full cryptographic sovereignty."
+        },
+        {
+          "slide": 4,
+          "title": "Market Size",
+          "kicker": "TAM / SAM / SOM",
+          "content": "TAM: $84 Billion (Autonomous Dev & Quant Finance) | SAM: $16 Billion (High-Earning Solopreneurs) | SOM: $2.4 Billion."
+        },
+        {
+          "slide": 5,
+          "title": "Technical Moat",
+          "kicker": "PROVEN ARCHITECTURE",
+          "content": "82 integrated subsystems, 289+ passing end-to-end tests, sub-millisecond private mempools, and Zero-Knowledge solvency proofs."
+        },
+        {
+          "slide": 6,
+          "title": "Business Model",
+          "kicker": "HIGH MARGIN SAAS",
+          "content": "Hybrid revenue model: SaaS subscriptions ($49 - $999/mo), lifetime licenses, and 1-click enterprise enclave deployments."
+        },
+        {
+          "slide": 7,
+          "title": "Traction & Velocity",
+          "kicker": "RAPID EXPANSION",
+          "content": "Current Traction: $48.2k MRR ($579k ARR), +118.4% Net Revenue Retention, and 340+ active institutional nodes."
+        },
+        {
+          "slide": 8,
+          "title": "Competitive Landscape",
+          "kicker": "DEFENSIBLE ADVANTAGE",
+          "content": "Unlike web wrappers, Command Center OS operates natively on bare-metal Darwin with offline WireGuard and LoRa radio mesh failover."
+        },
+        {
+          "slide": 9,
+          "title": "Core Engineering Team",
+          "kicker": "WORLD-CLASS BUILDERS",
+          "content": "Deep domain architects with track records across distributed systems, cryptographic security, and low-latency financial engineering."
+        },
+        {
+          "slide": 10,
+          "title": "The Ask",
+          "kicker": "SEED CAPITAL ALLOCATION",
+          "content": "Raising $2.5 Million Seed to accelerate global hardware mesh expansion, enterprise sovereign sales, and visionOS spatial computing."
+        }
+      ],
+      "matched_investors": [
+        {
+          "fund": "Founders Fund",
+          "focus": "Deep Tech, Autonomous Systems, Defense, Sovereign Infra",
+          "check_size": "$1.5M - $5.0M",
+          "match_score": 97,
+          "lead_partner": "Brian Singerman / Trae Stephens",
+          "thesis_alignment": "Backing radical technological sovereignty and zero-cloud dependency architectures."
+        },
+        {
+          "fund": "Paradigm",
+          "focus": "Crypto, ZK-Proof Systems, MEV, Decentralized Protocols",
+          "check_size": "$2.0M - $10.0M",
+          "match_score": 95,
+          "lead_partner": "Matt Huang / Dan Robinson",
+          "thesis_alignment": "Deep technical excellence in private mempools, Jito bundle arbitrage, and ZK solvency."
+        },
+        {
+          "fund": "Andreessen Horowitz (a16z crypto & speedrun)",
+          "focus": "AI Swarms, Developer Tooling, Web3, Spatial Computing",
+          "check_size": "$1.0M - $4.0M",
+          "match_score": 93,
+          "lead_partner": "Chris Dixon / Marc Andreessen",
+          "thesis_alignment": "Supporting builders transforming solopreneur velocity with local neural engines."
+        }
+      ]
+    }
+  ],
+  "investor_roster": [
+    {
+      "fund": "Founders Fund",
+      "focus": "Deep Tech, Autonomous Systems, Defense, Sovereign Infra",
+      "check_size": "$1.5M - $5.0M",
+      "match_score": 97,
+      "lead_partner": "Brian Singerman / Trae Stephens",
+      "thesis_alignment": "Backing radical technological sovereignty and zero-cloud dependency architectures."
+    },
+    {
+      "fund": "Paradigm",
+      "focus": "Crypto, ZK-Proof Systems, MEV, Decentralized Protocols",
+      "check_size": "$2.0M - $10.0M",
+      "match_score": 95,
+      "lead_partner": "Matt Huang / Dan Robinson",
+      "thesis_alignment": "Deep technical excellence in private mempools, Jito bundle arbitrage, and ZK solvency."
+    },
+    {
+      "fund": "Andreessen Horowitz (a16z crypto & speedrun)",
+      "focus": "AI Swarms, Developer Tooling, Web3, Spatial Computing",
+      "check_size": "$1.0M - $4.0M",
+      "match_score": 93,
+      "lead_partner": "Chris Dixon / Marc Andreessen",
+      "thesis_alignment": "Supporting builders transforming solopreneur velocity with local neural engines."
+    },
+    {
+      "fund": "Lux Capital",
+      "focus": "Physical Tech, RF Mesh, Hardware Tokens, CoreML",
+      "check_size": "$1.0M - $3.0M",
+      "match_score": 91,
+      "lead_partner": "Josh Wolfe",
+      "thesis_alignment": "Investing in off-grid LoRa radio mesh, sovereign enclaves, and counter-surveillance."
+    }
+  ]
+}

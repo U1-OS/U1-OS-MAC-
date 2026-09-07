@@ -1,0 +1,76 @@
+{
+  "domain": "u1-os.internal",
+  "organic_clicks": 14820,
+  "total_impressions": 112400,
+  "avg_position": 2.4,
+  "avg_ctr_pct": 13.2,
+  "keywords": [
+    {
+      "keyword": "sovereign enterprise command matrix",
+      "rank": 3,
+      "volume": 6200,
+      "target_url": "https://u1-os.internal/enterprise",
+      "device": "desktop",
+      "impressions": 12400,
+      "clicks": 744,
+      "tracked_at": 1788760882
+    },
+    {
+      "keyword": "sovereign cloud os",
+      "rank": 3,
+      "volume": 4800,
+      "target_url": "https://u1-os.internal/features",
+      "device": "desktop",
+      "impressions": 9600,
+      "clicks": 576,
+      "tracked_at": 1788760646
+    },
+    {
+      "keyword": "local ai agent macos",
+      "position": 1,
+      "change": "+2",
+      "volume": 8400,
+      "ctr_pct": 28.4,
+      "impressions": 24200,
+      "difficulty": 42
+    },
+    {
+      "keyword": "sovereign private mempool bot",
+      "position": 2,
+      "change": "+1",
+      "volume": 3200,
+      "ctr_pct": 21.2,
+      "impressions": 11800,
+      "difficulty": 58
+    },
+    {
+      "keyword": "solana flash loan arbitrage",
+      "position": 3,
+      "change": "0",
+      "volume": 12600,
+      "ctr_pct": 18.5,
+      "impressions": 48100,
+      "difficulty": 64
+    },
+    {
+      "keyword": "zero knowledge solvency proof",
+      "position": 4,
+      "change": "+3",
+      "volume": 2900,
+      "ctr_pct": 14.1,
+      "impressions": 8900,
+      "difficulty": 49
+    },
+    {
+      "keyword": "wireguard mesh p2p mac",
+      "position": 2,
+      "change": "+1",
+      "volume": 5100,
+      "ctr_pct": 22.8,
+      "impressions": 19400,
+      "difficulty": 38
+    }
+  ],
+  "last_crawl_at": 1788760060,
+  "last_synced": 1788760882
+}

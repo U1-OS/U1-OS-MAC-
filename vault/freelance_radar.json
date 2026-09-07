@@ -1,0 +1,115 @@
+{
+  "jobs": [
+    {
+      "job_id": "gig-solana-mev-01",
+      "title": "Architect Private Mempool & Jito Bundle Arbitrage Engine",
+      "client": "Stealth Trading Desk (Singapore)",
+      "budget": "$25,000 - $40,000",
+      "budget_num": 35000,
+      "posted_mins_ago": 12,
+      "payment_verified": true,
+      "client_spend": "$480,000+",
+      "win_probability": 94,
+      "skills": [
+        "Rust",
+        "Solana",
+        "Jito-Solana",
+        "Mempool",
+        "Python"
+      ],
+      "summary": "Looking for senior systems engineer to build sub-millisecond cyclic arbitrage bot targeting Raydium, Orca, and Meteora liquidity pools.",
+      "status": "OPEN_PRIME_TARGET"
+    },
+    {
+      "job_id": "gig-coreml-whisper-02",
+      "title": "On-Device Apple Silicon Metal NPU Local Speech Copilot",
+      "client": "Privacy-First HealthTech (San Francisco)",
+      "budget": "$15,000 - $20,000",
+      "budget_num": 18000,
+      "posted_mins_ago": 28,
+      "payment_verified": true,
+      "client_spend": "$190,000+",
+      "win_probability": 96,
+      "skills": [
+        "macOS",
+        "CoreML",
+        "Metal",
+        "Whisper",
+        "Swift",
+        "Python"
+      ],
+      "summary": "Need production on-device transcription engine running fully offline on M-series chips without external cloud API calls.",
+      "status": "OPEN_PRIME_TARGET"
+    },
+    {
+      "job_id": "gig-zk-proof-vault-03",
+      "title": "Zero-Knowledge Solvency & Pedersen Commitment Engine",
+      "client": "DeFi Custody Protocol (Zug, Switzerland)",
+      "budget": "$30,000 - $50,000",
+      "budget_num": 45000,
+      "posted_mins_ago": 45,
+      "payment_verified": true,
+      "client_spend": "$750,000+",
+      "win_probability": 91,
+      "skills": [
+        "Cryptography",
+        "ZK-SNARKs",
+        "Fiat-Shamir",
+        "Python",
+        "Solvency"
+      ],
+      "summary": "Implement non-interactive zero-knowledge solvency verification allowing clients to verify reserves without disclosing private asset balances.",
+      "status": "OPEN_PRIME_TARGET"
+    }
+  ],
+  "proposals": [
+    {
+      "proposal_id": "bid-5536c832",
+      "gig_id": "gig_solana_mev_01",
+      "title": "Architect Private Mempool & Jito Bundle Arbitrage Engine",
+      "bid_amount": 35000.0,
+      "timeline_days": 14,
+      "cover_letter": "Hi team, we specialize in pure Python zero-dependency systems engineering for 'Architect Private Mempool & Jito Bundle Arbitrage Engine'. Zero-dependency pure Python architecture with macOS hardware-level acceleration.",
+      "generated_at": 1788760883
+    },
+    {
+      "proposal_id": "bid-3537fde6",
+      "gig_id": "gig_solana_mev_01",
+      "title": "Architect Private Mempool & Jito Bundle Arbitrage Engine",
+      "bid_amount": 35000.0,
+      "timeline_days": 14,
+      "cover_letter": "Hi team, we specialize in pure Python zero-dependency systems engineering for 'Architect Private Mempool & Jito Bundle Arbitrage Engine'. Zero-dependency pure Python architecture with macOS hardware-level acceleration.",
+      "generated_at": 1788760746
+    },
+    {
+      "proposal_id": "bid-673497fb",
+      "gig_id": "gig_upwork_01",
+      "title": "Architect Private Mempool & Jito Bundle Arbitrage Engine",
+      "bid_amount": 35000.0,
+      "timeline_days": 14,
+      "cover_letter": "Hi team, we specialize in pure Python zero-dependency systems engineering for 'Architect Private Mempool & Jito Bundle Arbitrage Engine'. Zero-dependency pure Python architecture with macOS hardware-level acceleration.",
+      "generated_at": 1788760647
+    },
+    {
+      "proposal_id": "bid-06a751d5",
+      "job_id": "gig-solana-mev-01",
+      "job_title": "Architect Private Mempool & Jito Bundle Arbitrage Engine",
+      "client": "Stealth Trading Desk (Singapore)",
+      "bid_amount": "$25,000 - $40,000",
+      "proposal_body": "Hi Stealth Trading Desk (Singapore),\n\nI specialize in building sovereign high-performance infrastructure matching your exact requirements for 'Architect Private Mempool & Jito Bundle Arbitrage Engine'.\n\nKey Technical Credentials & Proven Architecture:\n1. Pure zero-dependency engineering with 100% test coverage and native hardware acceleration.\n2. Proven track record deploying Rust, Solana, Jito-Solana in production with institutional latency floors.\n3. Rapid 14-day turnaround with end-to-end integration and automated test harnesses.\n\nReady to review technical specifications and share our working live architecture.\n\nBest regards,\nCommand Center Core Team",
+      "win_probability": 94,
+      "status": "DISPATCHED_PENDING_CLIENT_RESPONSE",
+      "timestamp": 1788760082
+    },
+    {
+      "proposal_id": "bid-9821",
+      "job_id": "gig-solana-mev-01",
+      "client": "Stealth Trading Desk (Singapore)",
+      "bid_amount": "$35,000",
+      "pitch_summary": "We have engineered production flash-loan triangular arbitrage engines on Solana with sub-second Jito bundle dispatch.",
+      "status": "INTERVIEW_OFFERED",
+      "timestamp": 1788756482
+    }
+  ],
+  "total_pipeline_value": 98000
+}

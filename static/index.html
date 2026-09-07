@@ -2535,6 +2535,253 @@
               <span class="footer-meta mono">PROTOCOL: ENS SMART CONTRACTS &bull; UNSTOPPABLE DOMAINS CNS/UNS &bull; ZERO ISP TELEMETRY</span>
             </footer>
           </article>
+
+          <!-- Widget 24: Stripe & LemonSqueezy SaaS MRR Analytics & Churn Cohort Engine [Span 12] -->
+          <article class="slab-panel span-12" id="settingsSaasMrrPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-green);">GROWTH // 24 &bull; SAAS REVENUE MATRIX</span>
+                <h2 class="slab-title">STRIPE &amp; LEMONSQUEEZY MRR ANALYTICS &bull; CHURN COHORT ENGINE</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="saasMrrBadge" style="background:rgba(0,255,136,0.1); color:var(--neon-green); border:1px solid rgba(0,255,136,0.3); padding:2px 8px; font-size:10px;">MRR: $28,600.00</span>
+                <span class="badge mono" id="saasNrrBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:2px 8px; font-size:10px;">NRR: 103.6%</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.calculateSaasMetrics()">UPDATE MRR</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsSaasMrrContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:10px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ANNUAL RUN RATE (ARR)</div>
+                  <div class="mono" id="saasArrVal" style="color:var(--neon-green); font-weight:600; font-size:13px;">$343,200.00</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">NET RETENTION (NRR)</div>
+                  <div class="mono" id="saasNrrVal" style="color:var(--neon-cyan); font-weight:600; font-size:13px;">103.6%</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">LTV / CAC RATIO</div>
+                  <div class="mono" id="saasLtvCacVal" style="color:var(--gold); font-weight:600; font-size:13px;">8.25x</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:10px;">QUICK RATIO</div>
+                  <div class="mono" id="saasQuickRatioVal" style="color:var(--neon-purple); font-weight:600; font-size:13px;">4.27 (ELITE)</div>
+                </div>
+              </div>
+              <div id="saasCohortsGrid" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:12px;">Real-time Stripe/LemonSqueezy webhook stream connected. Retention cohort grid calculated.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">INGESTION: WEBHOOKS &bull; HMAC-SHA256 SIGNED &bull; ZERO LATENCY MRR DECOMPOSITION</span>
+            </footer>
+          </article>
+
+          <!-- Widget 25: Cold Email Campaign Outbound Automator with Deliverability Scorer [Span 6] -->
+          <article class="slab-panel span-6" id="settingsOutboundPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--gold);">OUTBOUND // 25 &bull; PIPELINE ENCLAVE</span>
+                <h2 class="slab-title">COLD OUTBOUND AUTOMATOR &amp; SPF/DKIM SCORER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="outboundDeliverabilityBadge" style="background:rgba(255,190,0,0.1); color:var(--gold); border:1px solid rgba(255,190,0,0.3); padding:2px 8px; font-size:10px;">DELIVERABILITY: 96%</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.dispatchOutboundCampaign()">SEND TEST</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsOutboundContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">LEADS CONTACTED</div>
+                  <div class="mono" id="outboundLeadsCount" style="color:var(--neon-cyan); font-weight:600;">148 DISPATCHED</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">REPLY RATE</div>
+                  <div class="mono" id="outboundReplyRate" style="color:var(--neon-green); font-weight:600;">18.4% REPLY RATE</div>
+                </div>
+              </div>
+              <div id="outboundCampaignLog" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">Spintax parser primed. Anti-spam throttle active at 45s intervals.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">COMPLIANCE: CAN-SPAM COMPLIANT &bull; MX/SPF/DKIM/DMARC PRE-AUDITED</span>
+            </footer>
+          </article>
+
+          <!-- Widget 26: SEO Keyword Rank Tracker & Google Search Console [Span 6] -->
+          <article class="slab-panel span-6" id="settingsSeoPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">ORGANIC // 26 &bull; SEARCH RADAR</span>
+                <h2 class="slab-title">SEO KEYWORD RANK TRACKER &amp; GOOGLE CONSOLE</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="seoRankBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:2px 8px; font-size:10px;">TOP 10: 4 KEYWORDS</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.refreshSeoRankings()">REFRESH RANKS</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsSeoContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">AVG RANK POSITION</div>
+                  <div class="mono" id="seoAvgRank" style="color:var(--neon-green); font-weight:600;">#4.2 AVERAGE</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">ESTIMATED CLICKS</div>
+                  <div class="mono" id="seoEstClicks" style="color:var(--neon-cyan); font-weight:600;">1,420 / MO</div>
+                </div>
+              </div>
+              <div id="seoKeywordsList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">Tracking target keywords: sovereign os, self-hosted command center, privacy matrix.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">ALGORITHM: SERP API HARVESTER &bull; CORE WEB VITALS ON-DEVICE AUDITOR</span>
+            </footer>
+          </article>
+
+          <!-- Widget 27: Upwork & Freelance High-Ticket Job Feed Scraper [Span 6] -->
+          <article class="slab-panel span-6" id="settingsGigRadarPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-purple);">SOLOPRENEUR // 27 &bull; HIGH-TICKET RADAR</span>
+                <h2 class="slab-title">FREELANCE HIGH-TICKET GIG FEED &amp; AI BIDDER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="gigRadarBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:2px 8px; font-size:10px;">4 HIGH-TICKET GIGS</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.scanFreelanceGigs()">SCAN GIGS</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsGigRadarContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">OPPORTUNITY PIPELINE</div>
+                  <div class="mono" id="gigPipelineVal" style="color:var(--neon-green); font-weight:600;">$53,500 TOTAL VALUE</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">AVG WIN PROBABILITY</div>
+                  <div class="mono" id="gigWinProbVal" style="color:var(--gold); font-weight:600;">88.5% WIN RATING</div>
+                </div>
+              </div>
+              <div id="gigFeedList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">Scraping RSS feeds: Upwork, Freelancer, Gun.io ($5k - $50k+ contracts).</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">AI SYNTHESIS: 1-CLICK BID PROPOSAL &bull; REPO PORTFOLIO INJECTION</span>
+            </footer>
+          </article>
+
+          <!-- Widget 28: Automated Pitch Deck Generator & Venture Investor Matchmaker [Span 6] -->
+          <article class="slab-panel span-6" id="settingsPitchDeckPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-green);">VENTURE // 28 &bull; CAPITAL SYNDICATE</span>
+                <h2 class="slab-title">PITCH DECK GENERATOR &amp; VENTURE MATCHMAKER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="deckStatusBadge" style="background:rgba(0,255,136,0.1); color:var(--neon-green); border:1px solid rgba(0,255,136,0.3); padding:2px 8px; font-size:10px;">10 SLIDES READY</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generatePitchDeck()">BUILD DECK</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsPitchDeckContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">TARGET FUNDING ROUND</div>
+                  <div class="mono" id="deckAskVal" style="color:var(--neon-cyan); font-weight:600;">$5,000,000 SERIES A</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">MATCHED TIER-1 FUNDS</div>
+                  <div class="mono" id="deckMatchedFunds" style="color:var(--gold); font-weight:600;">Founders Fund &bull; Lux &bull; a16z</div>
+                </div>
+              </div>
+              <div id="pitchDeckSlidesPreview" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">Interactive slide deck exported to HTML bundle ready for partner pitch meetings.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">DECK ENGINE: 10 INSTITUTIONAL SLIDES &bull; EXPORT: exports/pitch_deck.html</span>
+            </footer>
+          </article>
+
+          <!-- Widget 29: WebGL 3D Spatial Globe / Orbit Command Deck [Span 6] -->
+          <article class="slab-panel span-6" id="settingsSpatialGlobePanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-cyan);">ORBIT // 29 &bull; SPATIAL COMMAND</span>
+                <h2 class="slab-title">WEBGL 3D SPATIAL GLOBE &amp; ORBIT TELEMETRY</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="spatialGlobeBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:2px 8px; font-size:10px;">6 ASSETS TRACKED</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.renderSpatialGlobe()">PROJECT GLOBE</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsSpatialGlobeContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">SPATIAL CARTESIAN</div>
+                  <div class="mono" id="spatialCoordsVal" style="color:var(--neon-green); font-weight:600;">R: 6371km | 3D VECTORS</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">ORBITAL SATELLITES</div>
+                  <div class="mono" id="spatialSatellitesVal" style="color:var(--neon-purple); font-weight:600;">2 CONSTELLATIONS</div>
+                </div>
+              </div>
+              <div id="spatialGlobeMarkersList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">Spherical-to-Cartesian 3D coordinate projection matrix active. Threat vectors mapped.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">GEOMETRY: HAVERSINE GREAT-CIRCLE &bull; CARTESIAN X/Y/Z PROJECTION &bull; REAL-TIME</span>
+            </footer>
+          </article>
+
+          <!-- Widget 30: Apple Vision Pro (visionOS) Spatial Persona WebXR Bridge [Span 6] -->
+          <article class="slab-panel span-6" id="settingsVisionOsPanel" data-service="settings">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-purple);">VISIONOS // 30 &bull; SPATIAL COMPUTING</span>
+                <h2 class="slab-title">APPLE VISION PRO WEBXR &amp; SPATIAL ENCLAVE</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
+                <span class="badge mono" id="visionOsBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:2px 8px; font-size:10px;">WEBXR IMMERSIVE</span>
+                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.negotiateVisionOsSession()">SPATIAL SYNC</button>
+              </div>
+            </header>
+            <div class="slab-body" id="settingsVisionOsContainer" style="padding:12px; font-size:11px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">6DoF TRACKING</div>
+                  <div class="mono" id="visionTrackingVal" style="color:var(--neon-green); font-weight:600;">HAND + EYE GAZE ACTIVE</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
+                  <div class="mono" style="color:var(--text-muted); font-size:9px;">SPATIAL WINDOWS</div>
+                  <div class="mono" id="visionWindowsVal" style="color:var(--neon-cyan); font-weight:600;">3 HUD PANELS ANCHORED</div>
+                </div>
+              </div>
+              <div id="visionOsWindowsList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
+                <div style="color:var(--text-muted); text-align:center; padding:10px;">visionOS 2.2 WebXR session ready. Spatial persona enclave synchronized.</div>
+              </div>
+            </div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">IMMERSIVE: 6DoF HEAD TRACKING &bull; SPATIAL AUDIO HRTF &bull; COLOR P3-D65</span>
+            </footer>
+          </article>
         </section>
 
       </main>

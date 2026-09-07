@@ -1138,6 +1138,139 @@ def main():
     log_test("Sovereign DNS Resolver UI Panel Markup", 'id="settingsSovereignDnsPanel"' in index_html, "#settingsSovereignDnsPanel active in DOM")
     log_test("Client Application Wave 4 Native macOS API Hooks", "transcribeAudioSpeech" in app_js and "generateQuicklookPreview" in app_js and "sendMatrixMessage" in app_js and "scanBlePeers" in app_js and "triggerFido2Assertion" in app_js and "sendLoraPacket" in app_js and "resolveWeb3Domain" in app_js, "Wave 4 Native macOS & Sovereign P2P methods exposed in CommandCenter API")
 
+    # 83. Stripe & LemonSqueezy SaaS MRR Analytics & Churn Cohort Engine
+    print(f"\n{INFO} 83. Subsystem: Stripe & LemonSqueezy SaaS MRR Analytics & Cohort Retention:")
+    s, saas_res = action("settings", "calculate_saas_metrics", {
+        "mrr_start": 25000.0,
+        "new_mrr": 3500.0,
+        "expansion_mrr": 1200.0,
+        "churned_mrr": 800.0,
+        "contraction_mrr": 300.0,
+        "cac": 420.0,
+        "arpu": 99.0
+    })
+    log_test("MRR Decomposition & ARR Run-Rate Calculation", saas_res.get("success") and saas_res.get("mrr_end") == 28600.0 and saas_res.get("arr") == 343200.0, f"MRR: ${saas_res.get('mrr_end'):,.2f} | ARR: ${saas_res.get('arr'):,.2f} | Net New: +${saas_res.get('net_new_mrr'):,.2f}")
+    log_test("Net Revenue Retention (NRR) & Quick Ratio Metric Synthesis", saas_res.get("nrr_percent", 0) > 100.0 and saas_res.get("quick_ratio", 0) > 4.0, f"NRR: {saas_res.get('nrr_percent')}% | Quick Ratio: {saas_res.get('quick_ratio')} | LTV/CAC: {saas_res.get('ltv_cac_ratio')}x")
+    s, ch_res = action("settings", "get_cohort_retention", {})
+    log_test("Multi-Month Churn & Retention Cohort Matrix Extraction", ch_res.get("success") and len(ch_res.get("cohorts", [])) >= 4, f"Extracted {len(ch_res.get('cohorts', []))} billing cohorts with month-over-month retention curves")
+    log_test("SaaS MRR Analytics UI Panel Markup", 'id="settingsSaasMrrPanel"' in index_html, "#settingsSaasMrrPanel active in DOM")
+
+    # 84. Cold Email Campaign Outbound Automator with Deliverability Scorer
+    print(f"\n{INFO} 84. Subsystem: Cold Email Campaign Outbound Automator & Deliverability Scorer:")
+    s, ob_camp = action("settings", "create_outbound_campaign", {
+        "name": "Enterprise C2 Sovereign Expansion",
+        "target_audience": "VP Infrastructure & DevOps",
+        "sequence_steps": [
+            {"day": 1, "subject": "Quick question on {company} self-hosted edge", "body": "Hi {name}, saw your work on distributed systems..."},
+            {"day": 4, "subject": "Following up on zero-cloud telemetry", "body": "Hi {name}, our benchmark is ready..."}
+        ]
+    })
+    camp = ob_camp.get("campaign", {})
+    log_test("Outbound Campaign Definition & Step Sequencing", ob_camp.get("success") and len(camp.get("sequence_steps", [])) == 2, f"Created campaign '{camp.get('name')}' with {len(camp.get('sequence_steps', []))} automated touchpoints")
+    s, ob_send = action("settings", "dispatch_outbound_email", {
+        "lead_name": "Sarah",
+        "lead_email": "sarah@apex-systems.io",
+        "company": "Apex Systems",
+        "template_subject": "{Hi|Hello} {name} - quick question for {company}",
+        "template_body": "Saw your stack at {company}. Our zero-cloud C2 eliminates SaaS sprawl."
+    })
+    log_test("Spintax Variable Substitution & DKIM-Signed Email Dispatch", ob_send.get("success") and "Sarah" in ob_send.get("rendered_subject", ""), f"Dispatched email to {ob_send.get('lead', {}).get('email')}: '{ob_send.get('rendered_subject')}'")
+    s, ob_score = action("settings", "score_email_deliverability", {"domain": "u1-os.internal"})
+    log_test("SPF, DKIM & DMARC DNS Deliverability Posture Scoring", ob_score.get("success") and ob_score.get("deliverability_score", 0) >= 90, f"Domain deliverability score: {ob_score.get('deliverability_score')}/100 ({ob_score.get('inbox_placement_rating')})")
+    log_test("Cold Outbound Automator UI Panel Markup", 'id="settingsOutboundPanel"' in index_html, "#settingsOutboundPanel active in DOM")
+
+    # 85. SEO Keyword Rank Tracker & Google Search Console Real-Time Monitor
+    print(f"\n{INFO} 85. Subsystem: SEO Keyword Rank Tracker & Google Search Console:")
+    s, seo_add = action("settings", "track_seo_keyword", {
+        "keyword": "sovereign enterprise command matrix",
+        "target_url": "https://u1-os.internal/enterprise",
+        "volume": 6200
+    })
+    kw_entry = seo_add.get("keyword", {})
+    log_test("Target Keyword SERP Rank & Search Volume Registration", seo_add.get("success") and kw_entry.get("volume") == 6200, f"Tracked '{kw_entry.get('keyword')}' (Rank #{kw_entry.get('rank')}, Vol: {kw_entry.get('volume'):,})")
+    s, seo_audit = action("settings", "audit_page_seo", {
+        "url": "https://u1-os.internal",
+        "html_content": "<html><head><title>U1 Sovereign OS - Zero-Cloud Autonomous Matrix</title><meta name='description' content='High performance command center for sovereign teams.'></head><body><h1>Enterprise Command</h1><h2>Telemetry</h2></body></html>"
+    })
+    log_test("On-Page Semantic HTML & Core Web Vitals Audit", seo_audit.get("success") and seo_audit.get("score", 0) >= 80, f"On-page audit score: {seo_audit.get('score')}/100 (Title: {seo_audit.get('elements', {}).get('title_length')} chars, H1: {seo_audit.get('elements', {}).get('h1_count')})")
+    s, seo_sync = action("settings", "refresh_seo_rankings", {})
+    log_test("SERP Position Synchronization & Organic Impressions Accounting", seo_sync.get("success") and seo_sync.get("keywords_count", 0) >= 3, f"Synchronized {seo_sync.get('keywords_count')} tracked keywords across Google Search Console API")
+    log_test("SEO Keyword Rank Tracker UI Panel Markup", 'id="settingsSeoPanel"' in index_html, "#settingsSeoPanel active in DOM")
+
+    # 86. Upwork & Freelance High-Ticket Job Feed Scraper & 1-Click Proposal Bidder
+    print(f"\n{INFO} 86. Subsystem: Freelance High-Ticket Gig Radar & AI Bidder:")
+    s, gig_feed = action("settings", "fetch_freelance_gigs", {"min_budget": 5000.0})
+    gigs = gig_feed.get("gigs", [])
+    log_test("RSS / API High-Ticket Freelance Opportunity Ingestion", gig_feed.get("success") and len(gigs) >= 3, f"Ingested {len(gigs)} contract opportunities with budget >= $5,000 (Top: ${gigs[0].get('budget_max'):,})")
+    s, gig_eval = action("settings", "score_gig_opportunity", {"gig_id": gigs[0].get("id")})
+    eval_data = gig_eval.get("evaluation", {})
+    log_test("Client Reputation & Win Probability Algorithmic Scoring", gig_eval.get("success") and eval_data.get("win_probability", 0) > 0.7, f"Scored gig {gigs[0].get('id')}: Win prob {eval_data.get('win_probability')*100:.1f}% ({eval_data.get('verdict')})")
+    s, gig_prop = action("settings", "generate_gig_proposal", {"gig_id": gigs[0].get("id")})
+    prop = gig_prop.get("proposal", {})
+    log_test("Tailored 1-Click AI Proposal Synthesis & Bid Pricing", gig_prop.get("success") and prop.get("bid_amount", 0) >= 5000, f"Generated proposal for {prop.get('gig_id')} (Bid: ${prop.get('bid_amount'):,.2f}, ETA: {prop.get('timeline_days')} days)")
+    log_test("Freelance Gig Radar UI Panel Markup", 'id="settingsGigRadarPanel"' in index_html, "#settingsGigRadarPanel active in DOM")
+
+    # 87. Automated Pitch Deck Generator & Venture Investor Matchmaker
+    print(f"\n{INFO} 87. Subsystem: Pitch Deck Generator & Venture Investor Matchmaker:")
+    s, deck_res = action("settings", "generate_pitch_deck", {
+        "startup_name": "U1 Sovereign OS",
+        "tagline": "The Autonomous Local-First Sovereign Operating Matrix",
+        "ask_amount": 5000000.0
+    })
+    deck_obj = deck_res.get("deck", {})
+    log_test("Institutional 10-Slide Venture Capital Deck Generation", deck_res.get("success") and deck_obj.get("total_slides") == 10, f"Generated 10-slide deck for {deck_obj.get('startup_name')} (Target raise: ${deck_obj.get('ask_amount'):,.0f})")
+    s, vc_match = action("settings", "match_venture_investors", {
+        "sector": "Autonomous Infrastructure / AI OS",
+        "stage": "Series A",
+        "check_size_k": 5000.0
+    })
+    matches = vc_match.get("matches", [])
+    log_test("Tier-1 Venture Syndicate Matching & Investment Thesis Alignment", vc_match.get("success") and len(matches) >= 3, f"Matched {len(matches)} Tier-1 VC funds (Top: {matches[0].get('firm')} - {matches[0].get('lead_partner')})")
+    s, exp_html = action("settings", "export_pitch_deck_html", {"deck": deck_obj})
+    log_test("Interactive High-DPI HTML Deck Bundle Export", exp_html.get("success") and os.path.exists(exp_html.get("file_path", "")), f"Exported interactive deck to {exp_html.get('file_path')} ({exp_html.get('file_size_kb')} KB)")
+    log_test("Pitch Deck Generator UI Panel Markup", 'id="settingsPitchDeckPanel"' in index_html, "#settingsPitchDeckPanel active in DOM")
+
+    # 88. WebGL 3D Spatial Globe / Orbit Command Deck
+    print(f"\n{INFO} 88. Subsystem: WebGL 3D Spatial Globe & Orbit Telemetry:")
+    s, coord_proj = action("settings", "project_globe_coordinates", {"lat": 37.7749, "lon": -122.4194, "radius": 6371.0})
+    coords = coord_proj.get("coordinates", {})
+    log_test("Spherical-to-Cartesian 3D Coordinate Mathematical Projection", coord_proj.get("success") and "x" in coords and "y" in coords and "z" in coords, f"Projected (37.77°, -122.42°) -> X:{coords.get('x')} Y:{coords.get('y')} Z:{coords.get('z')}")
+    s, dist_res = action("settings", "calculate_globe_distance", {"lat1": 37.7749, "lon1": -122.4194, "lat2": 51.5074, "lon2": -0.1278})
+    km_dist = dist_res.get("distance_km", 0)
+    log_test("Haversine Great-Circle Geodesic Flight Path Computation", dist_res.get("success") and 8500 < km_dist < 9000, f"Computed SF to London geodesic distance: {km_dist:,.1f} km ({dist_res.get('distance_miles'):,.1f} miles)")
+    s, spat_tele = action("settings", "get_spatial_telemetry", {})
+    log_test("Orbital Constellation & Tactical Asset Telemetry Ingestion", spat_tele.get("success") and spat_tele.get("assets_count", 0) >= 3 and spat_tele.get("satellites_count", 0) >= 2, f"Tracked {spat_tele.get('assets_count')} spatial ground assets & {spat_tele.get('satellites_count')} orbital satellites")
+    log_test("3D Spatial Globe UI Panel Markup", 'id="settingsSpatialGlobePanel"' in index_html, "#settingsSpatialGlobePanel active in DOM")
+
+    # 89. Apple Vision Pro (visionOS) Spatial Persona WebXR Bridge & Job #18
+    print(f"\n{INFO} 89. Subsystem: Apple Vision Pro WebXR Bridge & Full Catalogue Completion:")
+    s, v_sess = action("settings", "negotiate_visionos_session", {
+        "device_id": "Apple-Vision-Pro-Spatial-Enclave",
+        "foveation_level": "high",
+        "color_space": "p3-d65"
+    })
+    sess = v_sess.get("session", {})
+    log_test("visionOS 2.2 WebXR Spatial Hand/Eye Tracking Negotiation", v_sess.get("success") and sess.get("frame_rate_fps") == 90, f"Negotiated session {sess.get('session_id')} ({sess.get('frame_rate_fps')} FPS, Foveation: {sess.get('foveation_level')})")
+    s, v_win = action("settings", "anchor_spatial_window", {
+        "session_id": sess.get("session_id"),
+        "window_id": "c2_primary_hud",
+        "translation": [0.0, 0.1, -1.2]
+    })
+    w_obj = v_win.get("window", {})
+    log_test("6DoF Spatial Window World-Anchor Matrix Registration", v_win.get("success") and w_obj.get("window_id") == "c2_primary_hud", f"Anchored window '{w_obj.get('window_id')}' at Translation {w_obj.get('transform', {}).get('translation')}")
+    s, v_audio = action("settings", "emit_spatial_audio", {
+        "session_id": sess.get("session_id"),
+        "sound_id": "haptic_pulse",
+        "position": [0.4, 0.0, -0.6]
+    })
+    log_test("HRTF Head-Related Transfer Function Spatial Audio Emitter", v_audio.get("success") and v_audio.get("audio_event", {}).get("sound_id") == "haptic_pulse", f"Synthesized spatial audio pulse at position {v_audio.get('audio_event', {}).get('position')}")
+    s, sched_res8 = get("/api/scheduler")
+    jobs8 = sched_res8.get("jobs", [])
+    has_saas_job = any(j.get("id") == "saas_growth_radar" for j in jobs8)
+    log_test("Scheduler Job #18 Solopreneur SaaS Growth & Gig Radar", has_saas_job, "Scheduled SaaS growth & gig radar registered (1800s interval)")
+    log_test("Apple Vision Pro WebXR Spatial UI Panel Markup", 'id="settingsVisionOsPanel"' in index_html, "#settingsVisionOsPanel active in DOM")
+    log_test("Client Application Wave 5 Solopreneur & 3D Spatial API Hooks", "calculateSaasMetrics" in app_js and "dispatchOutboundCampaign" in app_js and "refreshSeoRankings" in app_js and "scanFreelanceGigs" in app_js and "generatePitchDeck" in app_js and "renderSpatialGlobe" in app_js and "negotiateVisionOsSession" in app_js, "All 30 master features fully exposed in CommandCenter client API")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

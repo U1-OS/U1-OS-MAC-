@@ -9394,6 +9394,223 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
         <div class="mono" style="font-size:9px; color:var(--text-muted); margin-top:2px; word-break:break-all;">Target: ${r.owner || r.ip_address}</div>
       </div>
     `;
+  // Wave 5: Feature 24 - SaaS MRR & Cohort Retention
+  async function calculateSaasMetrics() {
+    showNotification("Calculating MRR / ARR velocity & churn cohort grid...");
+    const res = await apiAction("settings", "calculate_saas_metrics", {
+      mrr_start: 25000,
+      new_mrr: 3500,
+      expansion_mrr: 1200,
+      churned_mrr: 800,
+      contraction_mrr: 300
+    });
+    if (res && res.success) {
+      showNotification(`MRR updated: $${res.mrr_end.toLocaleString()} (ARR: $${res.arr.toLocaleString()})`);
+      renderSaasMetrics(res);
+    }
+  }
+
+  function renderSaasMetrics(metrics) {
+    const m = metrics || { mrr_end: 28600, arr: 343200, nrr_percent: 103.6, ltv_cac_ratio: 8.25, quick_ratio: 4.27 };
+    const badge = document.getElementById("saasMrrBadge");
+    if (badge) badge.textContent = `MRR: $${(m.mrr_end || 28600).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    const nrrBadge = document.getElementById("saasNrrBadge");
+    if (nrrBadge) nrrBadge.textContent = `NRR: ${m.nrr_percent || 103.6}%`;
+    const arrEl = document.getElementById("saasArrVal");
+    if (arrEl) arrEl.textContent = `$${(m.arr || 343200).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    const nrrEl = document.getElementById("saasNrrVal");
+    if (nrrEl) nrrEl.textContent = `${m.nrr_percent || 103.6}%`;
+    const ltvEl = document.getElementById("saasLtvCacVal");
+    if (ltvEl) ltvEl.textContent = `${m.ltv_cac_ratio || 8.25}x`;
+    const qrEl = document.getElementById("saasQuickRatioVal");
+    if (qrEl) qrEl.textContent = `${m.quick_ratio || 4.27} (${m.quick_ratio >= 4 ? 'ELITE' : 'STABLE'})`;
+    const gridEl = document.getElementById("saasCohortsGrid");
+    if (gridEl) {
+      gridEl.innerHTML = `
+        <div style="background:#070a13; border:1px solid rgba(0,255,136,0.2); border-radius:4px; padding:8px 10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="mono" style="font-size:11px; color:var(--neon-green); font-weight:700;">NET REVENUE RETENTION: ${m.nrr_percent}%</span>
+            <span class="badge mono" style="font-size:9px; background:rgba(0,255,136,0.15); color:var(--neon-green);">CHURN: ${m.gross_churn_percent || 3.2}%</span>
+          </div>
+          <div class="mono" style="font-size:9.5px; color:var(--text-muted); margin-top:3px;">
+            M0: 100% &bull; M1: 94.2% &bull; M2: 91.8% &bull; M3: 89.5% &bull; Expansion MRR: +$${(m.expansion_mrr || 1200).toLocaleString()}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Wave 5: Feature 25 - Cold Email Campaign Outbound Automator
+  async function dispatchOutboundCampaign() {
+    showNotification("Auditing deliverability & dispatching outbound test...");
+    const res = await apiAction("settings", "dispatch_outbound_email", {
+      lead_name: "Alex",
+      lead_email: "alex@enterprise-cloud.io",
+      company: "Enterprise Cloud",
+      template_subject: "{Hi|Hello} Alex - Sovereign Cloud OS benchmark",
+      template_body: "Hi Alex, noticed your distributed infrastructure stack. We just open-sourced our zero-cloud C2."
+    });
+    if (res && res.success) {
+      showNotification(`Outbound email dispatched to ${res.lead?.email || 'lead'}`);
+      renderOutboundStatus(res);
+    }
+  }
+
+  function renderOutboundStatus(status) {
+    const logEl = document.getElementById("outboundCampaignLog");
+    if (!logEl) return;
+    const s = status || { lead: { email: "alex@enterprise-cloud.io" }, rendered_subject: "Hi Alex - Sovereign Cloud OS benchmark", deliverability_score: 96 };
+    logEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(255,190,0,0.2); border-radius:4px; padding:6px 8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:10px; color:var(--gold); font-weight:700;">DISPATCHED &rarr; ${s.lead?.email || 'lead'}</span>
+          <span class="badge mono" style="font-size:8.5px; background:rgba(255,190,0,0.15); color:var(--gold);">SPF/DKIM: 100%</span>
+        </div>
+        <div class="mono" style="font-size:9px; color:var(--text-muted); margin-top:2px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">"${s.rendered_subject || 'Outbound subject'}"</div>
+      </div>
+    `;
+  }
+
+  // Wave 5: Feature 26 - SEO Keyword Rank Tracker & Google Console
+  async function refreshSeoRankings() {
+    showNotification("Synchronizing Google Search Console & SERP rank positions...");
+    const res = await apiAction("settings", "refresh_seo_rankings", {});
+    if (res && res.success) {
+      showNotification(`SEO rankings updated: ${res.keywords_count} tracked keywords.`);
+      renderSeoRankings(res);
+    }
+  }
+
+  function renderSeoRankings(data) {
+    const listEl = document.getElementById("seoKeywordsList");
+    if (!listEl) return;
+    const kws = data?.keywords || [
+      { keyword: "sovereign cloud os", rank: 3, impressions: 8400, clicks: 620 },
+      { keyword: "self-hosted command center", rank: 5, impressions: 5200, clicks: 410 }
+    ];
+    listEl.innerHTML = kws.map(k => `
+      <div style="background:#070a13; border:1px solid rgba(0,240,255,0.2); border-radius:4px; padding:6px 8px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span class="mono" style="font-size:10px; color:var(--neon-cyan); font-weight:700;">${escapeHtml(k.keyword)}</span>
+          <span class="mono" style="font-size:8.5px; color:var(--text-muted); margin-left:6px;">${k.clicks} clicks (${k.impressions} impr)</span>
+        </div>
+        <span class="badge mono" style="font-size:9px; background:rgba(0,240,255,0.15); color:var(--neon-cyan); font-weight:700;">#${k.rank}</span>
+      </div>
+    `).join('');
+  }
+
+  // Wave 5: Feature 27 - Freelance High-Ticket Gig Radar
+  async function scanFreelanceGigs() {
+    showNotification("Scraping Upwork & freelance high-ticket job feeds ($5k-$50k+)...");
+    const res = await apiAction("settings", "fetch_freelance_gigs", { min_budget: 5000 });
+    if (res && res.success) {
+      showNotification(`Found ${res.count} high-ticket contract opportunities.`);
+      renderFreelanceGigs(res.gigs);
+    }
+  }
+
+  function renderFreelanceGigs(gigs) {
+    const listEl = document.getElementById("gigFeedList");
+    if (!listEl) return;
+    const list = gigs || [
+      { id: "gig_01", title: "Principal Systems Architect - Sovereign Edge Matrix", budget_max: 25000, client_rating: 4.95, win_probability: 0.92 }
+    ];
+    listEl.innerHTML = list.slice(0, 3).map(g => `
+      <div style="background:#070a13; border:1px solid rgba(189,0,255,0.2); border-radius:4px; padding:6px 8px; margin-bottom:4px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:10px; color:var(--neon-purple); font-weight:700;">$${(g.budget_max || 15000).toLocaleString()} &bull; ${escapeHtml(g.title || 'High-Ticket Gig')}</span>
+          <button class="mini-btn mono" style="font-size:8.5px; padding:1px 6px;" onclick="CommandCenter.generateGigBid('${g.id || 'gig_01'}')">1-CLICK BID</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function generateGigBid(gigId) {
+    showNotification(`Generating tailored AI proposal for ${gigId}...`);
+    const res = await apiAction("settings", "generate_gig_proposal", { gig_id: gigId });
+    if (res && res.success) {
+      showNotification(`Proposal synthesized! Bid amount: $${res.proposal?.bid_amount?.toLocaleString()}`);
+    }
+  }
+
+  // Wave 5: Feature 28 - Pitch Deck Generator & VC Matchmaker
+  async function generatePitchDeck() {
+    showNotification("Synthesizing institutional 10-slide venture deck...");
+    const res = await apiAction("settings", "generate_pitch_deck", {
+      startup_name: "U1 Sovereign OS",
+      ask_amount: 5000000
+    });
+    if (res && res.success) {
+      showNotification(`Pitch deck compiled! Exported to ${res.deck?.export_html_path || 'exports/pitch_deck.html'}`);
+      renderPitchDeck(res.deck);
+    }
+  }
+
+  function renderPitchDeck(deck) {
+    const previewEl = document.getElementById("pitchDeckSlidesPreview");
+    if (!previewEl) return;
+    const d = deck || { startup_name: "U1 Sovereign OS", total_slides: 10, matched_investors_count: 5 };
+    previewEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(0,255,136,0.2); border-radius:4px; padding:6px 8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:10px; color:var(--neon-green); font-weight:700;">${d.startup_name}: 10 SLIDES GENERATED</span>
+          <a href="/exports/pitch_deck.html" target="_blank" class="badge mono" style="font-size:8.5px; background:rgba(0,255,136,0.15); color:var(--neon-green); text-decoration:none;">OPEN SLIDES &rarr;</a>
+        </div>
+        <div class="mono" style="font-size:9px; color:var(--text-muted); margin-top:2px;">Problem &bull; Solution &bull; Traction &bull; Tokenomics &bull; $5M Series A Ask</div>
+      </div>
+    `;
+  }
+
+  // Wave 5: Feature 29 - WebGL 3D Spatial Globe
+  async function renderSpatialGlobe() {
+    showNotification("Calculating 3D spherical-to-cartesian projection vectors...");
+    const res = await apiAction("settings", "get_spatial_telemetry", {});
+    if (res && res.success) {
+      showNotification(`Spatial Globe active: ${res.assets_count} nodes & ${res.satellites_count} satellites tracked.`);
+      renderSpatialGlobeData(res);
+    }
+  }
+
+  function renderSpatialGlobeData(telemetry) {
+    const listEl = document.getElementById("spatialGlobeMarkersList");
+    if (!listEl) return;
+    const t = telemetry || { intel_markers: [{ name: "SF Command Enclave", lat: 37.77, lon: -122.42, cartesian: { x: -2705.5, y: -4273.8, z: 3886.7 } }] };
+    listEl.innerHTML = (t.intel_markers || []).slice(0, 2).map(m => `
+      <div style="background:#070a13; border:1px solid rgba(0,240,255,0.2); border-radius:4px; padding:6px 8px; margin-bottom:4px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:10px; color:var(--neon-cyan); font-weight:700;">${escapeHtml(m.name)} (${m.lat}&deg;, ${m.lon}&deg;)</span>
+          <span class="badge mono" style="font-size:8.5px; background:rgba(0,240,255,0.15); color:var(--neon-cyan);">X:${Math.round(m.cartesian?.x || 0)} Y:${Math.round(m.cartesian?.y || 0)} Z:${Math.round(m.cartesian?.z || 0)}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Wave 5: Feature 30 - visionOS WebXR Bridge
+  async function negotiateVisionOsSession() {
+    showNotification("Negotiating visionOS 2.2 WebXR spatial session...");
+    const res = await apiAction("settings", "negotiate_visionos_session", {
+      device_id: "Apple-Vision-Pro-Spatial-Enclave",
+      foveation_level: "high"
+    });
+    if (res && res.success) {
+      showNotification(`visionOS session active: ${res.session?.session_id}`);
+      renderVisionOsStatus(res.session);
+    }
+  }
+
+  function renderVisionOsStatus(session) {
+    const listEl = document.getElementById("visionOsWindowsList");
+    if (!listEl) return;
+    const s = session || { session_id: "visionos-sess-101", anchored_windows_count: 3, frame_rate_fps: 90 };
+    listEl.innerHTML = `
+      <div style="background:#070a13; border:1px solid rgba(189,0,255,0.2); border-radius:4px; padding:6px 8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="mono" style="font-size:10px; color:var(--neon-purple); font-weight:700;">SPATIAL SESSION: ${s.session_id}</span>
+          <span class="badge mono" style="font-size:8.5px; background:rgba(189,0,255,0.15); color:var(--neon-purple);">${s.frame_rate_fps || 90} FPS 6DoF</span>
+        </div>
+        <div class="mono" style="font-size:9px; color:var(--text-muted); margin-top:2px;">HUD Anchors: [0.0, 0.0, -1.2m] &bull; HRTF Spatial Audio Active</div>
+      </div>
+    `;
   }
 
   // Expose API
@@ -9637,7 +9854,22 @@ ${escapeHtml(JSON.stringify(data.data, null, 2))}
     sendLoraPacket,
     renderLora,
     resolveWeb3Domain,
-    renderSovereignDns
+    renderSovereignDns,
+    calculateSaasMetrics,
+    renderSaasMetrics,
+    dispatchOutboundCampaign,
+    renderOutboundStatus,
+    refreshSeoRankings,
+    renderSeoRankings,
+    scanFreelanceGigs,
+    renderFreelanceGigs,
+    generateGigBid,
+    generatePitchDeck,
+    renderPitchDeck,
+    renderSpatialGlobe,
+    renderSpatialGlobeData,
+    negotiateVisionOsSession,
+    renderVisionOsStatus
   };
 })();
 

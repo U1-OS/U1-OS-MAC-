@@ -58,6 +58,24 @@
           "timestamp": 1788750527,
           "ciphertext": "yVPLHw/HKv3sZ7Kqk6v5AiAAUG5x5nxeQaLhTq0j1Ok=",
           "decrypted_body": "Operator verified enclave bridge"
+        },
+        {
+          "event_id": "$ev_74961fdb98e8",
+          "sender": "@root:u1.local",
+          "type": "m.room.encrypted",
+          "algorithm": "m.megolm.v1.aes-sha2",
+          "timestamp": 1788760742,
+          "ciphertext": "a7ujxa4Xr0F4chBTey5svVF24MMLs6hRjR8zhKs5Y5s=",
+          "decrypted_body": "Operator verified enclave bridge"
+        },
+        {
+          "event_id": "$ev_f9fa22bb0171",
+          "sender": "@root:u1.local",
+          "type": "m.room.encrypted",
+          "algorithm": "m.megolm.v1.aes-sha2",
+          "timestamp": 1788760879,
+          "ciphertext": "oqchJS9WA+4XYkkbs/ar0mUKa0XDbO4kaIR5DutX+sE=",
+          "decrypted_body": "Operator verified enclave bridge"
         }
       ]
     },

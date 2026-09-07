@@ -1,0 +1,93 @@
+{
+  "nodes": [
+    {
+      "node_id": "c2-san-francisco",
+      "name": "San Francisco Primary C2",
+      "lat": 37.7749,
+      "lon": -122.4194,
+      "alt_km": 0.05,
+      "role": "COMMAND_GATEWAY",
+      "status": "ONLINE_ACTIVE"
+    },
+    {
+      "node_id": "c2-tokyo",
+      "name": "Tokyo High-Speed Enclave",
+      "lat": 35.6762,
+      "lon": 139.6503,
+      "alt_km": 0.04,
+      "role": "MEV_VALIDATOR",
+      "status": "ONLINE_ACTIVE"
+    },
+    {
+      "node_id": "c2-frankfurt",
+      "name": "Frankfurt ZK Vault Enclave",
+      "lat": 50.1109,
+      "lon": 8.6821,
+      "alt_km": 0.11,
+      "role": "ZK_VAULT_BACKUP",
+      "status": "ONLINE_ACTIVE"
+    },
+    {
+      "node_id": "c2-singapore",
+      "name": "Singapore Mempool Node",
+      "lat": 1.3521,
+      "lon": 103.8198,
+      "alt_km": 0.01,
+      "role": "DEX_ARBITRAGE",
+      "status": "ONLINE_ACTIVE"
+    },
+    {
+      "node_id": "c2-zurich",
+      "name": "Zurich Secret Storage Enclave",
+      "lat": 47.3769,
+      "lon": 8.5417,
+      "alt_km": 0.41,
+      "role": "COLD_CUSTODY",
+      "status": "ONLINE_ACTIVE"
+    }
+  ],
+  "satellites": [
+    {
+      "sat_id": "SAT-U1-LEO-01",
+      "name": "U1-Orbital-Relay-Alpha",
+      "altitude_km": 540.0,
+      "inclination_deg": 53.2,
+      "orbital_period_mins": 94.8,
+      "lat": 28.4,
+      "lon": -45.6,
+      "velocity_kmh": 27500,
+      "status": "TRACKING_ACTIVE"
+    },
+    {
+      "sat_id": "SAT-U1-LEO-02",
+      "name": "U1-Orbital-Relay-Beta",
+      "altitude_km": 560.0,
+      "inclination_deg": 97.4,
+      "orbital_period_mins": 95.6,
+      "lat": -14.2,
+      "lon": 112.8,
+      "velocity_kmh": 27400,
+      "status": "TRACKING_ACTIVE"
+    }
+  ],
+  "globe_radius_km": 6371.0,
+  "threat_vectors_detected": 0,
+  "last_orbit_update": 1788760144,
+  "markers": [
+    {
+      "id": "marker-29928fe7",
+      "name": "New Tactical Asset",
+      "lat": 0.0,
+      "lon": 0.0,
+      "type": "asset",
+      "threat_level": "low",
+      "cartesian": {
+        "x": 6371.0,
+        "y": 0.0,
+        "z": 0.0,
+        "radius": 6371.0
+      },
+      "timestamp": 1788760648
+    }
+  ]
+}
