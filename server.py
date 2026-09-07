@@ -477,8 +477,12 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.send_json(cfg)
             return
 
-        # Serve frontend files
+        # Serve frontend files.
+        # The Command Centre shell is the front door; the previous shell
+        # stays reachable at /classic so nothing that worked is lost.
         if path == "/" or path == "/index.html":
+            file_path = os.path.join(STATIC_DIR, "u1os.html")
+        elif path in ("/classic", "/classic.html"):
             file_path = os.path.join(STATIC_DIR, "index.html")
         else:
             rel_path = path.lstrip("/")

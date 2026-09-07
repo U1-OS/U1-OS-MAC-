@@ -123,6 +123,17 @@
         <article class="card">
           <div class="chead">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16v13H4z"/><path d="M4 7l3-4h10l3 4"/></svg>
+            <h3>Drive &amp; storage</h3>
+            <button class="act" data-go="files">Manage →</button>
+          </div>
+          <div id="storage"></div>
+        </article>
+      </div>
+
+      <div class="row r-3">
+        <article class="card">
+          <div class="chead">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
             <h3>Focus</h3>
             <span class="tag idle" id="focusTag">READY</span>
           </div>
@@ -187,6 +198,27 @@
   <div class="dockwrap">
     <div class="dock" id="dock"></div>
   </div>
+</div>
+
+
+<div class="player" id="player">
+  <div class="ph">
+    <div class="art"></div>
+    <div class="pt">
+      <b id="plTitle">Deep work</b>
+      <span id="plSub">Focus session</span>
+    </div>
+    <button class="iconbtn" id="plCollapse" style="width:24px;height:24px" aria-label="Hide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </div>
+  <div class="ctrls">
+    <button id="plBack" aria-label="Reset"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5l-11 7 11 7z"/></svg></button>
+    <button class="play" id="plPlay" aria-label="Start or pause"><svg viewBox="0 0 24 24" fill="currentColor" id="plIcon"><path d="M8 5v14l11-7z"/></svg></button>
+    <button id="plFwd" aria-label="Skip to end"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 5h-2v14h2zM4 5l11 7L4 19z"/></svg></button>
+  </div>
+  <div class="prog"><i id="plBar"></i></div>
+  <div class="times"><span id="plNow">0:00</span><span id="plTotal">25:00</span></div>
 </div>
 
 <div class="creedfoot">Human ideas + AI power = a brighter tomorrow</div>

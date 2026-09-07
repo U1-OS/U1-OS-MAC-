@@ -244,71 +244,150 @@
     })();
   }
 
-  /* --- rotating dot globe --- */
+  /* --- rotating earth: dot-mapped landmasses, city lights, HUD arcs --- */
   function globe() {
     var cv = $('globe'); if (!cv) return;
     var c = fit(cv);
     window.addEventListener('resize', function () { c = fit(cv); });
-    var pts = [];
-    var RINGS = 26;
+
+    /* Coarse land mask as lon/lat boxes (degrees). Enough resolution that
+       the sphere reads as Earth without shipping an image asset. */
+    var LAND = [
+      [-168,-52,72,84],   // North America bulk
+      [-130,-60,25,50],   // N America south
+      [-92,-75,8,20],     // Central America
+      [-82,-35,-56,12],   // South America
+      [-25,60,35,71],     // Europe
+      [-18,52,-35,37],    // Africa
+      [26,60,12,42],      // Middle East
+      [60,150,8,55],      // Asia south + China
+      [60,180,50,75],     // Siberia
+      [95,141,-11,7],     // Indonesia
+      [113,154,-39,-11],  // Australia
+      [166,179,-47,-34],  // New Zealand
+      [-73,-12,59,83],    // Greenland
+      [-180,180,-90,-63]  // Antarctica
+    ];
+    function isLand(lonDeg, latDeg) {
+      for (var i = 0; i < LAND.length; i++) {
+        var b = LAND[i];
+        if (lonDeg >= b[0] && lonDeg <= b[1] && latDeg >= b[2] && latDeg <= b[3]) return true;
+      }
+      return false;
+    }
+
+    var pts = [], cities = [];
+    var RINGS = 46;
     for (var i = 1; i < RINGS; i++) {
-      var lat = Math.PI * (i / RINGS) - Math.PI / 2;
-      var count = Math.max(6, Math.round(Math.cos(lat) * 54));
+      var latDeg = 90 - (180 * i) / RINGS;
+      var lat = latDeg * Math.PI / 180;
+      var count = Math.max(8, Math.round(Math.cos(lat) * 96));
       for (var j = 0; j < count; j++) {
-        var lon = (Math.PI * 2 * j) / count;
-        pts.push([Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)]);
+        var lonDeg = -180 + (360 * j) / count;
+        var lon = lonDeg * Math.PI / 180;
+        var land = isLand(lonDeg, latDeg);
+        var p = [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon), land];
+        pts.push(p);
+        // sparse warm city lights on land
+        if (land && Math.random() < 0.09) cities.push(p);
       }
     }
-    var rot = 0;
+
+    var rot = 2.1;
     (function draw() {
-      rot += reduced ? 0 : 0.0022;
-      var w = c.w, h = c.h, R = Math.min(w, h) * 0.42;
+      rot += reduced ? 0 : 0.0016;
+      var w = c.w, h = c.h;
+      var R = Math.min(w, h) * 0.405;
       var cx = w / 2, cy = h / 2;
       c.g.clearRect(0, 0, w, h);
 
-      // atmosphere
-      var glow = c.g.createRadialGradient(cx, cy, R * 0.55, cx, cy, R * 1.5);
-      glow.addColorStop(0, 'rgba(79,216,255,.20)');
-      glow.addColorStop(0.55, 'rgba(79,216,255,.06)');
-      glow.addColorStop(1, 'rgba(79,216,255,0)');
-      c.g.fillStyle = glow;
-      c.g.beginPath(); c.g.arc(cx, cy, R * 1.5, 0, Math.PI * 2); c.g.fill();
+      /* outer atmosphere bloom */
+      var bloom = c.g.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.65);
+      bloom.addColorStop(0, 'rgba(90,200,255,.26)');
+      bloom.addColorStop(0.45, 'rgba(60,160,255,.10)');
+      bloom.addColorStop(1, 'rgba(40,120,255,0)');
+      c.g.fillStyle = bloom;
+      c.g.beginPath(); c.g.arc(cx, cy, R * 1.65, 0, Math.PI * 2); c.g.fill();
 
-      // body
-      var body = c.g.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.1, cx, cy, R);
-      body.addColorStop(0, 'rgba(28,64,110,.92)');
-      body.addColorStop(1, 'rgba(6,12,26,.96)');
-      c.g.fillStyle = body;
-      c.g.beginPath(); c.g.arc(cx, cy, R, 0, Math.PI * 2); c.g.fill();
+      /* ocean body with terminator shading */
+      var body = c.g.createRadialGradient(cx - R * 0.38, cy - R * 0.4, R * 0.06, cx, cy, R);
+      body.addColorStop(0, 'rgba(38,96,168,.98)');
+      body.addColorStop(0.55, 'rgba(14,44,92,.98)');
+      body.addColorStop(1, 'rgba(4,10,26,.99)');
+      c.g.save();
+      c.g.beginPath(); c.g.arc(cx, cy, R, 0, Math.PI * 2); c.g.clip();
+      c.g.fillStyle = body; c.g.fillRect(cx - R, cy - R, R * 2, R * 2);
 
-      // dots
       var sr = Math.sin(rot), cr = Math.cos(rot);
-      for (var i = 0; i < pts.length; i++) {
-        var p = pts[i];
+      function project(p) {
         var x = p[0] * cr - p[2] * sr;
         var z = p[0] * sr + p[2] * cr;
-        var y = p[1];
-        if (z < -0.05) continue;
-        var d = 1 / (2.4 - z);
-        var px = cx + x * R * d * 2.05;
-        var py = cy + y * R * d * 2.05;
-        var a = Math.max(0, Math.min(1, (z + 0.2) * 0.85));
+        return [cx + x * R, cy + p[1] * R * -1, z];
+      }
+
+      /* landmass dots */
+      for (var k = 0; k < pts.length; k++) {
+        var p = pts[k], q = project(p);
+        if (q[2] < 0) continue;
+        var lightSide = Math.max(0, Math.min(1, (q[2] * 0.55 + 0.55)));
+        if (p[3]) {
+          c.g.beginPath();
+          c.g.arc(q[0], q[1], 1.15, 0, Math.PI * 2);
+          c.g.fillStyle = 'rgba(120,215,255,' + (0.30 + lightSide * 0.55).toFixed(3) + ')';
+          c.g.fill();
+        } else if (k % 3 === 0) {
+          c.g.beginPath();
+          c.g.arc(q[0], q[1], 0.6, 0, Math.PI * 2);
+          c.g.fillStyle = 'rgba(70,140,210,' + (0.10 + lightSide * 0.18).toFixed(3) + ')';
+          c.g.fill();
+        }
+      }
+
+      /* warm city lights, brighter toward the night edge */
+      for (var m = 0; m < cities.length; m++) {
+        var q2 = project(cities[m]);
+        if (q2[2] < 0.02) continue;
+        var night = Math.max(0, 1 - (q2[2] + 0.25));
+        var a = 0.35 + night * 0.6;
         c.g.beginPath();
-        c.g.arc(px, py, 0.85 + z * 0.7, 0, Math.PI * 2);
-        c.g.fillStyle = 'rgba(120,225,255,' + (a * 0.72).toFixed(3) + ')';
+        c.g.arc(q2[0], q2[1], 1.15, 0, Math.PI * 2);
+        c.g.fillStyle = 'rgba(255,198,120,' + a.toFixed(3) + ')';
         c.g.fill();
       }
 
-      // rim
-      c.g.beginPath(); c.g.arc(cx, cy, R, 0, Math.PI * 2);
-      c.g.strokeStyle = 'rgba(140,235,255,.4)'; c.g.lineWidth = 1; c.g.stroke();
+      /* limb darkening toward the edge */
+      var limb = c.g.createRadialGradient(cx, cy, R * 0.62, cx, cy, R);
+      limb.addColorStop(0, 'rgba(0,0,0,0)');
+      limb.addColorStop(1, 'rgba(2,5,14,.72)');
+      c.g.fillStyle = limb; c.g.fillRect(cx - R, cy - R, R * 2, R * 2);
+      c.g.restore();
 
-      // orbit arcs
+      /* bright rim */
+      c.g.beginPath(); c.g.arc(cx, cy, R, 0, Math.PI * 2);
+      c.g.strokeStyle = 'rgba(150,235,255,.85)'; c.g.lineWidth = 1.4;
+      c.g.shadowColor = 'rgba(90,205,255,.9)'; c.g.shadowBlur = 20;
+      c.g.stroke(); c.g.shadowBlur = 0;
+
+      /* HUD arc brackets */
+      function arcBracket(radius, from, to, colour, width) {
+        c.g.beginPath();
+        c.g.arc(cx, cy, radius, from, to);
+        c.g.strokeStyle = colour; c.g.lineWidth = width || 1.5; c.g.lineCap = 'round';
+        c.g.stroke();
+      }
+      var swing = reduced ? 0 : Math.sin(rot * 0.7) * 0.12;
+      arcBracket(R * 1.10, -1.55 + swing, -0.62 + swing, 'rgba(110,225,255,.75)', 2);
+      arcBracket(R * 1.10, 1.62 + swing, 2.42 + swing, 'rgba(110,225,255,.45)', 2);
+      arcBracket(R * 1.20, -1.15 + swing, -0.86 + swing, 'rgba(150,240,255,.9)', 3);
+      arcBracket(R * 1.28, 0.42 - swing, 1.02 - swing, 'rgba(120,160,255,.35)', 1.5);
+
+      /* equatorial orbit ellipse */
       c.g.save();
       c.g.translate(cx, cy);
-      c.g.rotate(rot * 0.6);
-      c.g.strokeStyle = 'rgba(169,139,255,.34)'; c.g.lineWidth = 1;
-      c.g.beginPath(); c.g.ellipse(0, 0, R * 1.22, R * 0.34, 0.5, 0, Math.PI * 2); c.g.stroke();
+      c.g.rotate(0.42);
+      c.g.beginPath();
+      c.g.ellipse(0, 0, R * 1.32, R * 0.30, 0, 0, Math.PI * 2);
+      c.g.strokeStyle = 'rgba(140,200,255,.22)'; c.g.lineWidth = 1; c.g.stroke();
       c.g.restore();
 
       requestAnimationFrame(draw);
@@ -809,7 +888,7 @@
       return { label: n.label, hint: 'Section', run: function () { go(n.id); } };
     }).concat([
       { label:'Toggle interface sound', hint:'Sound', run: toggleSound },
-      { label:'Start or pause focus session', hint:'Focus', run: focusToggle },
+      { label:'Start or pause focus session', hint:'Focus', run: function () { if (U.focus) U.focus.toggle(); } },
       { label:'Mark all notifications read', hint:'Notifications', run: function () { Notify.readAll(); Sound.tap(); } },
       { label:'Check for updates', hint:'Updater', run: function () {
           U.api('updater','check_for_updates',{}).then(function (r) {
@@ -843,35 +922,9 @@
   }
   function closePal() { $('scrim').classList.remove('on'); Sound.close(); }
 
-  /* ---------------- focus timer ---------------- */
-  var TOTAL = 25 * 60, left = TOTAL, running = false, timer = null;
-  function paintFocus() {
-    var cv = $('focusRing');
-    if (cv) U.gauge(cv, ((TOTAL - left) / TOTAL) * 100, running ? '#57E7B5' : '#4FD8FF');
-    $('focusTime').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
-    $('focusTag').textContent = running ? 'RUNNING' : (left === TOTAL ? 'READY' : 'PAUSED');
-    $('focusTag').className = 'tag ' + (running ? 'ok' : 'idle');
-    $('focusNote').textContent = running ? 'Session in progress' : (left === TOTAL ? 'Nothing running' : 'Paused');
-    $('focusStart').textContent = running ? 'Pause' : 'Start';
-  }
-  function focusToggle() {
-    running = !running;
-    if (running) {
-      Sound.ok();
-      Notify.push('Focus session started — 25 minutes.', { tone:'ok', src:'Focus', silent:true });
-      timer = setInterval(function () {
-        left--;
-        if (left > 0 && left % 300 === 0) Sound.tick();
-        if (left <= 0) {
-          clearInterval(timer); running = false; left = 0; Sound.ok();
-          Notify.push('Focus session complete. Take a break.', { tone:'ok', src:'Focus', silent:true });
-        }
-        paintFocus();
-      }, 1000);
-    } else { clearInterval(timer); Sound.close(); }
-    paintFocus();
-  }
-  function focusReset() { clearInterval(timer); running = false; left = TOTAL; paintFocus(); Sound.close(); }
+  /* ---------------- focus ----------------
+     The clock itself lives in the session-player module so the card and
+     the player can never drift apart. Nothing to keep here. */
 
   function toggleSound() {
     var on = Sound.toggle();
@@ -905,7 +958,7 @@
   function boot() {
     buildRail(); buildDock(); buildPalette();
     tick(); setInterval(tick, 1000);
-    paintFocus(); Notify.paint();
+    Notify.paint();
     $('soundBtn').style.opacity = Sound.enabled() ? '1' : '.4';
     var name = localStorage.getItem('u1.name') || 'Operator';
     $('avatar').textContent = name.charAt(0).toUpperCase();
@@ -922,8 +975,8 @@
       }
       if (e.target.closest('#soundBtn')) { toggleSound(); return; }
       if (e.target.closest('#notifClear')) { Notify.readAll(); Sound.tap(); return; }
-      if (e.target.closest('#focusStart')) { focusToggle(); return; }
-      if (e.target.closest('#focusReset')) { focusReset(); return; }
+      // #focusStart and #focusReset are handled by the session player,
+      // which owns the single focus clock. Nothing to do here.
       var li = e.target.closest('#palList li');
       if (li) {
         var f = $('palList')._filtered || [], item = f[+li.dataset.ix];
@@ -985,4 +1038,147 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+})();
+
+/* ==================================================================
+   U1 OS // premium pass: dock labels, storage panel, session player
+   ================================================================== */
+(function () {
+  'use strict';
+  var U = window.U1, esc = U.esc, Sound = U.sound, Notify = U.notify;
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---- dock labels under each icon ---- */
+  function labelDock() {
+    Array.prototype.forEach.call(document.querySelectorAll('.dockitem'), function (b) {
+      if (b.querySelector('b')) return;
+      var t = document.createElement('b');
+      t.textContent = b.dataset.label || '';
+      b.appendChild(t);
+    });
+  }
+
+  /* ---- first tool card carries the active highlight ---- */
+  function markFirstTool() {
+    var t = document.querySelector('#tools .tool');
+    if (t) t.classList.add('first');
+  }
+
+  /* ---- Drive & storage, from the real workspace disk ---- */
+  function storage() {
+    var box = $('storage'); if (!box) return;
+    U.api('updater', 'get_status', {}).then(function (st) {
+      var rt = (st && st.runtime) || {};
+      var git = (st && st.git) || {};
+      var deps = rt.optional_dependencies || {};
+      var installed = Object.keys(deps).filter(function (k) { return deps[k].installed; }).length;
+      var total = Object.keys(deps).length;
+      var pct = total ? Math.round((installed / total) * 100) : 0;
+
+      box.innerHTML =
+        '<div style="display:flex;align-items:center;gap:11px">' +
+          '<span style="width:34px;height:34px;border-radius:10px;display:grid;place-items:center;' +
+          'background:linear-gradient(140deg,#4FD8FF,#1E7FB8);color:#04060D;font-weight:800;font-size:15px">W</span>' +
+          '<div><div style="font-size:13px;font-weight:600">Workspace</div>' +
+          '<div style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3)">' +
+          esc(rt.root ? String(rt.root).split('/').slice(-1)[0] : 'local') + ' · v' + esc(rt.version || '—') + '</div></div>' +
+        '</div>' +
+        '<div class="bar-lg"><i data-w="' + pct + '"></i></div>' +
+        '<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--ink-3)">' +
+          '<span>' + installed + ' of ' + total + ' optional packages</span>' +
+          '<span>' + esc(git.branch || '—') + ' @ ' + esc(git.commit || 'no commits') + '</span>' +
+        '</div>' +
+        '<div class="folders">' +
+          ['services', 'utils', 'static', 'tests', 'docs'].map(function (f) {
+            return '<div class="folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">' +
+              '<path d="M3 7h6l2 2h10v10H3z"/></svg>' + f + '</div>';
+          }).join('') +
+        '</div>';
+      setTimeout(function () {
+        var i = box.querySelector('.bar-lg i');
+        if (i) i.style.width = i.dataset.w + '%';
+      }, 60);
+    });
+  }
+
+  /* ---- session player: drives the same focus timer, no fake audio ---- */
+  var TOTAL = 25 * 60, left = TOTAL, running = false, timer = null;
+
+  function paint() {
+    var done = TOTAL - left;
+    var bar = $('plBar'); if (bar) bar.style.width = ((done / TOTAL) * 100).toFixed(2) + '%';
+    var mm = function (s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+    if ($('plNow')) $('plNow').textContent = mm(done);
+    if ($('plTotal')) $('plTotal').textContent = mm(TOTAL);
+    if ($('plSub')) $('plSub').textContent = running ? 'Focus session · running' : (left === TOTAL ? 'Focus session · ready' : 'Focus session · paused');
+    var icon = $('plIcon');
+    if (icon) icon.innerHTML = running ? '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+    // keep the home-card ring in step
+    var ring = $('focusRing');
+    if (ring) U.gauge(ring, (done / TOTAL) * 100, running ? '#57E7B5' : '#4FD8FF');
+    if ($('focusTime')) $('focusTime').textContent = mm(left);
+    if ($('focusTag')) {
+      $('focusTag').textContent = running ? 'RUNNING' : (left === TOTAL ? 'READY' : 'PAUSED');
+      $('focusTag').className = 'tag ' + (running ? 'ok' : 'idle');
+    }
+    if ($('focusNote')) $('focusNote').textContent = running ? 'Session in progress' : (left === TOTAL ? 'Nothing running' : 'Paused');
+    if ($('focusStart')) $('focusStart').textContent = running ? 'Pause' : 'Start';
+  }
+
+  function toggle() {
+    running = !running;
+    if (running) {
+      Sound.ok();
+      Notify.push('Focus session started — 25 minutes.', { tone: 'ok', src: 'Focus', silent: true });
+      timer = setInterval(function () {
+        left--;
+        if (left > 0 && left % 300 === 0) Sound.tick();
+        if (left <= 0) {
+          clearInterval(timer); running = false; left = 0; Sound.ok();
+          Notify.push('Focus session complete. Take a break.', { tone: 'ok', src: 'Focus', silent: true });
+        }
+        paint();
+      }, 1000);
+    } else { clearInterval(timer); Sound.close(); }
+    paint();
+  }
+  function reset() { clearInterval(timer); running = false; left = TOTAL; Sound.close(); paint(); }
+  function finish() {
+    clearInterval(timer); running = false; left = 0; Sound.ok(); paint();
+    Notify.push('Focus session ended early.', { tone: 'info', src: 'Focus', silent: true });
+  }
+
+  function boot() {
+    labelDock();
+    paint();
+    storage();
+    setTimeout(markFirstTool, 400);
+    setInterval(storage, 60000);
+
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('#plPlay') || e.target.closest('#focusStart')) { toggle(); return; }
+      if (e.target.closest('#plBack') || e.target.closest('#focusReset')) { reset(); return; }
+      if (e.target.closest('#plFwd')) { finish(); return; }
+      if (e.target.closest('#plCollapse')) {
+        var p = $('player');
+        p.dataset.min = p.dataset.min ? '' : '1';
+        p.style.height = p.dataset.min ? '62px' : '';
+        p.style.overflow = 'hidden';
+        Sound.tap();
+      }
+    });
+
+    // The session player owns the focus timer; the home card and the
+    // command palette drive it through here so there is only one clock.
+    U.focus = { toggle: toggle, reset: reset, finish: finish, paint: paint };
+
+    // re-label the dock after any rebuild
+    var dock = $('dock');
+    if (dock && window.MutationObserver) {
+      new MutationObserver(labelDock).observe(dock, { childList: true });
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 60); });
+  else setTimeout(boot, 60);
 })();

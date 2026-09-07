@@ -452,7 +452,9 @@ def main():
     # 27. Updater workspace, self-update and improvement agent
     print(f"\n{INFO} 27. Subsystem: Updater Workspace & Improvement Agent:")
     try:
-        req = urllib.request.Request(f"{BASE_URL}/", headers={"User-Agent": "CC-TestRunner/1.0"})
+        # The Command Centre shell is now the front door; the previous
+        # shell, which these markup assertions describe, is at /classic.
+        req = urllib.request.Request(f"{BASE_URL}/classic", headers={"User-Agent": "CC-TestRunner/1.0"})
         with urllib.request.urlopen(req, timeout=10) as r:
             shell_html = r.read().decode("utf-8", errors="replace")
     except Exception:
@@ -547,6 +549,34 @@ def main():
     log_test("Measured Health Panel Mounted In The Workspace", shell_has_health, "#updaterHealthContainer present in the Updater section")
     log_test("Client Reports Its Own Exceptions", "reportFrontendFaults" in updater_js and "unhandledrejection" in updater_js, "window.onerror and unhandled promise rejections reported to the measurement floor")
     log_test("Client Renders NOT MEASURED Rather Than A Number", "NOT MEASURED" in updater_js, "Missing measurements are labelled, never defaulted to zero")
+
+    # 30. Command Centre shell (front door)
+    print(f"\n{INFO} 30. Subsystem: Command Centre Shell:")
+    def _text(p):
+        try:
+            rq = urllib.request.Request(f"{BASE_URL}{p}", headers={"User-Agent": "CC-TestRunner/1.0"})
+            with urllib.request.urlopen(rq, timeout=10) as rr:
+                return rr.status, rr.read().decode("utf-8", errors="replace")
+        except Exception:
+            return 0, ""
+    s_root, root_html = _text("/")
+    s_css, shell_css = _text("/css/u1os.css")
+    s_js, shell_js = _text("/js/u1os.js")
+    log_test("Command Centre Shell Is The Front Door", s_root == 200 and 'id="globe"' in root_html, "/ serves the Command Centre shell")
+    log_test("Previous Shell Still Reachable At /classic", 'id="section-updater"' in shell_html, "Nothing that worked before was removed")
+    log_test("Shell Stylesheet Served", s_css == 200 and len(shell_css) > 8000, f"u1os.css delivered ({len(shell_css)} bytes)")
+    log_test("Shell Controller Served", s_js == 200 and len(shell_js) > 20000, f"u1os.js delivered ({len(shell_js)} bytes)")
+    for part in ("rail", "dock", "palList", "notifList", "tools", "gauges", "storage", "player"):
+        log_test(f"Shell Mounts #{part}", f'id="{part}"' in root_html, f"#{part} present in the shell")
+    log_test("Web Audio Voice Pack Present", all(v in shell_js for v in ["tap:", "hover:", "nav:", "ok:", "warn:", "bad:", "ping:", "boot:", "tick:"]), "Synthesised interface voices, no audio assets")
+    log_test("Sound Mute And Volume Persist", "u1.sound" in shell_js and "u1.vol" in shell_js, "Master gain, mute and level stored locally")
+    log_test("Canvas Scenes Are Real Drawing Code", "requestAnimationFrame" in shell_js and "createRadialGradient" in shell_js, "Globe, starfield, gauges and charts drawn on canvas")
+    log_test("Command Palette Bound To Cmd+K", "metaKey" in shell_js and "palList" in shell_js, "Palette opens on ⌘K and on search focus")
+    log_test("Notification Centre Persists Its Feed", "u1.feed" in shell_js, "Unread counts and history survive a reload")
+    log_test("Single Focus Clock Drives Card And Player", "U.focus = {" in shell_js, "The player owns the timer; the card reads from it")
+    log_test("Shell Reports Its Own Exceptions", "/api/telemetry/client" in shell_js, "Browser faults feed the measurement floor")
+    log_test("Absent Sources Are Labelled, Not Invented", "NOT MEASURED" in shell_js and "no activity recorded" in shell_js, "Panels state when a source is missing instead of showing a number")
+    log_test("Reduced Motion Honoured", "prefers-reduced-motion" in shell_css and "reduced" in shell_js, "Every animation collapses when the viewer asks for less motion")
 
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")

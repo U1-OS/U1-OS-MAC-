@@ -477,3 +477,173 @@ body{
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
+
+/* ==========================================================
+   PREMIUM PASS — HUD brackets, larger hero, dock labels,
+   storage + session player, tighter type. Overrides above.
+   ========================================================== */
+
+body{font-size:13.5px}
+.shell{grid-template-rows:62px minmax(0,1fr) 96px}
+:root{--aside:318px;--rail:224px}
+
+/* landscape bleed behind the whole shell */
+.shell::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(120% 70% at 50% 118%, rgba(46,120,190,.28), transparent 62%),
+    radial-gradient(80% 50% at 8% 96%, rgba(20,60,110,.4), transparent 70%),
+    radial-gradient(80% 50% at 94% 96%, rgba(30,80,140,.34), transparent 70%);
+}
+
+/* ---- HUD corner brackets on every card ---- */
+.card::before,.card::after{
+  content:'';position:absolute;width:13px;height:13px;pointer-events:none;
+  border-color:rgba(110,215,255,.5);opacity:.85;
+}
+.card::before{top:-1px;left:-1px;border-top:1px solid;border-left:1px solid;border-top-left-radius:var(--r)}
+.card::after{bottom:-1px;right:-1px;border-bottom:1px solid;border-right:1px solid;border-bottom-right-radius:var(--r)}
+.hero{border-radius:18px}
+.hero::before,.hero::after{
+  content:'';position:absolute;width:22px;height:22px;pointer-events:none;
+  border-color:rgba(120,225,255,.65);
+}
+.hero::before{top:-1px;right:-1px;border-top:1.5px solid;border-right:1.5px solid;border-top-right-radius:18px}
+.hero::after{bottom:-1px;left:-1px;border-bottom:1.5px solid;border-left:1.5px solid;border-bottom-left-radius:18px}
+
+/* ---- brand ---- */
+.brand h1{font-size:21px;letter-spacing:.15em}
+.brand small{font-size:7px;letter-spacing:.3em}
+
+/* ---- rail: chip icons, filled active ---- */
+.navitem{padding:8px 11px;gap:12px;border-radius:12px;font-size:13px}
+.navitem svg{
+  width:30px;height:30px;padding:6.5px;border-radius:9px;flex:0 0 auto;
+  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);
+  transition:.22s var(--ease);
+}
+.navitem:hover svg{background:rgba(79,216,255,.14);border-color:rgba(79,216,255,.3)}
+.navitem.on{
+  background:linear-gradient(96deg,rgba(37,120,220,.95),rgba(24,80,170,.95));
+  color:#fff;box-shadow:0 6px 22px rgba(30,120,220,.4),inset 0 0 0 1px rgba(140,220,255,.35);
+}
+.navitem.on svg{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.24)}
+.railquote{
+  border-radius:12px;position:relative;
+  background:linear-gradient(155deg,rgba(30,90,170,.22),rgba(10,20,40,.5));
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%);
+}
+.railquote p{font-size:11px;letter-spacing:.06em;line-height:1.55}
+
+/* ---- top bar ---- */
+.top{padding:0 22px}
+.omni{max-width:none;margin:0 auto}
+.omni input{height:42px;border-radius:99px;font-size:13.5px;padding-left:44px}
+.topright{gap:12px}
+.who .av{
+  width:30px;height:30px;
+  box-shadow:0 0 0 2px rgba(79,216,255,.35),0 0 14px rgba(79,216,255,.4);
+}
+.creed{position:absolute;right:22px;top:40px;font-size:8px;letter-spacing:.24em}
+.top{position:relative}
+
+/* ---- hero ---- */
+.hero{min-height:322px;padding:30px 34px}
+#globe{width:min(520px,50%);right:2%}
+.clock b{font-size:66px}
+.clock i{font-size:17px}
+.greet{font-size:30px;margin-top:14px}
+.stamp{font-size:10.5px;letter-spacing:.26em}
+.quotecard{
+  margin-top:18px;padding:13px 17px;border-radius:11px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%);
+  background:linear-gradient(140deg,rgba(79,216,255,.10),rgba(79,216,255,.02));
+}
+.quotecard::after{
+  content:'';display:block;width:44px;height:2px;margin-top:9px;border-radius:2px;
+  background:linear-gradient(90deg,var(--cyan),transparent);
+}
+.pillars{gap:9px;font-size:10.5px;letter-spacing:.24em}
+
+/* ---- tool cards ---- */
+.r-tools{grid-template-columns:repeat(auto-fit,minmax(198px,1fr))}
+.tool{padding:14px 15px 12px}
+.tool .glyph{width:40px;height:40px;border-radius:12px;font-size:18px;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.tool h4{font-size:14px}
+.tool canvas{height:52px;margin-top:12px}
+.tool.first{border-color:rgba(79,216,255,.55);box-shadow:0 0 0 1px rgba(79,216,255,.18),0 10px 34px rgba(0,0,0,.45)}
+
+/* ---- gauges: gapped ring, tick mark ---- */
+.gauge .ring{max-width:82px}
+.gauge .val{font-size:14px}
+.gauge .lab{font-size:9px;letter-spacing:.16em}
+
+/* ---- storage ---- */
+.bar-lg{height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin:10px 0 6px}
+.bar-lg i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cyan),var(--violet));width:0;transition:width 1.2s var(--ease)}
+.folders{display:flex;flex-direction:column;gap:6px;margin-top:11px}
+.folder{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink-2)}
+.folder svg{width:15px;height:15px;color:var(--amber);flex:0 0 auto}
+
+/* ---- session player ---- */
+.player{
+  position:fixed;left:18px;bottom:18px;z-index:40;width:246px;
+  border:1px solid var(--edge);border-radius:15px;padding:11px 13px;
+  background:rgba(9,15,28,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:0 18px 48px rgba(0,0,0,.6);
+}
+.player .ph{display:flex;align-items:center;gap:11px}
+.player .art{
+  width:44px;height:44px;border-radius:10px;flex:0 0 auto;
+  background:linear-gradient(150deg,#1E5FA8,#0A1A33 55%,#2B7FC4);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);position:relative;overflow:hidden;
+}
+.player .art::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:52%;
+  background:linear-gradient(180deg,transparent,rgba(120,200,255,.35));
+  clip-path:polygon(0 62%,26% 22%,44% 54%,68% 12%,100% 58%,100% 100%,0 100%);
+}
+.player .pt{flex:1 1 auto;min-width:0}
+.player .pt b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player .pt span{font-family:var(--mono);font-size:9.5px;color:var(--ink-3)}
+.player .ctrls{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px}
+.player .ctrls button{background:none;border:0;color:var(--ink-2);cursor:pointer;display:grid;place-items:center;transition:.2s}
+.player .ctrls button:hover{color:var(--cyan)}
+.player .ctrls svg{width:15px;height:15px}
+.player .play{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(140deg,var(--cyan),var(--cyan-deep));color:#04060D!important;
+  box-shadow:0 0 16px rgba(79,216,255,.5);
+}
+.player .play svg{width:14px;height:14px}
+.player .prog{height:3px;border-radius:2px;background:rgba(255,255,255,.09);overflow:hidden;margin-top:10px}
+.player .prog i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--violet));width:0}
+.player .times{display:flex;justify-content:space-between;margin-top:5px;font-family:var(--mono);font-size:9px;color:var(--ink-4)}
+@media(max-width:1180px){.player{display:none}}
+
+/* ---- dock with labels ---- */
+.dockwrap{padding:0 20px 16px}
+.dock{gap:4px;padding:9px 16px 7px;border-radius:22px}
+.dockitem{
+  width:52px;height:auto;padding:7px 0 5px;border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.dockitem svg{width:20px;height:20px}
+.dockitem b{font-size:8.5px;font-weight:500;letter-spacing:.06em;color:var(--ink-3);transition:color .2s}
+.dockitem:hover{transform:translateY(-7px) scale(1.1)}
+.dockitem:hover b{color:var(--cyan)}
+.dockitem::after{display:none}
+.dockorb{width:56px;height:56px;margin:0 8px 2px}
+
+.creedfoot{bottom:2px;font-size:9px;letter-spacing:.28em;color:#3A4A62}
+
+/* ---- aside polish ---- */
+.wx{position:relative}
+.aside .card:first-child{
+  background:
+    linear-gradient(160deg,rgba(20,60,110,.5),rgba(10,18,34,.85)),
+    var(--panel);
+}
+.wx .deg{font-size:35px}
+.ag .hh{font-variant-numeric:tabular-nums}
+.intg .gl{width:24px;height:24px;border-radius:7px;font-size:12px}
