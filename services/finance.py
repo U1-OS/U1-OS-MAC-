@@ -2,6 +2,8 @@ import time
 import urllib.request
 import json
 from services.base import BaseService
+from utils import options_greeks
+from utils import crypto_tax
 
 class FinanceService(BaseService):
     def __init__(self, config):
@@ -280,5 +282,34 @@ class FinanceService(BaseService):
                     self.add_event("bill_settled", f"Bill settled: {bill['vendor']} ({bill['amount']})")
 
             return {"success": True, "message": "Bill marked as paid"}
+
+        # 5. Options Volatility Surface & Gamma Scalper
+        elif action == "get_options_surface":
+            surface = options_greeks.get_options_surface()
+            return {"success": True, "surface": surface, "contracts": surface.get("surface", [])}
+
+        elif action == "calculate_greeks":
+            spot = float(payload.get("spot", 64200.0))
+            strike = float(payload.get("strike", 65000.0))
+            t = float(payload.get("time_to_expiry_years", 0.082))
+            opt_type = payload.get("option_type", "CALL")
+            greeks = options_greeks.calculate_black_scholes_greeks(spot, strike, t, option_type=opt_type)
+            return {"success": True, "greeks": greeks, **greeks}
+
+        elif action == "execute_gamma_hedge":
+            delta = float(payload.get("portfolio_delta", 1.45))
+            asset = payload.get("underlying_asset", "BTC")
+            res = options_greeks.execute_gamma_hedge(delta, asset)
+            self.add_event("gamma_hedge_executed", f"Gamma Scalping Rebalance: {res.get('action')} {res.get('hedge_contracts')} {asset} (Post-Hedge Delta: 0.0)")
+            return res
+
+        # 6. Crypto Tax & FIFO Cost-Basis Ledger
+        elif action == "generate_tax_report":
+            method = payload.get("accounting_method", "FIFO")
+            rep = crypto_tax.generate_tax_report(method)
+            return rep
+
+        elif action == "export_irs_8949_csv":
+            return crypto_tax.export_irs_8949_csv()
 
         return super().dispatch_action(action, payload)

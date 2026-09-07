@@ -684,6 +684,48 @@
               <span class="footer-meta mono">ORDER DISPATCH GATED BY EXPLICIT CONFIRMATION</span>
             </footer>
           </article>
+
+          <!-- Widget 4: Options Volatility Surface & Gamma Scalper [Span 6] -->
+          <article class="slab-panel span-6" id="financeOptionsPanel" data-service="finance">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--gold);">DERIVATIVES // 04 &bull; BLACK-SCHOLES</span>
+                <h2 class="slab-title">OPTIONS VOLATILITY SURFACE &amp; GAMMA SCALPER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="optionsBadge" style="background:rgba(255,179,0,0.1); color:var(--gold); border:1px solid rgba(255,179,0,0.3); padding:3px 10px; font-size:11px;">DELTA: +1.45</span>
+                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.refreshOptionsSurface()">VOL SURFACE</button>
+              </div>
+            </header>
+            <div class="slab-body" id="financeOptionsContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">GREEKS ENGINE: &Delta; &bull; &Gamma; &bull; &Theta; &bull; &nu;</span>
+              <button class="btn btn-xs btn-gold mono" onclick="CommandCenter.executeGammaHedge()">GAMMA REBALANCE</button>
+            </footer>
+          </article>
+
+          <!-- Widget 5: Crypto Tax & FIFO Cost-Basis Ledger [Span 6] -->
+          <article class="slab-panel span-6" id="financeTaxPanel" data-service="finance">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--neon-emerald);">TAX // 05 &bull; IRS FORM 8949</span>
+                <h2 class="slab-title">FIFO CAPITAL GAINS &amp; TAX ACCOUNTING LEDGER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="taxBadge" style="background:rgba(16,185,129,0.1); color:var(--neon-emerald); border:1px solid rgba(16,185,129,0.3); padding:3px 10px; font-size:11px;">TAX YEAR: 2026</span>
+                <button class="btn btn-sm btn-emerald mono" onclick="CommandCenter.generateTaxReport()">TAX REPORT</button>
+              </div>
+            </header>
+            <div class="slab-body" id="financeTaxContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">MULTI-CHAIN LOT MATCHING &bull; FIFO / HIFO</span>
+              <button class="btn btn-xs btn-emerald mono" onclick="CommandCenter.exportTax8949()">EXPORT 8949 CSV</button>
+            </footer>
+          </article>
         </section>
 
         <!-- ======================================================== -->
@@ -965,6 +1007,69 @@
             <footer class="slab-footer">
               <span class="footer-meta mono">CLOB REAL-TIME ORDERBOOKS &bull; STATISTICAL EXPECTED VALUE &bull; NEGATIVE RISK</span>
               <span class="footer-meta mono" id="predActiveMeta">ACTIVE MARKETS: 4 TRACKED</span>
+            </footer>
+          </article>
+
+          <!-- Widget 15: Cross-DEX Flash-Loan Triangular Arbitrage Engine [Span 6] -->
+          <article class="slab-panel span-6" id="cryptoFlashArbPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--cyan);">FLASH // 15 &bull; ATOMIC ARBITRAGE</span>
+                <h2 class="slab-title">CROSS-DEX FLASH-LOAN TRIANGULAR ARBITRAGE</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="flashArbBadge" style="background:rgba(0,255,242,0.1); color:var(--cyan); border:1px solid rgba(0,255,242,0.3); padding:3px 10px; font-size:11px;">ROUTES: 3 CYCLES</span>
+                <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.scanFlashArb()">SCAN ROUTES</button>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoFlashArbContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">ZERO CAPITAL OUTLAY &bull; 0.05% FLASH FEE &bull; JITO MEV PRIVATE BUNDLES</span>
+              <button class="btn btn-xs btn-cyan mono" onclick="CommandCenter.executeFlashArb()">EXECUTE ATOMIC CYCLE</button>
+            </footer>
+          </article>
+
+          <!-- Widget 16: Perpetual DEX Delta-Neutral Funding Harvester [Span 6] -->
+          <article class="slab-panel span-6" id="cryptoFundingPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--gold);">FUNDING // 16 &bull; DELTA-NEUTRAL HARVEST</span>
+                <h2 class="slab-title">PERPETUAL FUNDING RATE CASHFLOW HARVESTER</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="fundingBadge" style="background:rgba(255,179,0,0.1); color:var(--gold); border:1px solid rgba(255,179,0,0.3); padding:3px 10px; font-size:11px;">MAX APR: +49.2%</span>
+                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.scanFundingArb()">REFRESH APRs</button>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoFundingContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">1:1 SPOT LONG + PERP SHORT &bull; ZERO DIRECTIONAL RISK</span>
+              <button class="btn btn-xs btn-gold mono" onclick="CommandCenter.executeFundingHedge()">DEPLOY $10K HEDGE</button>
+            </footer>
+          </article>
+
+          <!-- Widget 17: Smart Money Whale Copy-Trading & Shadow Mirror [Span 12] -->
+          <article class="slab-panel span-12" id="cryptoWhaleMirrorPanel" data-service="crypto">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono" style="color:var(--purple);">ALPHA // 17 &bull; SMART MONEY COPY-TRADING</span>
+                <h2 class="slab-title">WHALE COPY-TRADING &amp; SHADOW WALLET MIRROR</h2>
+              </div>
+              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
+                <span class="badge mono" id="whaleBadge" style="background:rgba(168,85,247,0.1); color:var(--purple); border:1px solid rgba(168,85,247,0.3); padding:3px 10px; font-size:11px;">ACTIVE WHALES: 3 TRACKED</span>
+                <button class="btn btn-sm btn-purple mono" onclick="CommandCenter.refreshWhales()">SYNC WHALES</button>
+              </div>
+            </header>
+            <div class="slab-body" id="cryptoWhaleContainer"></div>
+            <footer class="slab-footer">
+              <span class="footer-meta mono">PROPORTIONAL CAPITAL ALLOCATION &bull; SUB-SECOND SAME-BLOCK MIRROR</span>
+              <button class="btn btn-xs btn-purple mono" onclick="CommandCenter.executeShadowTrade()">MIRROR ALPHA TRADE</button>
             </footer>
           </article>
         </section>

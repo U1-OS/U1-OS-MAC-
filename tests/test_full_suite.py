@@ -846,6 +846,95 @@ def main():
 
     log_test("Multi-Agent Swarm Deliberation Panel Markup", 'id="aiSwarmPanel"' in index_html, "#aiSwarmPanel active in DOM")
 
+    # 60. Cross-DEX Flash-Loan Triangular Arbitrage Engine
+    print(f"\n{INFO} 60. Subsystem: Cross-DEX Flash-Loan Triangular Arbitrage Engine:")
+    s, flash_scan = action("crypto", "scan_flash_arbitrage", {})
+    routes = flash_scan.get("opportunities", [])
+    log_test("Flash-Loan Triangular Arbitrage Route Discovery", flash_scan.get("success") and len(routes) >= 3, f"Discovered {len(routes)} cyclic multi-hop arbitrage routes across Solana & EVM")
+
+    s, flash_exec = action("crypto", "execute_flash_arbitrage", {"route_id": "tri_sol_usdc_bonk"})
+    f_rec = flash_exec.get("record", {})
+    log_test("Atomic Multi-Hop Flash Loan Execution & Settlement", flash_exec.get("success") and f_rec.get("status") == "LANDED_ATOMIC", f"Executed atomic cycle {f_rec.get('route_id')}: +{f_rec.get('net_profit')} {f_rec.get('base_token')} ({f_rec.get('net_spread_pct')}% spread)")
+
+    s, term_flash = action("crypto", "execute_terminal_command", {"command": "flasharb"})
+    log_test("Cyber Terminal Flash Arbitrage Matrix Console Integration", term_flash.get("success") and "CROSS-DEX FLASH-LOAN TRIANGULAR ARBITRAGE" in term_flash.get("output", ""), "Flash triangular arbitrage matrix rendered in cyber console")
+
+    log_test("Flash Triangular Arbitrage UI Panel Markup", 'id="cryptoFlashArbPanel"' in index_html, "#cryptoFlashArbPanel active in DOM")
+
+    # 61. Perpetual DEX Delta-Neutral Funding Rate Harvester
+    print(f"\n{INFO} 61. Subsystem: Perpetual DEX Delta-Neutral Funding Rate Harvester:")
+    s, fund_scan = action("crypto", "scan_funding_arbitrage", {})
+    f_opps = fund_scan.get("opportunities", [])
+    top_apr = fund_scan.get("funding", {}).get("top_apr_pct", 0)
+    log_test("Perpetual Funding Rate Matrix Multi-Venue Ingestion", fund_scan.get("success") and len(f_opps) >= 4, f"Ingested funding rates across {len(f_opps)} perp venues (Top APR: +{top_apr}%)")
+
+    s, hedge_res = action("crypto", "execute_delta_neutral_hedge", {"market_id": "hl_sol_perp", "capital_usd": 10000.0})
+    h_rec = hedge_res.get("hedge", {})
+    log_test("Delta-Neutral 1:1 Spot Long / Perp Short Position Sizing", hedge_res.get("success") and h_rec.get("delta") == 0.0, f"Hedge deployed: ${h_rec.get('allocated_capital_usd')} on {h_rec.get('symbol')} (+${h_rec.get('est_daily_yield_usd')}/day cashflow)")
+
+    s, term_fund = action("crypto", "execute_terminal_command", {"command": "funding"})
+    log_test("Cyber Terminal Funding Rate Matrix Console Integration", term_fund.get("success") and "PERPETUAL DEX DELTA-NEUTRAL FUNDING MATRIX" in term_fund.get("output", ""), "Funding rate matrix rendered in cyber console")
+
+    log_test("Perpetual Funding Harvester UI Panel Markup", 'id="cryptoFundingPanel"' in index_html, "#cryptoFundingPanel active in DOM")
+
+    # 62. Meme Token Liquidity Pool Migration & Snipe Radar
+    print(f"\n{INFO} 62. Subsystem: Meme Token Liquidity Pool Migration & Snipe Radar:")
+    s, mig_scan = action("crypto", "scan_pool_migrations", {})
+    migs = mig_scan.get("migrations", [])
+    log_test("Pump.fun -> Raydium/Meteora Pool Migration Ingestion", mig_scan.get("success") and len(migs) >= 3, f"Monitored {len(migs)} graduating liquidity pools transitioning to AMM DEXs")
+
+    s, mig_audit = action("crypto", "audit_pool_migration", {"mint": "Cyber99DogeSolanaMempoolMINTAddress111111"})
+    log_test("Graduation Contract Safety & LP Lock Verification", mig_audit.get("success") and mig_audit.get("anti_sniper_score", 0) >= 85, f"Audit verdict: {mig_audit.get('verdict')} (Safety Score: {mig_audit.get('anti_sniper_score')}/100, Mint Revoked: {mig_audit.get('mint_revoked')})")
+
+    s, sched_res4 = get("/api/scheduler")
+    jobs4 = sched_res4.get("jobs", [])
+    has_flash_job = any(j.get("id") == "flash_loan_triangular_watchdog" for j in jobs4)
+    log_test("Scheduler Job #14 Flash-Loan Triangular Arbitrage Watchdog", has_flash_job, "Scheduled flash triangular arb watchdog registered (300s interval)")
+
+    s, flash_hist = action("crypto", "get_flash_arb_history", {})
+    log_test("Flash Arbitrage Execution Ledger Audit Trail", flash_hist.get("success") and len(flash_hist.get("history", [])) > 0, "Retrieved historical flash loan execution records")
+
+    # 63. Smart Money Whale Copy-Trading & Shadow Wallet Mirror
+    print(f"\n{INFO} 63. Subsystem: Smart Money Whale Copy-Trading & Shadow Wallet Mirror:")
+    s, whales_res = action("crypto", "get_tracked_whales", {})
+    w_list = whales_res.get("whales", [])
+    log_test("Smart Money High-Alpha Whale Wallet Roster Ingestion", whales_res.get("success") and len(w_list) >= 3, f"Tracked {len(w_list)} smart money whale wallets on Solana and Base")
+
+    s, whale_add = action("crypto", "add_tracked_whale", {"address": "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin", "chain": "solana", "label": "Solana Sniper Syndicate"})
+    log_test("Dynamic Whale Address Watchlist Expansion", whale_add.get("success") and len(whale_add.get("tracked_whales", [])) >= 4, "New high-alpha whale address added to shadow surveillance")
+
+    s, shadow_trade = action("crypto", "execute_shadow_trade", {"whale_id": "whale_sol_alpha_1", "mirror_fraction": 0.05})
+    s_rec = shadow_trade.get("order", {})
+    log_test("Sub-Second Same-Block Proportional Shadow Trade Mirroring", shadow_trade.get("success") and s_rec.get("status") == "FILLED_IN_SAME_BLOCK", f"Mirrored {s_rec.get('whale_label')}: {s_rec.get('action')} ${s_rec.get('executed_stake_usd')} {s_rec.get('token')} @ ${s_rec.get('price')}")
+
+    s, term_shadow = action("crypto", "execute_terminal_command", {"command": "shadow"})
+    log_test("Cyber Terminal Whale Shadow Console Integration", term_shadow.get("success") and "SMART MONEY WHALE SHADOW MIRROR" in term_shadow.get("output", ""), "Whale mirror matrix rendered in cyber console")
+
+    # 64. Autonomous Options Volatility Surface & Gamma Scalper
+    print(f"\n{INFO} 64. Subsystem: Autonomous Options Volatility Surface & Gamma Scalper:")
+    s, opt_surf = action("finance", "get_options_surface", {})
+    c_list = opt_surf.get("contracts", [])
+    log_test("Black-Scholes Options Volatility Surface Ingestion", opt_surf.get("success") and len(c_list) >= 6, f"Generated volatility surfaces across {len(c_list)} options strikes (BTC + ETH)")
+
+    s, opt_greeks = action("finance", "calculate_greeks", {"spot": 64200.0, "strike": 65000.0, "time_to_expiry_years": 0.082, "option_type": "CALL"})
+    log_test("Real-Time Analytical Greeks Calculation (Delta, Gamma, Theta, Vega)", opt_greeks.get("success") and "gamma" in opt_greeks and "delta" in opt_greeks, f"Call @ $65000: Delta={opt_greeks.get('delta')}, Gamma={opt_greeks.get('gamma')}, Theta={opt_greeks.get('theta')}/day, Price=${opt_greeks.get('theoretical_price_usd')}")
+
+    s, gamma_hedge = action("finance", "execute_gamma_hedge", {"portfolio_delta": 1.45, "underlying_asset": "BTC"})
+    log_test("Automated Delta-Neutral Gamma Scalping Rebalance", gamma_hedge.get("success") and gamma_hedge.get("post_hedge_delta") == 0.0, f"Gamma rebalance: {gamma_hedge.get('action')} {gamma_hedge.get('hedge_contracts')} {gamma_hedge.get('asset')} (${gamma_hedge.get('notional_value_usd')})")
+
+    log_test("Options Volatility Surface & Gamma Scalper UI Panel Markup", 'id="financeOptionsPanel"' in index_html, "#financeOptionsPanel active in DOM")
+
+    # 65. Crypto Tax & FIFO Cost-Basis Accounting Ledger
+    print(f"\n{INFO} 65. Subsystem: Crypto Tax & FIFO Cost-Basis Accounting Ledger:")
+    s, tax_rep = action("finance", "generate_tax_report", {"accounting_method": "FIFO"})
+    log_test("Multi-Chain Capital Gains FIFO Lot Matching Engine", tax_rep.get("success") and tax_rep.get("total_gain_loss_usd", 0) > 0, f"Total Gains: ${tax_rep.get('total_gain_loss_usd')} (Short-Term: ${tax_rep.get('short_term_capital_gains_usd')}, Long-Term: ${tax_rep.get('long_term_capital_gains_usd')}) across {tax_rep.get('total_disposals')} disposals")
+
+    s, tax_csv = action("finance", "export_irs_8949_csv", {})
+    log_test("Compliant IRS Form 8949 CSV Tax Schedule Export", tax_csv.get("success") and "Description,Date Acquired,Date Sold" in tax_csv.get("csv_content", ""), f"Exported {tax_csv.get('events_exported')} disposal tax lots to {tax_csv.get('filename')}")
+
+    log_test("Crypto Tax FIFO Accounting Ledger UI Panel Markup", 'id="financeTaxPanel"' in index_html, "#financeTaxPanel active in DOM")
+    log_test("Client Application Quant & Tax Hook API Integration", "scanFlashArb" in app_js and "generateTaxReport" in app_js, "Wave 1 quant and tax methods exposed in CommandCenter API")
+
     # Summary
     print(f"\n{CYAN}============================================================{RESET}")
     print(f" TOTAL TESTS EXECUTED: {tests_run}")

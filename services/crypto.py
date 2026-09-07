@@ -19,6 +19,10 @@ from utils import browser_crawler
 from utils import evm_btc
 from utils import jito
 from utils import prediction_markets
+from utils import flash_arbitrage
+from utils import funding_arbitrage
+from utils import migration_radar
+from utils import whale_mirror
 
 SOL_CA_REGEX = re.compile(r'\b[1-9A-HJ-NP-Za-km-z]{32,44}\b')
 EVM_CA_REGEX = re.compile(r'\b0x[a-fA-F0-9]{40}\b')
@@ -986,6 +990,52 @@ class CryptoService(BaseService):
                 out = f"🎯 PREDICTION ORDER EXECUTED:\nMarket: {t.get('title')}\nOutcome: {t.get('outcome')} @ ${t.get('entry_price')} | Stake: ${t.get('amount_usd')} -> Payout: ${t.get('payout_if_win_usd')}"
                 return {"success": True, "output": out, "command": cmd_str}
 
+        elif cmd in ["flasharb", "triangles", "flash"]:
+            sub = args[0].lower() if args else "scan"
+            if sub in ["scan", "routes", "list"]:
+                res = flash_arbitrage.scan_triangular_arbitrage()
+                opps = res.get("opportunities", [])
+                lines = [f"=== CROSS-DEX FLASH-LOAN TRIANGULAR ARBITRAGE ({len(opps)} Routes) ==="]
+                for o in opps:
+                    lines.append(f"• [{o['chain'].upper()}] {o['id']} | Net Spread: +{o['net_spread_pct']}% (+{o.get('net_profit_sol', o.get('net_profit_eth'))} {o['base_token']})")
+                lines.append(f"Status: {res.get('status')} | Top Spread: {res.get('top_spread_pct')}%")
+                return {"success": True, "output": "\n".join(lines), "command": cmd_str}
+            else:
+                exec_res = flash_arbitrage.execute_flash_arbitrage()
+                rec = exec_res.get("execution", {})
+                out = f"⚡ FLASH ARBITRAGE EXECUTED ATOMICALLY:\nRoute: {rec.get('route_id')} ({rec.get('chain').upper()})\nBorrowed: {rec.get('borrow_amount')} {rec.get('base_token')} -> Net Profit: +{rec.get('net_profit')} {rec.get('base_token')} ({rec.get('net_spread_pct')}% spread)\nTX: {rec.get('tx_id')}"
+                return {"success": True, "output": out, "command": cmd_str}
+
+        elif cmd in ["funding", "perp", "harvester"]:
+            sub = args[0].lower() if args else "scan"
+            if sub in ["scan", "rates", "list"]:
+                res = funding_arbitrage.scan_funding_arbitrage()
+                opps = res.get("opportunities", [])
+                lines = [f"=== PERPETUAL DEX DELTA-NEUTRAL FUNDING MATRIX ({len(opps)} Venues) ==="]
+                for o in opps:
+                    lines.append(f"• [{o['platform']}] {o['symbol']} | APR: +{o['annualized_apr_pct']}% | Rate(8h): +{o['funding_rate_8h_pct']}% ({o['predicted_direction']})")
+                lines.append(f"Status: {res.get('status')} | Top APR: {res.get('top_apr_pct')}%")
+                return {"success": True, "output": "\n".join(lines), "command": cmd_str}
+            else:
+                hedge_res = funding_arbitrage.execute_delta_neutral_hedge()
+                rec = hedge_res.get("hedge", {})
+                out = f"🌾 DELTA-NEUTRAL FUNDING HEDGE DEPLOYED:\nMarket: {rec.get('symbol')} ({rec.get('platform')})\nCapital: ${rec.get('allocated_capital_usd')} | APR: {rec.get('annualized_apr_pct')}%\nEst. Daily Cashflow: +${rec.get('est_daily_yield_usd')}/day (Delta: {rec.get('delta')})"
+                return {"success": True, "output": out, "command": cmd_str}
+
+        elif cmd in ["shadow", "whale", "whales"]:
+            sub = args[0].lower() if args else "list"
+            if sub in ["list", "track", "scan"]:
+                whales = whale_mirror.get_tracked_whales()
+                lines = [f"=== SMART MONEY WHALE SHADOW MIRROR ({len(whales)} Whales) ==="]
+                for w in whales:
+                    lines.append(f"• [{w['chain'].upper()}] {w['label']} ({w['address'][:8]}...{w['address'][-6:]}) | Win Rate: {w['win_rate_pct']}%")
+                return {"success": True, "output": "\n".join(lines), "command": cmd_str}
+            else:
+                mirror_res = whale_mirror.execute_shadow_trade()
+                rec = mirror_res.get("order", {})
+                out = f"🐋 WHALE COPY-TRADE EXECUTED:\nMirroring: {rec.get('whale_label')} ({rec.get('chain').upper()})\nOrder: {rec.get('action')} ${rec.get('executed_stake_usd')} {rec.get('token')} @ ${rec.get('price')} (Slippage: {rec.get('slippage_pct')}%)\nStatus: {rec.get('status')}"
+                return {"success": True, "output": out, "command": cmd_str}
+
         return {"success": True, "output": f"Executed command: {cmd_str}", "command": cmd_str}
 
     def dispatch_action(self, action, payload=None):
@@ -1451,5 +1501,74 @@ class CryptoService(BaseService):
                 t = res.get("trade", {})
                 self.add_event("prediction_trade_executed", f"Executed ${amount:.2f} on {t.get('title')} ({outcome})")
             return res
+
+        # 1. Flash-Loan Triangular Arbitrage
+        elif action == "scan_flash_arbitrage":
+            res = flash_arbitrage.scan_triangular_arbitrage()
+            return {"success": True, "arbitrage": res, "opportunities": res.get("opportunities", []), "routes": res.get("opportunities", [])}
+
+        elif action == "execute_flash_arbitrage":
+            route_id = payload.get("route_id", "tri_sol_usdc_bonk")
+            amount = payload.get("borrow_amount") or payload.get("amount")
+            res = flash_arbitrage.execute_flash_arbitrage(route_id, amount)
+            if res.get("success"):
+                r = res.get("record", {})
+                self.add_event("flash_arb_executed", f"Executed atomic flash-loan: {r.get('route_id')} (+{r.get('net_profit')} {r.get('base_token')})")
+            return res
+
+        elif action == "get_flash_arb_history":
+            history = flash_arbitrage.get_flash_arb_history()
+            return {"success": True, "history": history, "total_executions": len(history)}
+
+        # 2. Perpetual Funding Rate Harvester
+        elif action == "scan_funding_arbitrage":
+            res = funding_arbitrage.scan_funding_arbitrage()
+            return {"success": True, "funding": res, "markets": res.get("opportunities", []), "opportunities": res.get("opportunities", [])}
+
+        elif action == "execute_delta_neutral_hedge":
+            market_id = payload.get("market_id", "hl_sol_perp")
+            capital = payload.get("allocated_capital_usd") or payload.get("capital_usd", 10000.0)
+            res = funding_arbitrage.execute_delta_neutral_hedge(market_id, capital)
+            if res.get("success"):
+                h = res.get("hedge", {})
+                self.add_event("funding_hedge_deployed", f"Deployed ${capital} delta-neutral hedge on {h.get('symbol')} ({h.get('annualized_apr_pct')}% APR)")
+            return res
+
+        elif action == "get_active_hedges":
+            hedges = funding_arbitrage.get_active_hedges()
+            return {"success": True, "hedges": hedges, "total_hedges": len(hedges)}
+
+        # 3. Liquidity Pool Migration Radar
+        elif action == "scan_pool_migrations":
+            res = migration_radar.scan_pool_migrations()
+            return {"success": True, "radar": res, "migrations": res.get("migrations", [])}
+
+        elif action == "audit_pool_migration":
+            mint = payload.get("mint") or payload.get("token_id", "CYBER_DOGE_99")
+            return migration_radar.audit_pool_migration(mint)
+
+        # 4. Whale Copy-Trading & Shadow Mirror
+        elif action == "get_tracked_whales":
+            whales = whale_mirror.get_tracked_whales()
+            return {"success": True, "whales": whales, "total_whales": len(whales)}
+
+        elif action == "add_tracked_whale":
+            addr = payload.get("address", "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU")
+            chain = payload.get("chain", "solana")
+            label = payload.get("label", "Smart Money Whale")
+            return whale_mirror.add_tracked_whale(addr, chain, label)
+
+        elif action == "execute_shadow_trade":
+            whale_id = payload.get("whale_id", "whale_sol_alpha_1")
+            fraction = payload.get("mirror_fraction", 0.05)
+            res = whale_mirror.execute_shadow_trade(whale_id, fraction)
+            if res.get("success"):
+                o = res.get("order", {})
+                self.add_event("whale_shadow_trade", f"Shadow mirrored {o.get('whale_label')}: {o.get('action')} ${o.get('executed_stake_usd')} {o.get('token')}")
+            return res
+
+        elif action == "get_shadow_trade_history":
+            history = whale_mirror.get_shadow_trade_history()
+            return {"success": True, "history": history, "total_orders": len(history)}
 
         return super().dispatch_action(action, payload)

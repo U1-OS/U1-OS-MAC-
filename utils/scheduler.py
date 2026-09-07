@@ -217,6 +217,15 @@ class AutomationScheduler:
             handler=self._job_competitor_pricing_radar
         )
 
+        # 14. Flash-Loan Triangular Arbitrage Watchdog
+        self.register_job(
+            "flash_loan_triangular_watchdog",
+            "Flash-Loan Triangular Arbitrage Watchdog",
+            "Simulates multi-hop cyclic arbitrage across Solana and EVM venues, calculating net profit and Jito tip floors",
+            interval_sec=300,
+            handler=self._job_flash_loan_triangular_watchdog
+        )
+
     def _job_dns_audit(self, feeder):
         import socket
         start = time.time()
@@ -403,6 +412,16 @@ class AutomationScheduler:
             summary = f"Competitor Radar: {targets} targets monitored, {deltas} pricing/product updates identified"
             return {"targets_monitored": targets, "deltas_detected": deltas, "summary": summary}
         return {"summary": "OSINT service unavailable for competitor radar"}
+
+    def _job_flash_loan_triangular_watchdog(self, feeder):
+        if feeder and hasattr(feeder, "services") and "crypto" in feeder.services:
+            crypto_svc = feeder.services["crypto"]
+            res = crypto_svc.dispatch_action("scan_flash_arbitrage", {})
+            opps = res.get("opportunities", [])
+            top = res.get("arbitrage", {}).get("top_spread_pct", 0.0)
+            summary = f"Flash Triangular Arb: {len(opps)} cyclic routes actionable (Top Spread: +{top}%)"
+            return {"routes_count": len(opps), "top_spread_pct": top, "summary": summary}
+        return {"summary": "Crypto service unavailable for flash triangular watchdog"}
 
     def register_job(self, job_id, name, description, interval_sec, handler):
         with self.lock:
