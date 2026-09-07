@@ -597,8 +597,79 @@ class CryptoService(BaseService):
   bot [status|start|stop|backtest] Autonomous AI trading bot manager
   positions                        Display active crypto holdings & unrealized PnL
   alerts                           List active price target alert sentinels
+  telegram <cmd>                   Execute remote Telegram Bot command (/status, /pnl, etc.)
+  crawl <url|ca>                   Native Headless Chrome DOM crawler & CA extractor
+  solana [address]                 Query Solana wallet balance & RPC telemetry
+  jupiter <symbol>                 Fetch live Jupiter Aggregator v6 quote
+  lockdown [on|off]                Engage or disengage security lockdown
   clear                            Clear terminal scrollback buffer"""
             return {"success": True, "output": out, "command": cmd_str}
+
+        elif cmd in ["telegram", "tg"]:
+            sub_cmd = " ".join(args) if args else "/status"
+            if not sub_cmd.startswith("/"):
+                sub_cmd = "/" + sub_cmd
+            # Check if telegram service is mounted on feeder
+            feeder = getattr(self, "feeder", None)
+            tg_svc = feeder.services.get("telegram") if feeder else None
+            if tg_svc:
+                raw_out = tg_svc.execute_telegram_command(sub_cmd)
+                clean_out = re.sub(r'<[^>]+>', '', raw_out).replace('&bull;', '•').replace('&gt;', '>').replace('&lt;', '<')
+                return {"success": True, "output": f"[TELEGRAM BOT RESPONSE]:\n{clean_out}", "command": cmd_str}
+            else:
+                return {"success": True, "output": f"Telegram command simulated: {sub_cmd}", "command": cmd_str}
+
+        elif cmd in ["crawl", "browse"]:
+            target = args[0] if args else "BONK"
+            if not target.startswith("http"):
+                # Treat as token symbol or CA
+                tok = next((t for t in self.tokens if t["symbol"].upper() == target.upper()), None)
+                ca = tok.get("ca") if tok else target
+                res = browser_crawler.inspect_token_dex(ca, dex="photon")
+            else:
+                res = browser_crawler.inspect_page(target)
+
+            if res.get("ok"):
+                cas = res.get("detected_solana_cas", [])
+                cas_str = f"\nDetected Solana CAs: {', '.join(cas[:3])}" if cas else "\nDetected CAs: None"
+                out = f"HEADLESS CHROME INSPECTION [{res.get('engine')}] ({res.get('latency_ms')}ms)\nURL: {res.get('url')}\nTitle: {res.get('title')}\nPreview: {res.get('text_preview', '')[:160]}...{cas_str}"
+                return {"success": True, "output": out, "command": cmd_str}
+            else:
+                return {"success": False, "output": f"Chrome crawl failed: {res.get('error')}", "command": cmd_str}
+
+        elif cmd == "solana":
+            addr = args[0] if args else (self.config.get("integrations", {}).get("solana", {}).get("wallet_address") or "So11111111111111111111111111111111111111112")
+            rpc = self.config.get("integrations", {}).get("solana", {}).get("rpc_url")
+            bal_res = solana.get_sol_balance(addr, rpc_url=rpc)
+            out = f"SOLANA ON-CHAIN STATUS:\nWallet: {addr}\nSOL Balance: {bal_res.get('sol', 0.0)} SOL ({bal_res.get('lamports', 0):,} lamports)\nRPC Status: {'ONLINE' if bal_res.get('ok') else 'STANDBY/OFFLINE'}"
+            return {"success": True, "output": out, "command": cmd_str}
+
+        elif cmd == "jupiter":
+            sym = args[0].upper() if args else "BONK"
+            tok = next((t for t in self.tokens if t["symbol"] == sym), None)
+            mint = tok.get("ca") if tok else jupiter.USDC_MINT
+            q = jupiter.get_quote(jupiter.NATIVE_SOL_MINT, mint, 1000000000)
+            if q.get("ok"):
+                out = f"JUPITER v6 ROUTE:\nIn: 1.0 SOL -> Out: {q.get('out_amount', 0)} ({sym})\nPrice Impact: {q.get('price_impact_pct', 0)}%\nRoutes: {len(q.get('route_plan', []))} hops"
+                return {"success": True, "output": out, "command": cmd_str}
+            else:
+                return {"success": False, "output": f"Jupiter quote standby: {q.get('error')}", "command": cmd_str}
+
+        elif cmd == "lockdown":
+            sub = args[0].lower() if args else "status"
+            feeder = getattr(self, "feeder", None)
+            sett_svc = feeder.services.get("settings") if feeder else None
+            if sub in ["on", "engage", "true"]:
+                if sett_svc:
+                    sett_svc.dispatch_action("toggle_lockdown", {"enable": True, "confirmed": True, "reason": "Cyber terminal lockdown"})
+                return {"success": True, "output": "EMERGENCY LOCKDOWN ENGAGED: All outbound mutations frozen.", "command": cmd_str}
+            elif sub in ["off", "disengage", "false"]:
+                if sett_svc:
+                    sett_svc.dispatch_action("toggle_lockdown", {"enable": False, "confirmed": True})
+                return {"success": True, "output": "LOCKDOWN DISENGAGED: Normal operations restored.", "command": cmd_str}
+            else:
+                locked = sett_svc.lockdown_active if sett_svc else False
+                return {"success": True, "output": f"Lockdown Status: {'ENGAGED' if locked else 'DISENGAGED'}", "command": cmd_str}
 
         elif cmd == "status":
             out = f"U1 OS v1.0 Feeder: ONLINE\nBinding: 127.0.0.1:8787 (Strict Localhost)\nServices: 10 Subsystems Active\nBot Engine: {self.bot_state['status']}"

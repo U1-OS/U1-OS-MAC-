@@ -96,6 +96,7 @@ class CommandCenterFeeder:
         self.services["gaming"] = GamingService(self.config)
         self.services["osint"] = OSINTService(self.config)
         self.services["crypto"] = CryptoService(self.config)
+        self.services["crypto"].feeder = self
         self.services["telegram"] = TelegramService(self.config)
         self.services["telegram"].feeder = self
         self.services["settings"] = SettingsService(self.config, self.config_path, self.services)

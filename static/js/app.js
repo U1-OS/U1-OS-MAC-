@@ -2209,6 +2209,98 @@ const CommandCenter = (() => {
         </div>
       `;
     }
+
+    // 8. Telegram Alpha Station & Remote Terminal
+    const tgEl = document.getElementById('cryptoTelegramContainer');
+    const tgDot = document.getElementById('tgStationDot');
+    const tgStatus = document.getElementById('tgStationStatus');
+    const tgOffset = document.getElementById('tgLastOffset');
+    const tgState = (currentState && currentState.services && currentState.services.telegram && currentState.services.telegram.data) ? currentState.services.telegram.data : {};
+    const isTgConfigured = tgState.configured || false;
+    const botInfo = tgState.bot_info || {};
+    const tgMsgs = tgState.recent_messages || [];
+
+    if (tgDot && tgStatus) {
+      tgDot.style.background = isTgConfigured ? 'var(--neon-emerald)' : 'var(--neon-cyan)';
+      tgStatus.textContent = isTgConfigured ? `@${botInfo.username || 'BOT_ACTIVE'}` : 'STANDBY (AWAITING TOKEN)';
+    }
+    if (tgOffset && isTgConfigured) {
+      tgOffset.textContent = `CHANNEL: ${tgState.alpha_channel || 'DIRECT'} | MSGS: ${tgMsgs.length}`;
+    }
+
+    if (tgEl) {
+      tgEl.innerHTML = `
+        <div class="telegram-station-wrap">
+          <div class="telegram-feed-container" id="tgFeedBox">
+            ${tgMsgs.length === 0 ? `
+              <div style="color:var(--text-muted); text-align:center; padding:20px;">
+                No messages recorded yet. Send a command below or connect your bot token in Integrations Hub.
+              </div>
+            ` : tgMsgs.slice(-8).map(m => {
+              const dirClass = m.direction === 'OUTBOUND' ? 'outbound' : (m.direction === 'BROADCAST' ? 'broadcast' : '');
+              return `
+                <div class="telegram-msg-card ${dirClass}">
+                  <div class="telegram-msg-header">
+                    <span>${escapeHtml(m.author || 'USER')} &bull; ${escapeHtml(m.direction || 'INBOUND')}</span>
+                    <span>${escapeHtml(m.time_str || '')}</span>
+                  </div>
+                  <div class="telegram-msg-text">${escapeHtml(m.text || '')}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="telegram-cmd-chips">
+            <span style="font-size:10px; color:var(--text-muted); align-self:center;">QUICK:</span>
+            <button class="tg-chip-btn" onclick="CommandCenter.executeTelegramCmdFromUI('/status')">/status</button>
+            <button class="tg-chip-btn" onclick="CommandCenter.executeTelegramCmdFromUI('/tokens')">/tokens</button>
+            <button class="tg-chip-btn" onclick="CommandCenter.executeTelegramCmdFromUI('/pnl')">/pnl</button>
+            <button class="tg-chip-btn" onclick="CommandCenter.executeTelegramCmdFromUI('/buy BONK 0.1')">/buy BONK 0.1</button>
+            <button class="tg-chip-btn" onclick="CommandCenter.executeTelegramCmdFromUI('/bot status')">/bot status</button>
+            <button class="tg-chip-btn" style="color:var(--neon-crimson); border-color:rgba(239,68,68,0.3);" onclick="CommandCenter.executeTelegramCmdFromUI('/lockdown')">/lockdown</button>
+          </div>
+
+          <div class="telegram-send-bar">
+            <input type="text" id="tgMsgInput" class="telegram-send-input" placeholder="Type a message or command (/status, /buy, /quote)..." onkeydown="if(event.key==='Enter') CommandCenter.sendTelegramMessageFromUI()">
+            <button class="btn btn-secondary btn-sm mono" onclick="CommandCenter.sendTelegramMessageFromUI()">SEND &rarr;</button>
+          </div>
+        </div>
+      `;
+      const fb = document.getElementById('tgFeedBox');
+      if (fb) fb.scrollTop = fb.scrollHeight;
+    }
+
+    // 9. Native Headless Chrome Web Inspector & DEX Crawler
+    const browserEl = document.getElementById('cryptoBrowserContainer');
+    if (browserEl) {
+      const firstCa = tokens[1] ? tokens[1].ca : 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
+      browserEl.innerHTML = `
+        <div class="browser-inspector-wrap">
+          <div class="browser-input-row">
+            <input type="text" id="browserTargetInput" class="browser-input-field" placeholder="Enter Token CA or DEX URL (Photon / DexScreener)..." value="${escapeHtml(firstCa)}">
+            <button class="btn btn-secondary btn-sm mono" id="btnRunCrawler" onclick="CommandCenter.runHeadlessChromeInspection()">INSPECT DOM</button>
+            <button class="btn btn-gold btn-sm mono" id="btnSnapCrawler" onclick="CommandCenter.captureHeadlessChromeSnapshot()">SNAPSHOT</button>
+          </div>
+
+          <div class="browser-quick-tokens">
+            <span style="font-size:10px; color:var(--text-muted); align-self:center;">TOKENS:</span>
+            ${tokens.slice(0, 5).map(t => `
+              <button class="tg-chip-btn" onclick="document.getElementById('browserTargetInput').value='${escapeHtml(t.ca)}'; CommandCenter.runHeadlessChromeInspection('${escapeHtml(t.ca)}')">${escapeHtml(t.symbol)}</button>
+            `).join('')}
+          </div>
+
+          <div class="browser-preview-box" id="browserResultConsole">
+            <div class="browser-stat-line">
+              <span>ENGINE: GOOGLE CHROME 152 HEADLESS</span>
+              <span id="crawlerLatencyTag" style="color:var(--neon-cyan);">READY</span>
+            </div>
+            <div id="crawlerOutputBody" style="color:var(--text-muted); font-size:11px; line-height:1.5;">
+              Ready to crawl live JavaScript single-page application charts and extract orderbook depths, market caps, and on-page contracts. Click <b>INSPECT DOM</b> or select any token above.
+            </div>
+          </div>
+        </div>
+      `;
+    }
   }
 
   function selectCryptoToken(symbol) {
@@ -2545,6 +2637,114 @@ const CommandCenter = (() => {
       modal.style.display = 'none';
       modal.setAttribute('aria-hidden', 'true');
     }
+  // Telegram Station UI Actions
+  function executeTelegramCmdFromUI(cmd) {
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    showNotification(`Executing Telegram command: ${cmd}...`);
+    apiAction('telegram', 'execute_command', { command: cmd }, (res) => {
+      if (res && res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.signal();
+        showNotification('Telegram command processed');
+        fetchState();
+      } else {
+        showNotification(`Telegram error: ${res ? res.error : 'Unknown'}`);
+      }
+    });
+  }
+
+  function sendTelegramMessageFromUI() {
+    const inp = document.getElementById('tgMsgInput');
+    if (!inp) return;
+    const text = inp.value.trim();
+    if (!text) return;
+    inp.value = '';
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+
+    if (text.startsWith('/')) {
+      executeTelegramCmdFromUI(text);
+      return;
+    }
+
+    apiAction('telegram', 'send_message', { text }, (res) => {
+      if (res && res.success) {
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showNotification('Message dispatched to Telegram');
+        fetchState();
+      } else {
+        showNotification(`Failed to send Telegram message: ${res ? (res.error || res.message) : 'Offline'}`);
+      }
+    });
+  }
+
+  // Headless Chrome Inspector UI Actions
+  function runHeadlessChromeInspection(target) {
+    const inp = document.getElementById('browserTargetInput');
+    const val = target || (inp ? inp.value.trim() : '') || 'BONK';
+    const tagEl = document.getElementById('crawlerLatencyTag');
+    const outBody = document.getElementById('crawlerOutputBody');
+    const btn = document.getElementById('btnRunCrawler');
+
+    if (tagEl) { tagEl.textContent = 'CRAWLING...'; tagEl.style.color = 'var(--gold)'; }
+    if (btn) btn.disabled = true;
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.execute();
+
+    if (outBody) {
+      outBody.innerHTML = `<div style="color:var(--neon-cyan);"><span class="blink">█</span> Initializing Google Chrome Headless 152... Executing JavaScript DOM on target: ${escapeHtml(val)}</div>`;
+    }
+
+    apiAction('crypto', 'browse_token_chart', { symbol: val, ca: val.length > 20 ? val : '' }, (res) => {
+      if (btn) btn.disabled = false;
+      if (res && res.success && res.crawler) {
+        const c = res.crawler;
+        if (tagEl) { tagEl.textContent = `${c.latency_ms}ms (${c.engine})`; tagEl.style.color = 'var(--neon-emerald)'; }
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        if (outBody) {
+          const casHtml = (c.detected_solana_cas || []).map(ca => `
+            <span class="browser-ca-chip" title="Click to copy CA" onclick="CommandCenter.copyCaToClipboard('${escapeHtml(ca)}')">${escapeHtml(ca.slice(0, 10))}...${escapeHtml(ca.slice(-6))}</span>
+          `).join(' ');
+          outBody.innerHTML = `
+            <div style="color:var(--text-primary); font-weight:700; margin-bottom:4px;">${escapeHtml(c.title || 'DOM Rendered')}</div>
+            <div style="color:var(--text-secondary); margin-bottom:6px;"><b>URL:</b> <a href="${escapeHtml(c.url)}" target="_blank" style="color:var(--neon-cyan);">${escapeHtml(c.url)}</a></div>
+            <div style="color:var(--text-muted); font-size:10.5px; margin-bottom:8px; line-height:1.4;">${escapeHtml(c.text_preview || '')}</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+              <span style="color:var(--gold); font-weight:700;">ON-PAGE CAS:</span>
+              ${casHtml || '<span style="color:var(--text-muted);">None detected</span>'}
+            </div>
+          `;
+        }
+      } else {
+        if (tagEl) { tagEl.textContent = 'ERROR'; tagEl.style.color = 'var(--neon-crimson)'; }
+        if (outBody) outBody.innerHTML = `<div style="color:var(--neon-crimson);">Crawl error: ${escapeHtml(res ? (res.error || res.message) : 'Server timeout')}</div>`;
+      }
+    });
+  }
+
+  function captureHeadlessChromeSnapshot(symbol) {
+    const inp = document.getElementById('browserTargetInput');
+    const sym = symbol || (inp ? inp.value.trim() : '') || 'BONK';
+    const tagEl = document.getElementById('crawlerLatencyTag');
+    const outBody = document.getElementById('crawlerOutputBody');
+
+    if (tagEl) { tagEl.textContent = 'SNAPSHOT...'; tagEl.style.color = 'var(--neon-magenta)'; }
+    if (typeof AudioFeedback !== 'undefined') AudioFeedback.click();
+    showNotification(`Capturing visual headless Chrome chart snapshot for $${sym}...`);
+
+    apiAction('crypto', 'capture_chart_snapshot', { symbol: sym }, (res) => {
+      if (res && res.success) {
+        if (tagEl) { tagEl.textContent = `${res.snapshot.latency_ms}ms (SAVED)`; tagEl.style.color = 'var(--neon-emerald)'; }
+        if (typeof AudioFeedback !== 'undefined') AudioFeedback.success();
+        showNotification(`Snapshot saved: ${res.snapshot.path}`);
+        if (outBody) {
+          outBody.innerHTML = `
+            <div style="color:var(--neon-emerald); font-weight:700;">✓ Visual Chart Snapshot Saved Successfully</div>
+            <div style="color:var(--text-muted); font-size:10px; margin-top:4px;">Path: ${escapeHtml(res.snapshot.path)} (${res.snapshot.size_bytes} bytes)</div>
+          `;
+        }
+      } else {
+        if (tagEl) { tagEl.textContent = 'FAILED'; tagEl.style.color = 'var(--neon-crimson)'; }
+        showNotification(`Snapshot failed: ${res ? res.error : 'Unknown'}`);
+      }
+    });
   }
 
   // Interactive Cyber Terminal Drawer
@@ -7064,7 +7264,11 @@ STATUS: RESOLVED // NOMINAL
     submitIntegrationSave,
     toggleAutoTradingMode,
     toggleAutoBrowserUsage,
-    saveAutonomousTradingConfig
+    saveAutonomousTradingConfig,
+    executeTelegramCmdFromUI,
+    sendTelegramMessageFromUI,
+    runHeadlessChromeInspection,
+    captureHeadlessChromeSnapshot
   };
 })();
 

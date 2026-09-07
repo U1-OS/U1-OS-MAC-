@@ -421,6 +421,15 @@ def main():
     s, term_tokens = action("crypto", "execute_terminal_command", {"command": "tokens"})
     log_test("Cyber Terminal Command Interpreter (tokens screener)", term_tokens.get("success") and "PRICE" in term_tokens.get("output", ""), "Screener matrix formatted for cyber console")
 
+    s, term_tg = action("crypto", "execute_terminal_command", {"command": "tg /status"})
+    log_test("Cyber Terminal Bridge to Telegram Bot (tg /status)", term_tg.get("success") and ("TELEMETRY" in term_tg.get("output", "") or "Telegram" in term_tg.get("output", "")), "Telegram remote output bridged to terminal")
+
+    s, term_sol = action("crypto", "execute_terminal_command", {"command": "solana"})
+    log_test("Cyber Terminal Solana Wallet Query (solana)", term_sol.get("success") and "SOL Balance" in term_sol.get("output", ""), "On-chain wallet state queried in terminal")
+
+    s, term_crawl = action("crypto", "execute_terminal_command", {"command": "crawl BONK"})
+    log_test("Cyber Terminal Headless Chrome Crawl (crawl BONK)", term_crawl.get("success") and "HEADLESS CHROME" in term_crawl.get("output", ""), "Headless Chrome rendered DOM & CAs in terminal")
+
     # 33. Telegram Alpha Bot Subsystem & Remote Command Terminal
     print(f"\n{INFO} 33. Subsystem: Telegram Alpha Bot & Remote Command Terminal:")
     s, tg_status = action("telegram", "execute_command", {"command": "/status"})

@@ -115,7 +115,7 @@ open http://127.0.0.1:8787
 ./command-center stop           # Graceful shutdown
 ./command-center restart        # Hot reload
 ./command-center status         # Health check
-./command-center test           # Run 103-test verification suite
+./command-center test           # Run 106-test verification suite
 ./command-center logs           # Live log tail
 ./command-center bot status     # AI bot status
 ./command-center bot backtest 100  # Run quantitative backtest
@@ -179,7 +179,7 @@ U1-OS-MAC-/
 │   ├── css/style.css       # Neon/cyber design system
 │   └── js/app.js           # Frontend engine
 ├── tests/
-│   └── test_full_suite.py  # 103-test master verification suite
+│   └── test_full_suite.py  # 106-test master verification suite
 └── docs/
     └── index.html          # GitHub Pages site
 ```
@@ -191,7 +191,7 @@ U1-OS-MAC-/
 ```bash
 ./command-center test
 
-# TOTAL TESTS PASSED:   103 / 103
+# TOTAL TESTS PASSED:   106 / 106
 # [PASS] ALL SUBSYSTEMS 100% OPERATIONAL
 ```
 
