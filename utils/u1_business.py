@@ -14,6 +14,23 @@ LOCK = threading.RLock()
 KEY = "u1_business_v1"
 
 
+def import_source(source_key, title, content, source):
+    """Idempotent ingestion of authorised source text; never approve it here."""
+    with LOCK:
+        value = _load()
+        existing = next((draft for draft in value['drafts'] if draft.get('source_key') == source_key), None)
+        if existing:
+            return existing['id']
+        if len(value['drafts']) >= 200:
+            raise ValueError('The local review queue has reached its limit.')
+        item = {'id':uuid.uuid4().hex, 'record_id':uuid.uuid4().hex, 'source_key':clean(source_key,400,True),
+                'title':clean(title[:160],160,True), 'content':clean(content[:12000],12000,True), 'source':clean(source[:200],200),
+                'status':'review', 'created':time.time(), 'date_candidates':list(dict.fromkeys(re.findall(r'\b20\d{2}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2})?\b',content)))[:10]}
+        value['drafts'].insert(0,item)
+        _save(value)
+        return item['id']
+
+
 def _load():
     with workspace.database() as conn:
         row = conn.execute("SELECT value FROM preferences WHERE key=?", (KEY,)).fetchone()

@@ -200,5 +200,5 @@
   loadWidgets();setInterval(()=>{if(current==='home')loadWidgets();},60000);
   window.addEventListener('focus',()=>{if(current==='home')loadWidgets();if(current==='finder')loadFinder();});
   // Keep accessibility attributes consistent with the actual visible page.
-  new MutationObserver(()=>document.querySelectorAll('.nav-item').forEach(button=>{if(button.classList.contains('active'))button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');})).observe(stage,{subtree:true,attributes:true,attributeFilter:['class']});
+  if(stage instanceof Node)new MutationObserver(()=>document.querySelectorAll('.nav-item').forEach(button=>{if(button.classList.contains('active'))button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');})).observe(stage,{subtree:true,attributes:true,attributeFilter:['class']});
 })();

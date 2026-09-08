@@ -49,5 +49,5 @@
   const loaders={weather,usage,tools:toolStatus,finder,casebook,sports:scores};
   function refresh(){if(!home.classList.contains('active'))return;for(const [id,loader] of Object.entries(loaders))if(!preferences.hidden.includes(id))update(id,loader);}
   refresh();setInterval(refresh,15000);window.addEventListener('focus',refresh);
-  new MutationObserver(()=>{if(home.classList.contains('active'))refresh();}).observe(home,{attributes:true,attributeFilter:['class']});
+  if(home instanceof Node)new MutationObserver(()=>{if(home.classList.contains('active'))refresh();}).observe(home,{attributes:true,attributeFilter:['class']});
 })();

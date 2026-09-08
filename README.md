@@ -1,10 +1,10 @@
 <div align="center">
 
-![U1 OS: your personal operating space](docs/cover.svg)
+![U1 OS: Your world. Amplified.](docs/cover.svg)
 
 # U1 OS
 
-**Your ideas, signals and next move. One workspace on your Mac.**
+**Your world. Amplified. A local-first command centre for your Mac.**
 
 [Explore the project](https://github.com/U1-OS/U1-OS-MAC-) · [Installation](INSTALLATION.md) · [Design overview](docs/index.html)
 
@@ -14,7 +14,44 @@
 
 ## A more personal workspace
 
-### September 2026: unified business workspace
+### September 8, 2026: native workspaces and managed recovery
+
+Projects, Tasks, Calendar, Notes and Files now run directly inside the canonical
+U1 OS shell, rather than opening the legacy application in an iframe. The new
+screens share focused editors, local persistence, recoverable Trash, restrained
+blue lighting, consistent vector icons and compact secondary menus.
+
+| This development build | Actual boundary |
+| --- | --- |
+| Five native local workspaces | Create/edit managed records and upload/download files; external Drive access is not implied |
+| Read-only Google Connect | Desktop OAuth with PKCE and Mac Keychain; real authorisation and live sync still required |
+| Email and calendar review | Bounded email/PDF import, a review queue and version-aware local event approval |
+| Managed workspace recovery | Database plus imported file contents; checksum validation; isolated restores, never active overwrite |
+| Shared application controls | Home layouts, local media, provider-specific usage, notification settings and reduced motion |
+| Selected automated checks | **72 passed on 2026-09-08**, not a full production, security or provider certification |
+
+**No account access is simulated.** Google sync is opt-in and read-only. A saved
+client is not a connected account. Source material is not executable instructions.
+Tokens are not included in managed workspace backups.
+
+#### Actual interface previews
+
+These are captures of the running development interface, not generated mock-ups.
+Empty records and an unconnected Google state are intentional.
+
+![Native Projects inside U1 OS](docs/screenshots/native-projects.png)
+
+<details>
+<summary>Preview Google Connect and its permission boundaries</summary>
+
+![Google Connect before account authorisation](docs/screenshots/google-connect.png)
+
+</details>
+
+See the [connection and recovery guide](docs/U1-OS-CONNECTIONS-RECOVERY.md)
+for setup, data coverage, sync limits and the isolated-restore workflow.
+
+### Also included: the unified business workspace
 
 The current local build adds a native Desktop launcher, a real-readiness startup
 screen, textured decorative Earth, shared appearance controls and embedded

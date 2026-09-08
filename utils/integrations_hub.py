@@ -19,8 +19,8 @@ def entry(key, name, group, fields, portal, note, stage="installed"):
 
 
 CATALOG = [
-    entry("gmail", "Gmail", "Communication", ["client_id", "client_secret", "refresh_token"], "https://console.cloud.google.com/apis/credentials", "Add your Google OAuth credentials when you are ready."),
-    entry("google_calendar", "Google Calendar", "Communication", ["calendar_id"], "https://calendar.google.com/", "Uses the Google credentials saved under Gmail. Saving a calendar ID alone does not authenticate Google."),
+    entry("gmail", "Gmail", "Communication", ["client_id", "client_secret", "refresh_token"], "https://console.cloud.google.com/apis/credentials", "Legacy file-based settings slot. Use Google Connect in the U1 shell for the new Keychain-backed, read-only OAuth workflow. Saved values do not verify access."),
+    entry("google_calendar", "Google Calendar", "Communication", ["calendar_id"], "https://calendar.google.com/", "Use Google Connect for the new read-only primary-calendar sync. This legacy calendar ID alone does not authenticate Google."),
     entry("twilio", "Twilio SMS and calls", "Communication", ["account_sid", "auth_token", "from_number"], "https://console.twilio.com/", "Account details and a provisioned sending number are required."),
     entry("stripe", "Stripe", "Finance", ["secret_key", "currency"], "https://dashboard.stripe.com/apikeys", "Use a restricted key with the permissions you need."),
     entry("openai", "OpenAI", "AI and media", ["api_key"], "https://platform.openai.com/api-keys", "API billing and credentials are separate from a chat subscription."),

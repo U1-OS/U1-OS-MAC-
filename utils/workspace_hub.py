@@ -471,3 +471,23 @@ def handle_post(path, payload, *args, **kwargs):
     if path in ('business', '/api/workspace/business'):
         return u1_business.action(payload)
     return _u1_business_previous_post(path, payload, *args, **kwargs)
+
+from utils import u1_google, u1_recovery
+_u1_reliability_previous_get = handle_get
+_u1_reliability_previous_post = handle_post
+
+def handle_get(path, *args, **kwargs):
+    if path == 'google':
+        return u1_google.snapshot()
+    if path == 'recovery':
+        return u1_recovery.snapshot()
+    return _u1_reliability_previous_get(path, *args, **kwargs)
+
+def handle_post(path, payload, *args, **kwargs):
+    if path == 'google':
+        return u1_google.action(payload)
+    if path == 'recovery':
+        return u1_recovery.action(payload)
+    return _u1_reliability_previous_post(path, payload, *args, **kwargs)
+
+u1_google.start()

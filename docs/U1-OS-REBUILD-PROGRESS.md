@@ -2,11 +2,23 @@
 
 Updated: 2026-09-08. Development build, not a production-readiness certificate.
 
-The updated app was built and installed on the Desktop, with the previous app
-preserved under the ignored local runtime directory. The local server was
-restarted and its installation identity verified. Selected checks currently
-stand at 52 passed and one legacy reminder-text assertion failed; see the
-validation record for browser limitations and remaining checks.
+The Desktop launcher remains installed, with its previous version preserved
+locally. This pass built the Mac Keychain helper and restarted the server.
+Selected checks now stand at **72 passed**. This is a development snapshot,
+not a completed production or provider acceptance audit.
+
+## Latest native-workspace and reliability pass
+
+- Native Projects, Tasks, Calendar, Notes and Files; zero legacy frames on these routes.
+- Shared bounded read cache, compact tool groups, consistent icons, in-shell editors and recoverable Trash.
+- Inactive clean legacy frames suspend on navigation; frames with input remain to protect drafts.
+- Read-only Google Desktop OAuth, PKCE, state-bound loopback callback and Mac Keychain helper.
+- Bounded email/PDF ingestion and version-aware calendar review; real account authorisation pending.
+- Managed SQLite and file-content archives with SHA-256 checks and isolated restores.
+- Reminder compatibility restored; missing-node observers guarded.
+- Corrected inherited grid constraints, pending OAuth client replacement and abandoned-upload backup handling.
+- Five native routes displayed without embedded frames or desktop horizontal overflow; no browser errors captured during those checks.
+- Repository About text, README, documentation overview and actual privacy-safe previews refreshed.
 
 ## Installed local implementation
 
@@ -26,14 +38,15 @@ validation record for browser limitations and remaining checks.
 
 ## Account-dependent or still pending
 
-- Automatic Gmail ingestion, PDF extraction/OCR and reliable email-to-calendar sync.
+- Real Google consent and end-to-end Gmail/calendar acceptance. The implemented connector is unconnected.
+- OCR for scanned PDF attachments; the extractor reads bounded existing text only.
 - Verified OAuth connection lifecycle for every provider and provider-wide quota APIs.
 - Cloud/social analytics, revenue sync, publishing queues and clipping pipelines.
 - Spotify/YouTube Music/SoundCloud/Stremio account playback and external now-playing readers.
 - Banking, invoicing/payment integrations and real-money trading. No execution is enabled by this rebuild.
 - Full native conversion of every legacy workspace; the iframe bridge is transitional.
 - Complete desktop/mobile/4K visual acceptance, accessibility audit and performance profiling.
-- Notarisation, a bundled standalone runtime, signed updates and complete backup/restore/rollback.
+- Notarisation, bundled standalone runtime, signed updates and active-workspace rollback. Managed recovery restores to a separate folder only.
 - Hosted documentation deployment; a GitHub source push is not GitHub Pages deployment.
 
 ## Privacy and operation

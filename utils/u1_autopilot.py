@@ -108,7 +108,7 @@ def tick(now=None):
                         continue
                     key = "event:" + record["id"] + ":" + start.isoformat() + ":" + str(stage[0])
                     if key not in marks:
-                        notify(key, "Event within " + stage[1], record["title"] + " / " + start.astimezone(zone).strftime("%a %d %b, %H:%M"), "reminder")
+                        notify(key, "Event within " + stage[1] + " / " + start.astimezone(zone).strftime("%a %d %b, %H:%M"), record["title"], "reminder")
                         marks[key] = start.timestamp()
                 save_value("u1_event_reminder_marks", marks)
             if config["health"]:

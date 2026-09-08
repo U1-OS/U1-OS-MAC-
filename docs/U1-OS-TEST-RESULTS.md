@@ -2,6 +2,39 @@
 
 Date: 2026-09-08.
 
+## Latest native-workspace and reliability pass
+
+| Selected check | Result |
+| --- | --- |
+| Recovery and read-only Google contracts | 19 passed |
+| Existing autopilot, reminders, business/PDF, launcher and Agent Centre | 45 passed |
+| Platform JavaScript tests | 8 passed |
+| New JavaScript syntax and Python compilation checks | Passed |
+| Keychain helper compilation and local signing | Passed; no real credentials accessed |
+| Server restart and installation readiness | Passed |
+| Five native routes | Projects, Tasks, Calendar, Notes and Files mounted; zero workspace iframes |
+| Desktop layout at 1137px | No horizontal document overflow |
+| Browser errors during native-route checks | None returned |
+| Google setup UI | Unconnected state, installed helper and permission boundaries displayed |
+
+Aggregate: **72 passed across the selected 72 automated tests**.
+
+New checks cover isolated database/file restoration, checksum failure, symlinks,
+archive-path rejection, active versus abandoned imports, explicit calendar review,
+stale versions, deduplication, local-edit protection, cancellation, plain-text MIME,
+OAuth PKCE/state and pending-client replacement. Google network calls and Keychain
+are mocked. No real Google account was authorised or read.
+
+The first run had three errors from a missing source URL in a new test fixture;
+that fixture was corrected with user approval. The historical reminder-text
+failure is resolved without weakening the original assertion.
+
+Actual previews are in `docs/screenshots/`. They contain no private messages or
+document contents and no seeded project records. Full provider acceptance,
+accessibility, performance profiling and native GUI validation remain pending.
+
+The historical results below are retained as an audit trail, not the current total.
+
 ## Previously completed launcher pass
 
 - Eight launcher unit tests passed.

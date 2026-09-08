@@ -48,6 +48,7 @@
   ['quality','motion','skipBoot'].forEach(function(k){section.querySelector('[name="'+k+'"]').value=String(p[k]);});section.addEventListener('change',function(e){var name=e.target.name;if(!name)return;if(name==='volume'){window.U1.sound.setVolume(e.target.value);return;}var value=name==='skipBoot'?e.target.value==='true':name==='depth'?Number(e.target.value):e.target.value,obj={};obj[name]=value;var persisted=window.U1Launch.save(obj);section.querySelector('[data-preference-status]').textContent=persisted?'Preferences saved on this device.':'Preferences applied for this session; local storage is unavailable.';});section.querySelector('[data-preview-boot]').onclick=window.U1Launch.preview;body.append(section);
  }
  function mount(id,body){
+  if(window.U1CoreViews&&window.U1CoreViews.supports(id)){window.U1CoreViews.mount(id,body);return;}
   body.innerHTML='';if(id==='settings')preferencesPanel(body);
   var host=document.createElement('div');host.className='u1-workspace-host';var toolbar=document.createElement('div');toolbar.className='u1-workspace-toolbar';var status=document.createElement('span');status.textContent='Loading the existing workspace...';toolbar.append(status);
   var retry=document.createElement('button');retry.type='button';retry.className='btn';retry.textContent='Reload workspace';toolbar.append(retry);host.append(toolbar);
@@ -58,6 +59,7 @@
   frame.addEventListener('load',function(){try{var doc=frame.contentDocument;if(!doc)throw Error('Unavailable');var style=doc.createElement('style');style.textContent='html,body{margin:0!important;background:#030c17!important;height:100%!important}.prism-sidebar,.prism-topbar,.prism-dock,.prism-footer,#prism-live-bar,#u1-global-widgets,.prism-standalone .studio-sidebar,#u1-boot-screen{display:none!important}#prism-shell{display:block!important;height:100dvh!important;min-height:0!important}#prism-shell> :not(.prism-sidebar):not(.prism-dock):not(.prism-footer){width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;height:100dvh!important;display:block!important}.prism-scroll{height:100dvh!important;max-height:none!important;overflow:auto!important}#prism-page{padding:18px!important}';doc.head.append(style);status.textContent='Local workspace loaded. Account-dependent features retain their own connection status.';}catch(e){status.textContent='Workspace access is unavailable. No browser security restrictions were bypassed.';}});
   frame.addEventListener('load',function(){
    var doc=frame.contentDocument;if(!doc)return;
+   doc.addEventListener('input',function(){frame.dataset.u1Dirty='true';},true);
    var sheet=doc.createElement('link');sheet.rel='stylesheet';sheet.href='/css/u1-platform-embedded.css';doc.head.append(sheet);
    doc.addEventListener('click',function(event){var target=event.target.closest('[data-route="studio"],a[href="/studio.html"],a[href="/integrations.html"]');if(!target||!window.U1Platform)return;event.preventDefault();event.stopImmediatePropagation();window.U1Platform.open(target.matches('a[href="/integrations.html"]')?'connections':'studio');},true);
   });
