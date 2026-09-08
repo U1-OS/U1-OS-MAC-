@@ -354,6 +354,15 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        from utils.u1_safety import gate_request
+        if not gate_request(self):
+            return
+        from utils import u1_native_routes
+        if u1_native_routes.handle_request(self):
+            return
+        from utils.u1_life_studio import handle_request
+        if handle_request(self):
+            return
         path = self.path.split("?")[0]
 
         if path.startswith("/api/workspace/"):
@@ -521,6 +530,15 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
                 and (not origin or origin == f"http://{host}"))
 
     def do_POST(self):
+        from utils.u1_safety import gate_request
+        if not gate_request(self):
+            return
+        from utils import u1_native_routes
+        if u1_native_routes.handle_request(self):
+            return
+        from utils.u1_life_studio import handle_request
+        if handle_request(self):
+            return
         path = self.path.split("?")[0]
         if path.startswith("/api/workspace/"):
             import secrets

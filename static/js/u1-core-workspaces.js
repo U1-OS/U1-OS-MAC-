@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   var views = { projects: ['project', 'Projects', 'Give your next idea a clear direction.'], tasks: ['task', 'Tasks', 'A clear list. A focused day.'], calendar: ['event', 'Calendar', 'Your schedule, with room for what matters.'], notes: ['note', 'Notes', 'Capture an idea before it disappears.'], files: ['file', 'Files', 'Your private, local working library.'] };
-  var hosts = new Map(), snapshot = null, dialog = null, activeRecord = null, sourceButton = null, routeEpoch = 0;
+  var hosts = new Map(), extensions = new Map(), snapshot = null, dialog = null, activeRecord = null, sourceButton = null, routeEpoch = 0;
   var icons = {
     project: '<path d="M3 7h6l2 2h10v11H3zM3 7V4h7l2 3"/>',
     task: '<rect x="4" y="3" width="16" height="18" rx="3"/><path d="m8 12 3 3 6-7"/>',
@@ -43,6 +43,7 @@
     }).join('') : '<div class="u1-core-empty"><span class="u1-core-empty-icon">' + icon(kind) + '</span><h3>Your ' + esc(config[1].toLowerCase()) + ' start here.</h3><p>' + (kind === 'file' ? 'Upload documents, images or media. Originals stay on this Mac.' : 'Create your first ' + kind + '. Real records, saved locally. No sample data.') + '</p><button class="u1-core-primary" data-core-new>' + (kind === 'file' ? 'Choose files' : 'Create ' + kind) + '</button></div>') + '</div>';
   }
   async function mount(id, host) {
+    if (extensions.has(id)) return extensions.get(id)(host);
     if (!views[id]) return;
     hosts.set(id, host);
     var serial = ++routeEpoch;
@@ -158,6 +159,24 @@
     new MutationObserver(function () { setTimeout(function () { suspendFrames(); refreshActive(); }, 100); }).observe(document.body, { attributes: true, attributeFilter: ['data-u1-view'] });
     document.addEventListener('visibilitychange', function () { document.body.classList.toggle('u1-page-idle', document.hidden); if (!document.hidden) { window.U1Data.invalidate(); refreshActive(); } });
   }
-  window.U1CoreViews = Object.freeze({ supports: function (id) { return !!views[id]; }, mount: mount, icon: icon });
+  window.U1CoreViews = Object.freeze({
+    supports: function (id) { return !!views[id] || extensions.has(id); },
+    register: function (id, render) {
+      if (typeof render !== 'function' || views[id]) return;
+      extensions.set(id, render);
+      // A direct hash entry can precede a DOM-ready extension registration.
+      // Retire that cached fallback rather than leaving a valid route stranded.
+      var host = document.getElementById('body-' + id);
+      if (host) {
+        delete host.dataset.filled;
+        if (document.body.dataset.u1View === id) {
+          host.dataset.filled = '1';
+          mount(id, host);
+        }
+      }
+    },
+    mount: mount,
+    icon: icon
+  });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

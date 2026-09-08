@@ -1,12 +1,37 @@
 #!/bin/bash
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BUILD="$ROOT/.runtime/u1-desktop"
-APP="$ROOT/dist/U1 OS.app"
-mkdir -p "$BUILD/module-cache" "$BUILD/U1.iconset" "$APP/Contents/MacOS" "$APP/Contents/Resources"
+umask 077
+ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
+if [ "$#" -gt 0 ]; then
+  printf 'Usage: bash macos/build-desktop.sh\n' >&2
+  exit 2
+fi
+if [ "$(uname -s)" != Darwin ]; then
+  printf 'A local macOS SDK and Swift compiler are required.\n' >&2
+  exit 1
+fi
+[ ! -L "$ROOT/dist" ] || { printf 'Refusing a symlinked dist directory.\n' >&2; exit 1; }
+mkdir -p "$ROOT/dist"
+LOCK="$ROOT/dist/.u1-desktop-build.lock"
+mkdir "$LOCK" || { printf 'Another build owns the lock; do not remove an active build lock.\n' >&2; exit 1; }
+BUILD=""
+cleanup() {
+  if [ -n "$BUILD" ]; then rm -rf -- "$BUILD"; fi
+  rmdir "$LOCK"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+BUILD="$(mktemp -d "$ROOT/dist/.u1-desktop-build.XXXXXX")"
+APP="$BUILD/U1 OS.app"
+SDKROOT="$(/usr/bin/xcrun --show-sdk-path)"
 SWIFTC="$(/usr/bin/xcrun --find swiftc)"
-"$SWIFTC" -O -module-cache-path "$BUILD/module-cache" -framework AppKit -framework WebKit "$ROOT/macos/U1OS.swift" -o "$APP/Contents/MacOS/U1OS"
-"$SWIFTC" -O -module-cache-path "$BUILD/module-cache" -framework AppKit "$ROOT/macos/RenderIcon.swift" -o "$BUILD/render-icon"
+export SDKROOT MACOSX_DEPLOYMENT_TARGET=12.0
+mkdir -p "$BUILD/module-cache" "$BUILD/U1.iconset" "$APP/Contents/MacOS" "$APP/Contents/Resources"
+"$SWIFTC" -O -sdk "$SDKROOT" -module-cache-path "$BUILD/module-cache" "$ROOT/macos/NavigationPolicy.swift" "$ROOT/macos/PolicyChecks.swift" -o "$BUILD/policy-checks"
+"$BUILD/policy-checks"
+"$SWIFTC" -O -sdk "$SDKROOT" -module-cache-path "$BUILD/module-cache" -framework AppKit -framework WebKit -framework ServiceManagement "$ROOT/macos/NavigationPolicy.swift" "$ROOT/macos/U1OS.swift" -o "$APP/Contents/MacOS/U1OS"
+"$SWIFTC" -O -sdk "$SDKROOT" -module-cache-path "$BUILD/module-cache" -framework AppKit "$ROOT/macos/RenderIcon.swift" -o "$BUILD/render-icon"
 "$BUILD/render-icon" "$BUILD/icon-1024.png"
 for pixels in 16 32 128 256 512; do
   /usr/bin/sips -z "$pixels" "$pixels" "$BUILD/icon-1024.png" --out "$BUILD/U1.iconset/icon_${pixels}x${pixels}.png" >/dev/null
@@ -14,19 +39,11 @@ for pixels in 16 32 128 256 512; do
   /usr/bin/sips -z "$double" "$double" "$BUILD/icon-1024.png" --out "$BUILD/U1.iconset/icon_${pixels}x${pixels}@2x.png" >/dev/null
 done
 /usr/bin/iconutil -c icns "$BUILD/U1.iconset" -o "$APP/Contents/Resources/U1.icns"
-U1_BUILD_ROOT="$ROOT" U1_BUILD_APP="$APP" /usr/bin/python3 - <<'PY'
-import os
-import plistlib
-from pathlib import Path
-info = dict(CFBundleExecutable='U1OS', CFBundleIdentifier='local.u1os.business',
-            CFBundleName='U1 OS', CFBundleDisplayName='U1 OS', CFBundlePackageType='APPL',
-            CFBundleShortVersionString='1.0.0', CFBundleVersion='1', CFBundleIconFile='U1.icns',
-            LSMinimumSystemVersion='12.0', NSHighResolutionCapable=True,
-            NSAppTransportSecurity={'NSAllowsLocalNetworking': True},
-            U1WorkspaceRoot=os.environ['U1_BUILD_ROOT'])
-with (Path(os.environ['U1_BUILD_APP']) / 'Contents/Info.plist').open('wb') as handle:
-    plistlib.dump(info, handle)
-PY
+/usr/bin/python3 -B "$ROOT/macos/release_support.py" metadata "$APP" "$ROOT"
+/usr/bin/plutil -lint "$APP/Contents/Info.plist"
 /usr/bin/codesign --force --sign - "$APP"
-printf 'Built local desktop application: %s\n' "$APP"
-printf 'This app uses the existing workspace and runtime; it is not a self-contained notarized distribution.\n'
+/usr/bin/codesign --verify --strict "$APP"
+/usr/bin/python3 -B "$ROOT/macos/release_support.py" promote "$APP" "$ROOT/dist/U1 OS.app"
+printf 'PASS: compiled app, icon, metadata, native policy checks and ad-hoc signature integrity.\n'
+printf 'Built local desktop application: %s/dist/U1 OS.app\n' "$ROOT"
+printf 'No Developer ID certificate was used. Not notarised, not self-contained; Desktop was not changed.\n'

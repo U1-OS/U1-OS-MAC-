@@ -822,7 +822,7 @@
     if (id === 'home') return $('v-home');
     var el = $('v-' + id);
     if (el) return el;
-    var meta = VIEWS[id] || { t: id, s: '' };
+    var meta = (window.U1Life && window.U1Life.meta[id]) || VIEWS[id] || { t: id, s: '' };
     el = document.createElement('section');
     el.className = 'view';
     el.id = 'v-' + id;

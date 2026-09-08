@@ -1,0 +1,31 @@
+{
+  "name": "Personal OS quality",
+  "on": {"push": {}, "pull_request": {}, "workflow_dispatch": {}},
+  "permissions": {"contents": "read"},
+  "concurrency": {"group": "personal-os-${{ github.workflow }}-${{ github.ref }}", "cancel-in-progress": true},
+  "jobs": {
+    "personal-tests": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 15,
+      "steps": [
+        {"uses": "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd", "with": {"persist-credentials": false}},
+        {"uses": "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548", "with": {"python-version": "3.12"}},
+        {"uses": "actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903", "with": {"node-version": "26.8.1", "package-manager-cache": false}},
+        {"name": "Parent-approved personal dependencies", "run": "python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements-personal.txt"},
+        {"name": "Explicit isolated U1 release gate", "run": "bash scripts/check-personal-release.sh --require-all --report \"$RUNNER_TEMP/personal-release.json\""},
+        {"name": "Sanitised check evidence", "if": "${{ always() }}", "shell": "bash", "run": "if [ -f \"$RUNNER_TEMP/personal-release.json\" ]; then cat \"$RUNNER_TEMP/personal-release.json\" >> \"$GITHUB_STEP_SUMMARY\"; fi"}
+      ]
+    },
+    "macos-build": {
+      "needs": "personal-tests",
+      "runs-on": "macos-latest",
+      "timeout-minutes": 10,
+      "steps": [
+        {"uses": "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd", "with": {"persist-credentials": false}},
+        {"name": "Compile and verify local Mac wrapper", "env": {"U1_SOURCE_REVISION": "${{ github.sha }}"}, "run": "bash macos/build-desktop.sh"},
+        {"name": "Build evidence", "run": "printf '%s\\n' 'Mac wrapper compiled; native policy checks and ad-hoc signature integrity passed. Interactive startup/sleep-wake checks not run. No Developer ID signing or notarisation. Build remains workspace-dependent.' >> \"$GITHUB_STEP_SUMMARY\""},
+        {"name": "Release guide artifact on successful source push", "if": "${{ github.event_name == 'push' }}", "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", "with": {"name": "personal-os-release-guide-${{ github.run_number }}", "path": "docs/MAC-RELEASE.md", "if-no-files-found": "error", "retention-days": 7, "include-hidden-files": false}}
+      ]
+    }
+  }
+}

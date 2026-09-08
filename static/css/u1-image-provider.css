@@ -1,0 +1,14 @@
+.u1-image-columns { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr); gap: 24px; align-items: start; }
+.u1-image-columns > * { min-width: 0; }
+.u1-image-setup { margin-bottom: 24px; padding: 20px !important; border: 1px solid var(--ai-edge); border-radius: 16px; background: #091b2dcc; }
+.u1-image-setup summary { color: var(--ai-accent); font-size: 14px; }
+.u1-image-setup form { display: grid; gap: 16px; }
+.u1-image-setup input[type=password] { width: 100%; background: #061320; border: 1px solid var(--ai-edge); color: inherit; border-radius: 10px; font: inherit; padding: 12px; }
+.u1-image-spec { display: flex; gap: 8px; flex-wrap: wrap; }
+.u1-image-spec span { border: 1px solid var(--ai-edge); border-radius: 30px; padding: 6px 10px; font-size: 11px; color: var(--ai-muted); }
+.u1-image-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; margin-top: 28px; }
+.u1-image-result { margin: 0; min-width: 0; overflow: hidden; border-radius: 20px; border: 1px solid var(--ai-edge); background: radial-gradient(ellipse at top right, #12416450, #081320); }
+.u1-image-result img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; background: repeating-conic-gradient(#102235 0% 25%, #0a1828 0% 50%) 50% / 24px 24px; }
+.u1-image-result figcaption { padding: 20px; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.u1-image-result a { color: var(--ai-accent); text-underline-offset: 4px; }
+@media (max-width: 960px) { .u1-image-columns { grid-template-columns: minmax(0, 1fr); } }

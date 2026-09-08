@@ -22,6 +22,7 @@ import time
 
 from services.base import BaseService
 from utils import metrics
+from utils.u1_release_guard import ReleaseGuard
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSION_FILE = os.path.join(ROOT, "VERSION")
@@ -66,6 +67,7 @@ class UpdaterService(BaseService):
         self.last_check = None
         self.last_result = None
         self.agent = None          # set by the server once wired
+        self.release = ReleaseGuard(ROOT)
 
     # ------------------------------------------------------------------
     # Inspection
@@ -179,6 +181,7 @@ class UpdaterService(BaseService):
                 "agent": self.agent_snapshot(),
                 "last_check": self.last_check,
                 "last_result": self.last_result,
+                "release": self.release.snapshot(),
             }
             self.last_updated = time.time()
 
@@ -187,6 +190,12 @@ class UpdaterService(BaseService):
     # ------------------------------------------------------------------
     def dispatch_action(self, action, payload=None):
         payload = payload or {}
+
+        if action == "prepare_update":
+            return self.release.run("prepare", payload)
+
+        if action == "get_release_state":
+            return {"success": True, **self.release.snapshot()}
 
         if action == "get_status":
             self.poll()
@@ -231,25 +240,7 @@ class UpdaterService(BaseService):
                 return {"success": False, "error": "uncommitted_changes",
                         "message": (f"{git['uncommitted_files']} file(s) have uncommitted changes. "
                                     "Commit or stash them before updating so nothing is lost.")}
-            ok, out = _git("pull", "--ff-only", "origin", git.get("branch", "main"), timeout=90)
-            after = self.git_snapshot()
-            self.last_result = "updated" if ok else "update_failed"
-            if not ok:
-                return {"success": False, "error": "pull_failed", "output": out,
-                        "message": f"Update could not be applied: {out}"}
-            self.add_event("update_applied", f"Updated to {after.get('commit')}")
-            return {
-                "success": True,
-                "updated": git.get("commit") != after.get("commit"),
-                "from_commit": git.get("commit"),
-                "to_commit": after.get("commit"),
-                "output": out,
-                "git": after,
-                "restart_required": True,
-                "message": ("Update applied. Restart the workspace to load the new code."
-                            if git.get("commit") != after.get("commit")
-                            else "Already at the newest commit.")
-            }
+            return self.release.run("apply", payload)
 
         if action == "install_dependencies":
             if not payload.get("confirmed"):
