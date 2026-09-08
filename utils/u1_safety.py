@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import json
+import math
 import os
 import secrets
 import sys
@@ -30,11 +31,13 @@ def _notify_after_state(method):
         finally:
             self._notification_local.depth = depth
             if depth == 0:
-                self._notify_spotify_lock()
+                self._notify_provider_locks()
                 if isinstance(result, dict):
                     with self.mutex:
                         result["spotify_oauth_cancel_pending"] = self._lock_epoch > self._notified_epoch
                         result["spotify_oauth_cancel_error"] = self._notification_error
+                        result["google_cancel_pending"] = self._lock_epoch > self._google_notified_epoch
+                        result["google_cancel_error"] = self._google_notification_error
     return wrapped
 
 
@@ -52,6 +55,19 @@ def _cancel_spotify_oauth():
         provider.cancel_all()
     finally:
         instance.lock.release()
+
+
+def _cancel_google_operations():
+    """Invalidate loaded Google work locally, without starting any provider."""
+    provider = sys.modules.get("utils.u1_google")
+    if provider is None:
+        return
+    if not provider.LOCK.acquire(timeout=0.05):
+        raise SafetyError("Google cancellation is pending")
+    try:
+        provider.cancel_all()
+    finally:
+        provider.LOCK.release()
 
 
 def internet_reachable():
@@ -73,17 +89,20 @@ def internet_reachable():
 
 
 class SafetyLock:
-    def __init__(self, directory, probe=internet_reachable, clock=time.time):
+    def __init__(self, directory, probe=internet_reachable, clock=time.time, elapsed_clock=time.monotonic):
         self.directory = Path(directory)
         self.path = self.directory / "state.json"
         self.probe = probe
         self.clock = clock
+        self.elapsed_clock = elapsed_clock
         self.mutex = threading.RLock()
         self._notification_local = threading.local()
         self._notification_mutex = threading.Lock()
         self._lock_epoch = 0
         self._notified_epoch = 0
         self._notification_error = None
+        self._google_notified_epoch = 0
+        self._google_notification_error = None
         self.token = secrets.token_urlsafe(32)
         self.config = None
         self.locked = False
@@ -93,6 +112,7 @@ class SafetyLock:
         self.network_at = 0
         self.network_failures = 0
         self.deadline = None
+        self._elapsed_deadline = None
         self.failures = 0
         self.retry_at = 0
         self.started = False
@@ -119,6 +139,10 @@ class SafetyLock:
                     or value["minutes"] not in (0, 5, 15, 30, 60, 120, 240)):
                 raise SafetyError("Invalid safety configuration")
             self.config = value
+            wall_deadline = value.get("checkin_deadline_wall")
+            if wall_deadline is not None and (type(wall_deadline) not in (int, float)
+                                             or not math.isfinite(wall_deadline)):
+                raise SafetyError("Invalid persisted check-in deadline")
             self.locked = True
             self.reason = "Server restarted. Unlock with your safety passphrase."
         except (OSError, ValueError, TypeError, KeyError):
@@ -166,34 +190,45 @@ class SafetyLock:
         self.locked = True
         self.reason = reason
         self.deadline = None
+        self._elapsed_deadline = None
         self._lock_epoch += 1
 
-    def _notify_spotify_lock(self):
+    def _notify_provider_locks(self):
         # Nonblocking serialization also prevents callback re-entry from nesting
         # notifications. Failed/busy delivery stays observable and is retried by
         # the next outermost Safety operation or monitor tick; never spin/spawn.
         if not self._notification_mutex.acquire(blocking=False):
             return
         try:
-            with self.mutex:
-                epoch = self._lock_epoch
-                if epoch <= self._notified_epoch:
-                    return
-            try:
-                _cancel_spotify_oauth()
-            except Exception:
+            # Independent epochs prevent one busy provider from suppressing the
+            # other. Neither callback may run while holding the Safety mutex.
+            providers = (("Spotify OAuth", _cancel_spotify_oauth, "_notified_epoch", "_notification_error"),
+                         ("Google", _cancel_google_operations, "_google_notified_epoch", "_google_notification_error"))
+            for label, cancel, notified, error in providers:
                 with self.mutex:
-                    self._notification_error = "Spotify OAuth cancellation pending; retry on the next Safety update."
-            else:
-                with self.mutex:
-                    self._notified_epoch = epoch
-                    self._notification_error = None
+                    epoch = self._lock_epoch
+                    if epoch <= getattr(self, notified):
+                        continue
+                try:
+                    cancel()
+                except Exception:
+                    with self.mutex:
+                        setattr(self, error, label + " cancellation pending; retry on the next Safety update.")
+                else:
+                    with self.mutex:
+                        setattr(self, notified, epoch)
+                        setattr(self, error, None)
         finally:
             self._notification_mutex.release()
 
     def _expire(self):
-        if self.config and not self.locked and self.deadline is not None and self.clock() >= self.deadline:
-            self._lock("Dead-man check-in expired")
+        if self.config and not self.locked and self.deadline is not None:
+            # Elapsed time prevents a wall-clock rollback from extending an
+            # active session. Wall time also expires ordinary sleep intervals
+            # on platforms whose monotonic clock does not advance in suspend.
+            if ((self._elapsed_deadline is not None and self.elapsed_clock() >= self._elapsed_deadline)
+                    or self.clock() >= self.deadline):
+                self._lock("Dead-man check-in expired")
 
     @_notify_after_state
     def snapshot(self):
@@ -206,7 +241,7 @@ class SafetyLock:
                     "deadline": self.deadline, "server_time": self.clock(),
                     "network": self.network, "network_checked_at": self.network_at,
                     "retry_after": max(0, int(self.retry_at - self.clock())),
-                    "scope": "U1 OS UI and new API requests only. Existing jobs, streams, other apps and exchange orders are not cancelled."}
+                    "scope": "U1 OS UI and new API requests. Google sync/OAuth and pending Spotify OAuth receive cancellation requests. Existing assistant jobs, streams, other apps and exchange orders are not automatically cancelled."}
 
     @_notify_after_state
     def blocked(self):
@@ -216,7 +251,15 @@ class SafetyLock:
 
     def _checkin(self):
         minutes = self.config["minutes"]
-        self.deadline = self.clock() + minutes * 60 if minutes else None
+        deadline = self.clock() + minutes * 60 if minutes else None
+        elapsed_deadline = self.elapsed_clock() + minutes * 60 if minutes else None
+        # Persist only wall time, never a process-local monotonic value. A
+        # restart always locks; this field can never restore an unlocked lease.
+        config = {**self.config, "checkin_deadline_wall": deadline}
+        self._persist(config)
+        self.config = config
+        self.deadline = deadline
+        self._elapsed_deadline = elapsed_deadline
 
     @_notify_after_state
     def tick(self, network=None):
@@ -315,9 +358,9 @@ class SafetyLock:
                     self.tick(reachable)
                     if not reachable:
                         raise SafetyError("Internet reachability is unavailable. Reconnect, or change offline locking in Safety settings using your passphrase.")
+                self._checkin()
                 self.locked = False
                 self.reason = "Unlocked by the operator"
-                self._checkin()
             elif action == "checkin":
                 if self.locked:
                     raise SafetyError("Unlock before checking in")

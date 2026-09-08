@@ -13,6 +13,7 @@ import platform
 import re
 import shutil
 import sqlite3
+import stat
 import threading
 import time
 import urllib.parse
@@ -30,6 +31,9 @@ LOG = logging.getLogger("PRISM.workspace")
 KINDS = {"project", "task", "note", "event"}
 MAX_FILE = 25 * 1024 * 1024
 MAX_STORAGE = 1024 * 1024 * 1024
+UPLOAD_IDLE_SECONDS = 24 * 60 * 60
+MAX_EXPORT_ITEMS = 10000
+MAX_EXPORT_BYTES = 64 * 1024 * 1024
 PROFILE = {"name": "Andrew", "city": "Beveridge, Victoria", "country": "AU",
            "timezone": "Australia/Melbourne", "effects": "balanced", "focus": False,
            "contrast": False, "drive_plan_tb": 5}
@@ -60,6 +64,9 @@ def database():
                     size INTEGER NOT NULL, received INTEGER NOT NULL DEFAULT 0,
                     folder TEXT NOT NULL, status TEXT NOT NULL, created REAL NOT NULL,
                     checksum TEXT, deleted REAL
+                );
+                CREATE TABLE IF NOT EXISTS file_upload_sessions (
+                    file_id TEXT PRIMARY KEY, touched REAL NOT NULL
                 );
             """)
             yield conn
@@ -162,6 +169,127 @@ def files(include_trash=False):
     return [dict(row) for row in rows]
 
 
+@contextmanager
+def _managed_file(file_id, flags=os.O_RDONLY, create=False):
+    """Pin both managed directories; never follow file links or open devices."""
+    identifier(file_id)
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    root_fd = os.open(DATA, directory_flags)
+    try:
+        if create:
+            try:
+                os.mkdir("files", mode=0o700, dir_fd=root_fd)
+            except FileExistsError:
+                pass
+        directory_fd = os.open("files", directory_flags, dir_fd=root_fd)
+        try:
+            fd = os.open(file_id, flags | os.O_NOFOLLOW | os.O_NONBLOCK,
+                         0o600, dir_fd=directory_fd)
+            try:
+                info = os.fstat(fd)
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != os.getuid() or info.st_size > MAX_FILE:
+                    raise ValueError("That managed file is unsafe or exceeds the size limit.")
+                stream = os.fdopen(fd, "r+b" if flags & os.O_RDWR else "rb")
+            except BaseException:
+                os.close(fd)
+                raise
+            with stream:
+                yield stream
+        finally:
+            os.close(directory_fd)
+    finally:
+        os.close(root_fd)
+
+
+def _read_verified_row(row):
+    size, expected = row["size"], row["checksum"]
+    if type(size) is not int or not 0 <= size <= MAX_FILE or row["received"] != size or not isinstance(expected, str) or not re.fullmatch(r"[a-f0-9]{64}", expected):
+        raise ValueError("That file has invalid size or checksum metadata. Re-import the original.")
+    try:
+        with _managed_file(row["id"]) as stream:
+            before = os.fstat(stream.fileno())
+            if before.st_size != size:
+                raise ValueError("That file failed its stored size verification. Re-import the original.")
+            content = stream.read(size + 1)
+            after = os.fstat(stream.fileno())
+    except OSError:
+        raise ValueError("That managed file is unavailable or unsafe.") from None
+    digest = hashlib.sha256(content).hexdigest()
+    if len(content) != size or digest != expected or (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (after.st_size, after.st_mtime_ns, after.st_ctime_ns):
+        raise ValueError("That file failed its stored checksum verification. Re-import the original.")
+    return {**dict(row), "checksum": digest}, content
+
+
+def read_verified_file(file_id, *, include_trash=False):
+    """Return (metadata, bytes) verified from the same bounded open descriptor.
+
+    Trusted backend callers may include ready files in Trash for backup only.
+    Never trust a stored checksum as evidence that current bytes were checked.
+    """
+    file_id = identifier(file_id)
+    with database() as conn:
+        row = conn.execute("SELECT * FROM files WHERE id=? AND status='ready'" +
+                           ("" if include_trash else " AND deleted IS NULL"), (file_id,)).fetchone()
+        if row is None:
+            raise ValueError("That file is unavailable.")
+        return _read_verified_row(row)
+
+
+def _abandon_upload(conn, row, now):
+    # Retain every partial byte. Only the unused reservation is released.
+    try:
+        with _managed_file(row["id"]) as stream:
+            received = os.fstat(stream.fileno()).st_size
+    except FileNotFoundError:
+        received = 0
+    except OSError:
+        raise ValueError("The unfinished upload is unsafe; no file was removed.") from None
+    conn.execute("UPDATE files SET status='aborted',received=?,deleted=COALESCE(deleted,?) WHERE id=?",
+                 (received, now, row["id"]))
+    conn.execute("DELETE FROM file_upload_sessions WHERE file_id=?", (row["id"],))
+    return received
+
+
+def expire_uploads():
+    """Release historical trashed/idle reservations, without deleting any bytes."""
+    now = time.time()
+    with database() as conn:
+        rows = conn.execute("SELECT f.* FROM files f LEFT JOIN file_upload_sessions s ON s.file_id=f.id "
+                            "WHERE f.status='uploading' AND (f.deleted IS NOT NULL OR COALESCE(s.touched,f.created)<=?)",
+                            (now - UPLOAD_IDLE_SECONDS,)).fetchall()
+        for row in rows:
+            _abandon_upload(conn, row, now)
+    return len(rows)
+
+
+def _storage(conn):
+    row = conn.execute("SELECT COALESCE(SUM(CASE WHEN status='ready' THEN size ELSE received END),0), "
+                       "COALESCE(SUM(CASE WHEN status='uploading' AND deleted IS NULL THEN MAX(size-received,0) ELSE 0 END),0) FROM files").fetchone()
+    return {"used": row[0], "reserved": row[1], "allocated": row[0] + row[1],
+            "scope": "All managed bytes, including Trash and retained unfinished uploads", "limit": MAX_STORAGE}
+
+
+def export_workspace():
+    """One complete metadata snapshot, or an explicit bounded-export error."""
+    with database() as conn:
+        conn.execute("BEGIN")
+        stored = conn.execute("SELECT * FROM records ORDER BY updated DESC,id LIMIT ?", (MAX_EXPORT_ITEMS + 1,)).fetchall()
+        local_files = conn.execute("SELECT * FROM files ORDER BY created DESC,id LIMIT ?", (MAX_EXPORT_ITEMS + 1,)).fetchall()
+        if len(stored) + len(local_files) > MAX_EXPORT_ITEMS:
+            raise ValueError("The complete metadata export exceeds the 10,000-item limit. Nothing was exported; use a managed backup or split the workspace.")
+        profile = conn.execute("SELECT value FROM preferences WHERE key='profile'").fetchone()
+        result = {"success": True, "format": "prism-workspace-backup", "version": 1, "exported_at": time.time(),
+                  "records": [decode_record(r) for r in stored if r["deleted"] is None],
+                  "trash": [decode_record(r) for r in stored if r["deleted"] is not None],
+                  "files": [dict(r) for r in local_files if r["deleted"] is None],
+                  "file_trash": [dict(r) for r in local_files if r["deleted"] is not None],
+                  "profile": {**PROFILE, **(json.loads(profile[0]) if profile else {})}, "complete": True,
+                  "notice": "Complete file metadata only, including file_trash. Download important file contents separately. Provider credentials are not included."}
+        if len(json.dumps(result).encode("utf-8")) > MAX_EXPORT_BYTES:
+            raise ValueError("The complete metadata export exceeds the 64 MB limit. Nothing was exported; use a managed backup.")
+        return result
+
+
 def inventory():
     """Shallow directory metadata only; never index document contents or secrets."""
     result = []
@@ -258,11 +386,13 @@ def weather(city, country):
 def handle_get(path, query):
     action = path.rstrip("/").rsplit("/", 1)[-1]
     if action == "summary":
+        expire_uploads()
         stored = records()
         local_files = files()
+        with database() as conn:
+            storage = _storage(conn)
         return {"success": True, "profile": preferences(), "records": stored, "files": local_files,
-                "folders": inventory(), "storage": {"used": sum(f["size"] for f in local_files if f["status"] == "ready"),
-                                                       "scope": "Files imported into PRISM", "limit": MAX_STORAGE},
+                "folders": inventory(), "storage": storage,
                 "privacy": "Local, unencrypted workspace database. Existing services and credentials are stored separately."}
     if action == "system":
         return system_metrics()
@@ -272,20 +402,12 @@ def handle_get(path, query):
     if action == "trash":
         return {"success": True, "records": records(True), "files": files(True)}
     if action == "export":
-        return {"success": True, "format": "prism-workspace-backup", "version": 1, "exported_at": time.time(),
-                "records": records(), "trash": records(True), "files": files(), "profile": preferences(),
-                "notice": "File metadata only. Download important file contents separately. Provider credentials are not included."}
+        return export_workspace()
     if action == "file":
         file_id = identifier(query.get("id", [""])[0])
-        with database() as conn:
-            row = conn.execute("SELECT * FROM files WHERE id=? AND deleted IS NULL AND status='ready'", (file_id,)).fetchone()
-        if not row:
-            raise ValueError("That file is unavailable.")
-        file_path = DATA / "files" / file_id
-        if file_path.is_symlink() or not file_path.is_file() or file_path.stat().st_size > MAX_FILE:
-            raise ValueError("That file is unavailable.")
+        row, content = read_verified_file(file_id)
         return {"success": True, "id": file_id, "name": row["name"], "mime": row["mime"],
-                "content": base64.b64encode(file_path.read_bytes()).decode("ascii")}
+                "size": row["size"], "checksum": row["checksum"], "content": base64.b64encode(content).decode("ascii")}
     raise ValueError("That PRISM route is not available.")
 
 
@@ -319,11 +441,25 @@ def handle_post(path, body):
         item_id = identifier(body.get("id"))
         table = "files" if body.get("kind") == "file" else "records"
         with database() as conn:
-            found = conn.execute(f"SELECT id FROM {table} WHERE id=?", (item_id,)).fetchone()
+            found = conn.execute(f"SELECT * FROM {table} WHERE id=?", (item_id,)).fetchone()
             if not found:
                 raise ValueError("That item was not found.")
+            if table == "files" and found["status"] in {"uploading", "aborted"}:
+                if action == "restore":
+                    raise ValueError("Unfinished uploads cannot be restored as complete files. Import the original again; partial bytes remain local.")
+                if found["status"] == "uploading":
+                    _abandon_upload(conn, found, time.time())
             conn.execute(f"UPDATE {table} SET deleted=? WHERE id=?", (time.time() if action == "trash" else None, item_id))
         return {"success": True}
+    if action == "upload-abort":
+        file_id = identifier(body.get("id"))
+        with database() as conn:
+            row = conn.execute("SELECT * FROM files WHERE id=?", (file_id,)).fetchone()
+            if row is None or row["status"] not in {"uploading", "aborted"}:
+                raise ValueError("Choose an unfinished upload. Completed files are never removed by cancellation.")
+            retained = _abandon_upload(conn, row, time.time()) if row["status"] == "uploading" else row["received"]
+        return {"success": True, "id": file_id, "status": "aborted", "retained_bytes": retained,
+                "notice": "Unused reservation released. Partial bytes remain local and count toward storage; import the original to try again."}
     if action == "profile":
         value = body.get("profile", {})
         if not isinstance(value, dict):
@@ -359,15 +495,16 @@ def handle_post(path, body):
         folder = clean(body.get("folder"), 80) or "Files"
         mime = clean(body.get("mime"), 100) or "application/octet-stream"
         file_id = uuid.uuid4().hex
+        expire_uploads()
         with database() as conn:
-            allocated = conn.execute("SELECT COALESCE(SUM(size),0) FROM files").fetchone()[0]
+            allocated = _storage(conn)["allocated"]
             if allocated + size > MAX_STORAGE:
-                raise ValueError("PRISM's local import allowance is full. Files in Trash still count toward storage.")
-            file_dir = DATA / "files"
-            file_dir.mkdir(mode=0o700, exist_ok=True)
-            with open(file_dir / file_id, "xb") as stream:
-                os.chmod(stream.name, 0o600)
-            conn.execute("INSERT INTO files(id,name,mime,size,folder,status,created) VALUES(?,?,?,?,?,'uploading',?)", (file_id, name, mime, size, folder, time.time()))
+                raise ValueError("PRISM's local import allowance is full. Cancel unfinished imports to release reservations; Trash and retained partial bytes still count.")
+            with _managed_file(file_id, os.O_RDWR | os.O_CREAT | os.O_EXCL, create=True):
+                pass
+            now = time.time()
+            conn.execute("INSERT INTO files(id,name,mime,size,folder,status,created) VALUES(?,?,?,?,?,'uploading',?)", (file_id, name, mime, size, folder, now))
+            conn.execute("INSERT INTO file_upload_sessions VALUES(?,?)", (file_id, now))
         return {"success": True, "id": file_id, "chunk_size": 32768}
     if action == "upload-chunk":
         file_id = identifier(body.get("id"))
@@ -380,23 +517,29 @@ def handle_post(path, body):
             raise ValueError("That upload chunk is invalid.") from None
         if len(chunk) > 32768:
             raise ValueError("That upload chunk is too large.")
+        expire_uploads()
         with database() as conn:
             row = conn.execute("SELECT * FROM files WHERE id=? AND status='uploading' AND deleted IS NULL", (file_id,)).fetchone()
-            if not row or body.get("offset") != row["received"] or row["received"] + len(chunk) > row["size"]:
+            if not row or type(body.get("offset")) is not int or body["offset"] != row["received"] or row["received"] + len(chunk) > row["size"]:
                 raise ValueError("The upload position changed. Start this file again.")
-            file_path = DATA / "files" / file_id
-            if file_path.is_symlink():
-                raise ValueError("The upload destination is unavailable.")
-            with open(file_path, "r+b") as stream:
-                stream.seek(row["received"])
-                stream.write(chunk)
-                stream.truncate(row["received"] + len(chunk))
             received = row["received"] + len(chunk)
             checksum = None
             status = "uploading"
-            if received == row["size"]:
-                checksum = hashlib.sha256(file_path.read_bytes()).hexdigest()
-                status = "ready"
+            with _managed_file(file_id, os.O_RDWR) as stream:
+                if os.fstat(stream.fileno()).st_size != row["received"]:
+                    raise ValueError("The upload bytes changed. Cancel this import and start again.")
+                stream.seek(row["received"])
+                stream.write(chunk)
+                stream.truncate(received)
+                stream.flush()
+                if received == row["size"]:
+                    stream.seek(0)
+                    checksum = hashlib.sha256(stream.read(MAX_FILE + 1)).hexdigest()
+                    status = "ready"
             conn.execute("UPDATE files SET received=?,status=?,checksum=? WHERE id=?", (received, status, checksum, file_id))
+            if status == "ready":
+                conn.execute("DELETE FROM file_upload_sessions WHERE file_id=?", (file_id,))
+            else:
+                conn.execute("INSERT OR REPLACE INTO file_upload_sessions VALUES(?,?)", (file_id, time.time()))
         return {"success": True, "received": received, "status": status}
     raise ValueError("That PRISM action is not available.")

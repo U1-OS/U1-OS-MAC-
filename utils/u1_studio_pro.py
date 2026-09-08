@@ -1,15 +1,20 @@
 """Bounded local publishing: operator text, vector artwork, interactive PDFs and ZIPs.
 
-No account access, uploads, user-selected paths, network calls or persistent writes.
+No account access, uploads, user-selected paths or network calls. Approved handoffs
+persist personal records and Studio provenance in the managed workspace database.
 The parent server must run its safety gate before dispatching this handler.
 """
 import base64
+from contextlib import contextmanager
+import fcntl
 import hashlib
 import hmac
 import io
 import json
+import os
 import re
 import secrets
+import sqlite3
 import textwrap
 import threading
 import zipfile
@@ -383,15 +388,100 @@ def _handoff_file(body):
     if not isinstance(signature,str) or not re.fullmatch(r"[a-f0-9]{64}",signature) or not hmac.compare_digest(signature,_receipt_signature(value)):
         raise ValueError("The artifact receipt is invalid or expired. Generate and save the current document again.")
     file_id = workspace.identifier(body.get("file_id"))
-    with workspace.database() as conn:
-        row = conn.execute("SELECT id,name,mime,size,received,status,checksum,deleted FROM files WHERE id=?",(file_id,)).fetchone()
+    verify = getattr(workspace, "read_verified_file", None)
+    if not callable(verify):
+        raise RuntimeError("Managed Files integrity verification is unavailable. Complete the Files update before handing off a product.")
+    row, raw = verify(file_id)
     if not row or row["deleted"] is not None or row["status"] != "ready" or row["received"] != row["size"]:
         raise ValueError("Choose the successfully saved, ready file. Missing, uploading and trashed files cannot be handed off.")
     if any(row[key] != value[other] for key,other in (("name","filename"),("mime","mime"),("size","size"),("checksum","sha256"))):
         raise ValueError("The saved file does not match this generated artifact receipt.")
+    if len(raw) != value["size"] or hashlib.sha256(raw).hexdigest() != value["sha256"]:
+        raise ValueError("The verified file bytes do not match this generated artifact receipt.")
     if value["mime"] not in {"application/pdf","application/zip"}:
         raise ValueError("Only generated PDF or ZIP files can become catalogue products.")
     return value, dict(row)
+
+
+@contextmanager
+def _provenance_lock(workspace):
+    """Serialize Studio processes while retaining personal.action for all records."""
+    with workspace.database() as conn:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS studio_product_origins (
+                document_key TEXT PRIMARY KEY, product_id TEXT,
+                seed_file_id TEXT NOT NULL, artifact_json TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS studio_launch_origins (
+                product_id TEXT NOT NULL, task_key TEXT NOT NULL, launch_id TEXT NOT NULL,
+                PRIMARY KEY(product_id,task_key)
+            );
+        """)
+    fd = os.open(workspace.DATA / ".studio-handoff.lock",
+                 os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0), 0o600)
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            from utils.u1_personal_core import PersonalError
+            raise PersonalError("Another Studio handoff is running. Review again after it finishes.", 409, "handoff_busy") from None
+        yield
+    finally:
+        os.close(fd)
+
+
+def _origin(artifact):
+    from utils import prism_workspace as workspace
+    with workspace.database() as conn:
+        row = conn.execute("SELECT * FROM studio_product_origins WHERE document_key=?", (artifact["document_key"],)).fetchone()
+    return dict(row) if row else None
+
+
+def _bind_origin(artifact, file_id, product_id=None):
+    from utils import prism_workspace as workspace
+    with workspace.database() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute("INSERT OR IGNORE INTO studio_product_origins VALUES(?,NULL,?,?)",
+                     (artifact["document_key"], file_id, json.dumps(artifact, sort_keys=True)))
+        row = conn.execute("SELECT product_id FROM studio_product_origins WHERE document_key=?", (artifact["document_key"],)).fetchone()
+        if product_id:
+            if row[0] and row[0] != product_id:
+                raise ValueError("This Studio origin already belongs to a different product. Review the catalogue.")
+            conn.execute("UPDATE studio_product_origins SET product_id=? WHERE document_key=?", (product_id, artifact["document_key"]))
+
+
+def _launch_key(product_id, title):
+    return hashlib.sha256((product_id+"\n"+title).encode("utf-8")).hexdigest()
+
+
+def _existing_launches(personal, product_id, titles):
+    from utils import prism_workspace as workspace
+    rows = _personal_rows(personal, "launch") if titles else []
+    with workspace.database() as conn:
+        origins = dict(conn.execute("SELECT task_key,launch_id FROM studio_launch_origins WHERE product_id=?", (product_id,)).fetchall())
+    result = {}
+    for title in titles:
+        key = _launch_key(product_id, title)
+        if key in origins:
+            found = next((row for row in rows if row["id"] == origins[key] and row["payload"]["product_id"] == product_id), None)
+            if not found:
+                raise personal.PersonalError("An earlier Studio launch task was removed or relinked. Review it in Income instead of silently recreating it.", 409, "launch_origin_conflict")
+        else:
+            marker = "[u1-studio-launch:"+key+"]"
+            matches = [row for row in rows if row["payload"]["product_id"] == product_id and
+                       (row["title"] == title or marker in row["payload"].get("notes", ""))]
+            if len(matches) > 1:
+                raise ValueError("Multiple launch tasks match this review. Resolve them in Income first.")
+            found = matches[0] if matches else None
+        result[title] = found
+    return result
+
+
+def _bind_launch(product_id, title, launch_id):
+    from utils import prism_workspace as workspace
+    with workspace.database() as conn:
+        conn.execute("INSERT OR IGNORE INTO studio_launch_origins VALUES(?,?,?)",
+                     (product_id, _launch_key(product_id, title), launch_id))
 
 
 def _personal_rows(personal, kind):
@@ -408,11 +498,19 @@ def _personal_rows(personal, kind):
 
 def _handoff_existing(personal, artifact, file_id):
     marker = "[u1-studio-product:"+artifact["document_key"]+"]"
+    origin = _origin(artifact)
     matches = []
     for row in _personal_rows(personal,"product"):
         payload = row["payload"]
-        if marker in payload.get("notes", "") or any(v["file_id"] == file_id and v["version"] == artifact["version"] for v in payload.get("versions", [])):
+        if origin and origin["product_id"]:
+            matched = row["id"] == origin["product_id"]
+        else:
+            candidates = {file_id, origin["seed_file_id"] if origin else file_id}
+            matched = marker in payload.get("notes", "") or any(v["file_id"] in candidates and v["version"] == artifact["version"] for v in payload.get("versions", []))
+        if matched:
             matches.append(row)
+    if origin and origin["product_id"] and not matches:
+        raise ValueError("The product for this Studio origin was removed. Review the catalogue before creating a replacement.")
     if len(matches) > 1:
         raise ValueError("More than one catalogue record already matches this artifact. Resolve those records in Income before handing off.")
     existing = matches[0] if matches else None
@@ -436,7 +534,7 @@ def _handoff(body):
     # The application's shared reentrant lock serializes Studio retries and
     # concurrent requests with PRISM/personal actions. Records themselves remain
     # in the existing personal store and are created through its public action.
-    with workspace.LOCK:
+    with workspace.LOCK, _provenance_lock(workspace):
         artifact, saved = _handoff_file(body)
         marker, existing = _handoff_existing(personal, artifact, saved["id"])
         proposed = {"title":existing["title"] if existing else artifact["title"],
@@ -458,12 +556,13 @@ def _handoff(body):
         if type(expected) is not int or expected < 0:
             raise ValueError("Use the catalogue version returned by the handoff review")
         reused = existing is not None
+        existing_tasks = _existing_launches(personal, existing["id"], checklist) if existing else {}
         version_link = {"version":artifact["version"],"file_id":saved["id"],
                         "notes":f"Studio artifact SHA-256: {artifact['sha256']}\nSource: {SOURCE}\n{artifact['content_source']}"}
         if existing:
             payload = existing["payload"]
             linked = any(v["file_id"] == saved["id"] and v["version"] == artifact["version"] for v in payload["versions"])
-            retry = linked and marker in payload["notes"] and product == proposed
+            retry = linked and product == proposed and all(existing_tasks.get(title) for title in checklist)
             if expected != existing["version"] and not (expected <= existing["version"] and retry):
                 raise personal.PersonalError("The product changed after review. Review the latest catalogue record before continuing.",409,"version_conflict")
             if product != proposed:
@@ -471,31 +570,30 @@ def _handoff(body):
             changes = {}
             if not linked:
                 changes["versions"] = payload["versions"]+[version_link]
-            if marker not in payload["notes"]:
-                changes["notes"] = (payload["notes"]+"\n"+marker).strip()
             record = personal.action({"action":"update","id":existing["id"],"expected_version":existing["version"],"payload":changes})["record"] if changes else existing
         else:
             if expected != 0:
                 raise personal.PersonalError("The reviewed product is no longer available. Review the handoff again.",409,"version_conflict")
+            _bind_origin(artifact, saved["id"])
             record = personal.action({"action":"create","kind":"product","title":product["title"],"payload":{
                 "status":"review","audience":product["audience"],"description":product["description"],
                 "current_version":artifact["version"],"versions":[version_link],
-                "notes":marker+"\nCreated from an operator-reviewed Studio file. Private catalogue record; no publication performed."}})["record"]
+                "notes":"Created from an operator-reviewed Studio file. Private catalogue record; no publication performed."}})["record"]
+        _bind_origin(artifact, saved["id"], record["id"])
         launches, pending, warnings = [], [], []
-        existing_tasks = _personal_rows(personal,"launch") if checklist else []
         for title in checklist:
-            key = hashlib.sha256((record["id"]+"\n"+title).encode("utf-8")).hexdigest()
-            task_marker = "[u1-studio-launch:"+key+"]"
-            found = next((row for row in existing_tasks if row["payload"]["product_id"] == record["id"] and
-                          (task_marker in row["payload"].get("notes","") or row["title"] == title)),None)
+            found = existing_tasks.get(title)
             if found:
+                _bind_launch(record["id"], title, found["id"])
                 if found["archived"]:
                     warnings.append("An approved launch task is archived; restore it in Income: "+title)
                 launches.append(found)
                 continue
             try:
-                launches.append(personal.action({"action":"create","kind":"launch","title":title,"payload":{
-                    "product_id":record["id"],"status":"backlog","notes":task_marker+"\nOperator-approved planning task. No publication or account action is scheduled."}})["record"])
+                launch = personal.action({"action":"create","kind":"launch","title":title,"payload":{
+                    "product_id":record["id"],"status":"backlog","notes":"Operator-approved planning task. No publication or account action is scheduled."}})["record"]
+                _bind_launch(record["id"], title, launch["id"])
+                launches.append(launch)
             except personal.PersonalError as error:
                 pending.append(title)
                 warnings.append(str(error))
@@ -635,4 +733,6 @@ def handle_request(handler):
         _reply(handler, {"success": False, "error": message}, getattr(exc,"status",400))
     except RuntimeError as exc:
         _reply(handler, {"success": False, "error": str(exc)}, 503)
+    except (OSError, sqlite3.Error):
+        _reply(handler, {"success": False, "error": "Studio storage verification did not complete. Refresh before retrying; an earlier approved record may already be saved."}, 503)
     return True

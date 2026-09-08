@@ -742,6 +742,8 @@ def snapshot(query=None, export=False):
         conn.execute("BEGIN")
         conn.create_function("personal_contains", 3, lambda title, payload, needle: int(needle.casefold() in (title + " " + json.dumps(json.loads(payload), ensure_ascii=False)).casefold()))
         total = conn.execute("SELECT COUNT(*) FROM personal_records WHERE " + where, params).fetchone()[0]
+        if export and total > limit:
+            raise PersonalError("The complete selected export exceeds the record limit. Narrow the filters; nothing was exported.")
         rows = conn.execute("SELECT * FROM personal_records WHERE " + where + " ORDER BY updated DESC,id LIMIT ? OFFSET ?", (*params, limit, offset)).fetchall()
         profile = conn.execute("SELECT value FROM preferences WHERE key='profile'").fetchone()
         timezone = json.loads(profile[0]).get("timezone", "Australia/Melbourne") if profile else "Australia/Melbourne"
@@ -753,12 +755,21 @@ def snapshot(query=None, export=False):
                   "total": total, "limit": limit, "offset": offset, "has_more": offset + len(rows) < total,
                   "generated_at": time.time(), "timezone": timezone, "today": datetime.now(zone).date().isoformat(),
                   "source": "Operator-entered local planning records", "notice": "Local unencrypted storage. Drafts, estimates and manual paper simulation only; no background monitoring, publishing, payments or live trades. Automated strategy evaluation is unavailable."}
+        if export:
+            account_rows = [row for row in rows if row["kind"] == "paper_account"]
+            account_ids = [row["id"] for row in account_rows]
+            trade_rows = conn.execute("SELECT * FROM personal_paper_trades WHERE account_id IN (" +
+                                      ",".join("?" for _ in account_ids) + ") ORDER BY created DESC,id LIMIT ?",
+                                      (*account_ids, MAX_PAPER_TRADES + 1)).fetchall() if account_ids else []
+            if len(trade_rows) > MAX_PAPER_TRADES:
+                raise PersonalError("The complete selected export exceeds the paper-trade limit. Narrow the account filters; nothing was exported.")
+            result["paper_balances"] = {r["id"]: _paper_balance(conn, _decode(r)) for r in account_rows}
+            result["paper_trades"] = [dict(row) for row in trade_rows]
+            return {**result, "format": "u1-personal-workflows", "exported_at": result["generated_at"],
+                    "export_notice": "Planning records only. Linked PRISM records and file contents are not embedded. Protect this export as private personal and business data."}
         account_rows = conn.execute("SELECT * FROM personal_records WHERE kind='paper_account' ORDER BY title,id LIMIT ?", (MAX_PER_KIND,)).fetchall()
         result["paper_balances"] = {r["id"]: _paper_balance(conn, _decode(r)) for r in account_rows}
         result["paper_trades"] = [dict(r) for r in conn.execute("SELECT * FROM personal_paper_trades ORDER BY created DESC,id LIMIT ?", (MAX_PAPER_TRADES,)).fetchall()]
-        if export:
-            return {**result, "format": "u1-personal-workflows", "exported_at": result["generated_at"],
-                    "export_notice": "Planning records only. Linked PRISM records and file contents are not embedded. Protect this export as private personal and business data."}
         personal = conn.execute("SELECT id,kind,title,archived FROM personal_records ORDER BY title,id LIMIT ?", (MAX_RECORDS,)).fetchall()
         canonical = conn.execute("SELECT id,kind,title,deleted FROM records WHERE kind IN ('task','event','project') ORDER BY updated DESC LIMIT 1000").fetchall()
         files = conn.execute("SELECT id,name,deleted,status FROM files ORDER BY created DESC LIMIT 1000").fetchall()

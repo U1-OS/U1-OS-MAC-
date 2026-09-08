@@ -3,122 +3,160 @@ import os
 import subprocess
 import urllib.request
 import json
+import math
+import hashlib
+import threading
+import urllib.parse
 import xml.etree.ElementTree as ET
 from services.base import BaseService
+from utils import news_markets
 
 class IntelligenceService(BaseService):
     def __init__(self, config):
         super().__init__("intelligence", config)
-        self.configured = True
-        self.status = "active"
+        self.configured = False
+        self.status = "unavailable"
         self._last_weather_fetch = 0
         self._last_news_fetch = 0
-        self.weather_cache = {
-            "temp_c": 19,
-            "temp_f": 66,
-            "condition": "Clear",
-            "humidity": "55%",
-            "wind": "11 km/h",
-            "city": "Sydney",
-            "feels_like": "19°C"
-        }
-        self.news_cache = [
-            {"title": "Command Center OS initialized — all systems nominal", "source": "SYSTEM", "url": "#"},
-            {"title": "Global financial markets steady amid rate outlook", "source": "FINANCE", "url": "#"},
-            {"title": "OpenAI & Anthropic advance frontier agent architectures", "source": "TECH", "url": "#"}
-        ]
-        self.pool_cache = {
-            "configured": False,
-            "temp_c": None,
-            "temp_f": None,
-            "status_text": "SENSOR UNPAIRED: CONNECT SENSOR"
-        }
+        self._weather_attempted_at = 0
+        self._news_attempted_at = 0
+        self._weather_city = None
+        self._news_feed_key = None
+        self._weather_lock = threading.Lock()
+        self._news_lock = threading.Lock()
+        self.weather_cache = self._empty_weather()
+        self.news_cache = []
+        self.news_status = {"success": False, "stale": False, "source": None,
+                            "fetched_at": None, "error": "News has not been received."}
+        self.pool_cache = {"configured": False, "temp_c": None, "temp_f": None,
+                           "status_text": "SENSOR UNPAIRED: CONNECT SENSOR"}
+
+    @staticmethod
+    def _empty_weather(city=None):
+        return {"success": False, "stale": False, "temp_c": None, "temp_f": None,
+                "condition": None, "humidity": None, "wind": None, "city": city or None,
+                "feels_like": None, "source": "wttr.in", "source_url": "https://wttr.in/",
+                "fetched_at": None, "observed_at": None, "timezone": None,
+                "error": "Weather has not been received."}
+
+    @staticmethod
+    def _number(value):
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            number = float(value)
+            return number if math.isfinite(number) else None
+        except (TypeError, ValueError, OverflowError):
+            return None
 
     def _fetch_weather(self):
-        now = time.time()
-        # Fetch weather every 5 minutes (300s) to avoid rate limits
-        if now - self._last_weather_fetch < 300 and self._last_weather_fetch > 0:
-            return self.weather_cache
-
-        intel_cfg = self.config.get("intelligence", {})
-        city = intel_cfg.get("weather_city", "")
-        url = f"https://wttr.in/{city}?format=j1" if city else "https://wttr.in/?format=j1"
-
-        try:
-            req = urllib.request.Request(
-                url,
-                headers={"User-Agent": "CommandCenterOS/1.0 (Darwin; macOS)"}
-            )
-            with urllib.request.urlopen(req, timeout=2.5) as response:
-                if response.status == 200:
-                    raw = json.loads(response.read().decode("utf-8"))
-                    curr = raw.get("current_condition", [{}])[0]
-                    nearest = raw.get("nearest_area", [{}])[0]
-                    area_name = city or nearest.get("areaName", [{}])[0].get("value", "Local")
-
-                    old_temp = self.weather_cache.get("temp_c")
-                    new_temp = int(curr.get("temp_C", 20))
-
-                    self.weather_cache = {
-                        "temp_c": new_temp,
-                        "temp_f": int(curr.get("temp_F", 68)),
-                        "condition": curr.get("weatherDesc", [{}])[0].get("value", "Partly Cloudy"),
-                        "humidity": f"{curr.get('humidity', '50')}%",
-                        "wind": f"{curr.get('windspeedKmph', '10')} km/h",
-                        "city": area_name,
-                        "feels_like": f"{curr.get('FeelsLikeC', new_temp)}°C"
-                    }
-                    self._last_weather_fetch = now
-
-                    if old_temp is not None and old_temp != new_temp:
-                        self.add_event("weather_shift", f"Weather update: {area_name} {new_temp}°C ({self.weather_cache['condition']})")
-        except Exception as e:
-            # Keep existing cache on network failure
-            pass
-
-        return self.weather_cache
+        with self._weather_lock:
+            now = time.time()
+            city = str(self.config.get("intelligence", {}).get("weather_city", "")).strip()[:100]
+            if city != self._weather_city:
+                self._weather_city = city
+                self.weather_cache = self._empty_weather(city)
+                self._weather_attempted_at = 0
+            ttl = 300 if self.weather_cache.get("success") else 60
+            if self._weather_attempted_at and now - self._weather_attempted_at < ttl:
+                return dict(self.weather_cache)
+            self._weather_attempted_at = now
+            try:
+                url = "https://wttr.in/" + urllib.parse.quote(city, safe="") + "?format=j1"
+                raw = json.loads(news_markets.fetch(url))
+                current = raw.get("current_condition", [])[0]
+                temperature = self._number(current.get("temp_C"))
+                descriptions = current.get("weatherDesc") or []
+                condition = descriptions[0].get("value") if descriptions else None
+                if temperature is None or not isinstance(condition, str) or not condition.strip():
+                    raise ValueError("Weather measurements are incomplete")
+                areas = raw.get("nearest_area") or []
+                names = areas[0].get("areaName", []) if areas else []
+                area = names[0].get("value") if names else None
+                humidity = self._number(current.get("humidity"))
+                wind = self._number(current.get("windspeedKmph"))
+                feels = self._number(current.get("FeelsLikeC"))
+                observed = current.get("localObsDateTime") or current.get("observation_time")
+                fetched = time.time()
+                self.weather_cache = {
+                    "success": True, "stale": False, "temp_c": temperature,
+                    "temp_f": self._number(current.get("temp_F")), "condition": condition.strip()[:120],
+                    "humidity": f"{humidity:g}%" if humidity is not None else None,
+                    "wind": f"{wind:g} km/h" if wind is not None else None,
+                    "city": city or (area[:100] if isinstance(area, str) else None),
+                    "feels_like": f"{feels:g} C" if feels is not None else None,
+                    "source": "wttr.in", "source_url": "https://wttr.in/",
+                    "observed_at": observed[:80] if isinstance(observed, str) else None,
+                    "timezone": None, "fetched_at": fetched, "attempted_at": now,
+                    "refresh_seconds": 300, "error": None,
+                    "notice": "Provider snapshot; retrieval time is not the observation time. "
+                              "The provider timezone is not inferred."
+                }
+                self._last_weather_fetch = fetched
+            except Exception:
+                self.weather_cache = {**self.weather_cache, "success": False,
+                    "stale": bool(self.weather_cache.get("fetched_at")), "attempted_at": now,
+                    "refresh_seconds": 60,
+                    "error": "Weather unavailable. Retained measurements, if any, are stale."}
+            return dict(self.weather_cache)
 
     def _fetch_news(self):
-        now = time.time()
-        # Fetch news every 10 minutes
-        if now - self._last_news_fetch < 600 and self._last_news_fetch > 0:
-            return self.news_cache
-
-        headlines = []
-        feeds = self.config.get("intelligence", {}).get("news_feeds", [
-            "https://news.ycombinator.com/rss"
-        ])
-
-        for feed_url in feeds[:2]:
+        with self._news_lock:
+            now = time.time()
+            feeds = self.config.get("intelligence", {}).get("news_feeds", ["https://news.ycombinator.com/rss"])
+            key = tuple(feeds) if isinstance(feeds, list) and all(isinstance(feed, str) for feed in feeds) else None
+            if key != self._news_feed_key:
+                self._news_feed_key = key
+                self.news_cache = []
+                self.news_status = {"success": False, "stale": False, "fetched_at": None}
+                self._news_attempted_at = 0
+            ttl = 600 if self.news_status.get("success") else 60
+            if self._news_attempted_at and now - self._news_attempted_at < ttl:
+                return list(self.news_cache)
+            self._news_attempted_at = now
             try:
-                req = urllib.request.Request(
-                    feed_url,
-                    headers={"User-Agent": "CommandCenterOS/1.0"}
-                )
-                with urllib.request.urlopen(req, timeout=2.5) as resp:
-                    if resp.status == 200:
-                        content = resp.read()
-                        root = ET.fromstring(content)
-                        # RSS item elements
-                        for item in root.findall(".//item")[:5]:
-                            title_elem = item.find("title")
-                            link_elem = item.find("link")
-                            if title_elem is not None and title_elem.text:
-                                source = "TECH" if "ycombinator" in feed_url else "NEWS"
-                                headlines.append({
-                                    "title": title_elem.text.strip(),
-                                    "source": source,
-                                    "url": link_elem.text.strip() if link_elem is not None and link_elem.text else "#"
-                                })
+                known = {spec[1]: category for category, spec in news_markets.SOURCES.items()}
+                if not key or len(key) > 2 or any(url not in known and url != "https://news.ycombinator.com/rss" for url in key):
+                    raise ValueError("Unsupported news feed")
+                items, seen, fetched_times, sources = [], set(), [], []
+                for url in dict.fromkeys(key):
+                    if url in known:
+                        value = news_markets.news(known[url])
+                        if not value.get("success") or value.get("stale"):
+                            raise ValueError("Publisher unavailable")
+                        rows = value.get("items", [])[:5]
+                        fetched = value["fetched_at"]
+                        source = value["source"]
+                    else:
+                        channel = news_markets.rss_channel(news_markets.fetch(url))
+                        rows, source = [], "Hacker News"
+                        for row in channel.findall("item")[:10]:
+                            title = (row.findtext("title") or "").strip()[:400]
+                            link = news_markets.safe_story_url((row.findtext("link") or "").strip())
+                            if title and link:
+                                rows.append({"id": hashlib.sha256(link.encode()).hexdigest()[:24],
+                                    "title": title, "url": link, "source": source,
+                                    "published_at": news_markets.published_time(row.findtext("pubDate"))})
+                        rows = rows[:5]
+                        fetched = time.time()
+                    sources.append(source)
+                    fetched_times.append(fetched)
+                    for item in rows:
+                        if item["url"] not in seen:
+                            seen.add(item["url"])
+                            items.append({**item, "stale": False, "fetched_at": fetched})
+                self.news_cache = items
+                self._last_news_fetch = min(fetched_times)
+                self.news_status = {"success": True, "stale": False, "source": " / ".join(sources),
+                    "source_urls": list(dict.fromkeys(key)), "fetched_at": self._last_news_fetch,
+                    "attempted_at": now, "refresh_seconds": 600, "error": None}
             except Exception:
-                continue
-
-        if headlines:
-            self.news_cache = headlines
-            self._last_news_fetch = now
-            self.add_event("news_refresh", f"Intelligence strip updated: {len(headlines)} headlines active")
-
-        return self.news_cache
+                self.news_cache = [{**item, "stale": True} for item in self.news_cache]
+                self.news_status = {**self.news_status, "success": False,
+                    "stale": bool(self.news_status.get("fetched_at")), "attempted_at": now,
+                    "refresh_seconds": 60,
+                    "error": "News unavailable or feed unsupported. Only the existing fixed publisher feeds are accepted."}
+            return list(self.news_cache)
 
     def _get_system_telemetry(self):
         load_avg = [0.0, 0.0, 0.0]
@@ -265,26 +303,25 @@ class IntelligenceService(BaseService):
         telemetry = self._get_system_telemetry()
         pool = self._check_pool_sensor()
         hardware = self._get_hardware_telemetry()
-
         with self.lock:
-            self.data = {
-                "weather": weather,
-                "news": news,
-                "telemetry": telemetry,
-                "pool": pool,
-                "hardware": hardware
-            }
+            ready = weather.get("success") is True and self.news_status.get("success") is True
+            self.data = {"weather": weather, "news": news, "news_status": dict(self.news_status),
+                         "telemetry": telemetry, "pool": pool, "hardware": hardware,
+                         "success": ready, "notice": "Provider availability and freshness are reported per feed."}
             self.last_updated = time.time()
-            self.configured = True
-            self.status = "active"
+            self.configured = ready
+            self.status = "active" if ready else "unavailable"
 
     def dispatch_action(self, action, payload=None):
         if action == "refresh_news":
-            self._last_news_fetch = 0
             self._fetch_news()
-            return {"success": True, "message": "News ticker refreshed"}
+            return {"success": self.news_status.get("success") is True,
+                    "stale": self.news_status.get("stale", False),
+                    "message": "News snapshot available; cache intervals apply." if self.news_status.get("success")
+                               else self.news_status.get("error", "News unavailable.")}
         elif action == "refresh_weather":
-            self._last_weather_fetch = 0
-            self._fetch_weather()
-            return {"success": True, "message": "Weather data refreshed"}
+            value = self._fetch_weather()
+            return {"success": value.get("success") is True, "stale": value.get("stale", False),
+                    "message": "Weather snapshot available; cache intervals apply." if value.get("success")
+                               else value.get("error", "Weather unavailable.")}
         return super().dispatch_action(action, payload)

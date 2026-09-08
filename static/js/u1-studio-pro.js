@@ -2,10 +2,35 @@
 (function () {
   'use strict';
   var API = '/api/workspace/studio-pro', DRAFT = 'u1.studio.pro.draft.v1', BRAND = 'u1.studio.pro.brand.v1';
-  var dispose = null;
+  var RECOVERY = 'u1.studio.pro.recovery.v1.', controllers = new WeakMap(), active = null;
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function read(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) { return null; } }
   function store(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (_) { return false; } }
+  function rawDraft() { try { return localStorage.getItem(DRAFT); } catch (_) { return null; } }
+  function identity() { return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+'-'+Math.random().toString(36).slice(2); }
+  function createDraftSession() {
+    var baseline = rawDraft(), id = identity(), key = RECOVERY+id, sequence = 0;
+    function envelope(document) { return {format:'u1-studio-pro',schema:1,document:document,writer:id,revision:++sequence,updated_at:Date.now()}; }
+    return {
+      initial:read(DRAFT), key:key,
+      changedElsewhere:function () { return rawDraft() !== baseline; },
+      checkpoint:function (document) { return store(key,envelope(document)); },
+      save:function (document, force) {
+        var current=rawDraft(),value=envelope(document),recovered=store(key,value);
+        if(current!==baseline&&!force)return {saved:false,conflict:true,recovered:recovered};
+        if(force&&current&&current!==baseline){try{if(!store(RECOVERY+identity(),JSON.parse(current)))return {saved:false,conflict:true,recovered:recovered};}catch(_){return {saved:false,conflict:true,recovered:recovered};}}
+        var prior;try{prior=JSON.parse(current||'null');}catch(_){prior=null;}
+        value.revision=Math.max(sequence,prior&&Number.isSafeInteger(prior.revision)?prior.revision+1:1);sequence=value.revision;
+        var okay=store(DRAFT,value);if(okay)baseline=JSON.stringify(value);
+        return {saved:okay,conflict:false,recovered:recovered};
+      }
+    };
+  }
+  function recoveryDrafts() {
+    var rows=[];
+    try{for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(key&&key.indexOf(RECOVERY)===0){var draft=read(key);if(draft&&draft.format==='u1-studio-pro'&&draft.document)rows.push({key:key,draft:draft});}}}catch(_){}
+    return rows.sort(function(a,b){return (b.draft.updated_at||0)-(a.draft.updated_at||0);});
+  }
   function section(title) { return {title:title || 'Untitled section', content:'', activity:'', quizzes:[], answer_notes:''}; }
   function blank() { return {title:'', subtitle:'', audience:'', template:'course', version:'1.0', source:'', brand:read(BRAND) || {name:'', accent:'#176B64', font:'serif'}, sections:[section('Learning outcome')], fillable:true, include_answer_notes:false, instructions:'', licence:''}; }
   function decode(artifact) {
@@ -41,12 +66,16 @@
   function input(label, key, maximum, type) { return '<label>'+label+'<input data-doc="'+key+'" type="'+(type || 'text')+'" maxlength="'+maximum+'"></label>'; }
   function area(label, key, maximum, rows) { return '<label>'+label+'<textarea data-doc="'+key+'" maxlength="'+maximum+'" rows="'+rows+'"></textarea></label>'; }
   function render(host) {
-    if (dispose) dispose();
+    var cached=controllers.get(host);
+    if(cached&&host.querySelector('[data-draft]')){cached.activate();return;}
+    if(active)active.deactivate();
     host.classList.add('u1-native-workspace','u1-studio-pro');
-    var draft = read(DRAFT), state = draft && draft.format === 'u1-studio-pro' && draft.document && Array.isArray(draft.document.sections) && draft.document.sections.length ? draft.document : blank();
+    var draftSession=createDraftSession(),draft=draftSession.initial,draftDirty=false;
+    var state = draft && draft.format === 'u1-studio-pro' && draft.document && Array.isArray(draft.document.sections) && draft.document.sections.length ? draft.document : blank();
     var selected = 0, revision = 0, renderedRevision = -1, pdf = null, zip = null, urls = [], busy = false, alive = true, removed = null, templates = [], timer = null, previewSerial = 0, pageNumber = 1, pageUrl = null, savedArtifact = null, handoffReview = null;
     function release() { urls.forEach(function (url) { URL.revokeObjectURL(url); }); urls = []; if (pageUrl) URL.revokeObjectURL(pageUrl); pageUrl = null; previewSerial++; }
-    dispose = function () { alive = false; clearTimeout(timer); release(); host.classList.remove('u1-studio-pro'); };
+    function deactivate(){clearTimeout(timer);timer=null;if(draftDirty)persist();alive=false;}
+    function destroy(){deactivate();release();controllers.delete(host);if(active===controller)active=null;host.classList.remove('u1-studio-pro');if(window.removeEventListener){window.removeEventListener('storage',storageChanged);window.removeEventListener('pagehide',checkpoint);}}
     host.innerHTML = '<header class="sp-hero"><div><p class="sp-kicker">DIGITAL STUDIO / LOCAL EDITION</p><h2>Your knowledge.<br><em>Your finished product.</em></h2><p>Write, arrange and publish an original workbook, with a real PDF at every review.</p></div><div class="sp-hero-actions"><button type="button" data-sp="legacy">Original printable library</button><button type="button" data-sp="prompts">Prompt Builder</button><span data-capability>Checking local PDF tools...</span></div></header>'+
       '<div class="sp-status" data-status role="status" aria-live="polite">Start with your title and your own content.</div>'+
       '<div class="sp-properties"><div class="sp-title">'+input('Product title','title',120)+input('Subtitle','subtitle',280)+'</div>'+input('Version','version',24)+'<label>Structure<select data-doc="template"><option value="course">Course workbook</option></select></label><button type="button" data-sp="structure">Use empty structure</button></div>'+
@@ -55,10 +84,21 @@
       '<section class="sp-review"><div class="sp-panel-heading"><h3>03 / Review &amp; publish</h3><span data-preview-state>NO PDF YET</span></div><button type="button" class="sp-primary" data-sp="generate">Generate accurate PDF preview</button><div class="sp-preview-empty" data-empty><b>A real preview belongs here.</b><p>Add your content, then generate the exact PDF you can download or save.</p></div><div class="sp-page-controls" data-page-controls hidden><button type="button" data-sp="previous" data-current>Previous</button><label>PDF page<select data-page></select></label><button type="button" data-sp="next" data-current>Next</button></div><img class="sp-pdf-page" data-page-image alt="Exact rendered PDF page" hidden><details data-interactive hidden><summary>Interactive PDF viewer (compatible browsers)</summary><iframe data-pdf title="Generated workbook PDF, including form fields and section links" hidden></iframe></details><div class="sp-preview-meta" data-preview-meta></div><a data-open hidden target="_blank" rel="noopener">Open this PDF in a new tab</a><p class="sp-reader-note">The page image is rendered from your exact PDF bytes. Use a form-capable PDF reader to fill and save answers; some browsers do not support the embedded interactive viewer.</p><div class="sp-export-buttons"><button type="button" data-sp="pdf" data-current disabled>Download PDF</button><button type="button" data-sp="bundle" data-current disabled>Build &amp; download ZIP</button><button type="button" data-sp="cover" data-current disabled>Download cover SVG</button><button type="button" data-sp="mockup" data-current disabled>Download mockup SVG</button></div><div class="sp-save"><label>Save to managed Files<select data-save-kind><option value="pdf">Reviewed PDF</option><option value="bundle">Complete ZIP bundle</option></select></label><button type="button" data-sp="save" data-current disabled>Save to Files</button><p data-saved></p></div><div class="sp-art"><img data-cover alt="Original local vector cover" hidden><img data-mockup alt="Original local product mockup" hidden></div></section></div>'+
       '<section class="sp-connections"><div><span class="sp-kicker">CREATIVE CONNECTIONS</span><h3>Choose what leaves your workspace.</h3><p>AI images and Canva sync are not connected. Cover and mockup artwork above is generated locally as original SVG geometry.</p></div><div><h4>AI image authorisation</h4><p>Open Connections, choose a supported image provider, review its account and usage permissions, and authorise it there. Until an image provider is integrated with this editor, use Prompt Builder to prepare your brief and run it yourself in that provider.</p><button type="button" data-go="integrations">Open Connections</button>'+(window.U1CoreViews && typeof window.U1CoreViews.supports === 'function' && window.U1CoreViews.supports('images') ? '<button type="button" data-go="images">AI image provider setup</button>' : '')+'</div><div><h4>Canva hand-off</h4><p>Open your own Canva account and import the downloaded PDF or SVG. Review account permissions before authorising any future connector. Automatic sync is unavailable in this editor.</p><a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">Open Canva</a></div></section>';
     host.querySelector('.sp-save').insertAdjacentHTML('afterend','<section class="sp-handoff"><h4>Saved file to product catalogue</h4><p>Create a private product record from the current file after Files confirms it is ready.</p><button type="button" data-sp="handoff-review" disabled>Review catalogue handoff</button><div data-handoff-review hidden><p data-handoff-file></p><label>Catalogue title<input data-handoff-title maxlength="160"></label><label>Audience<input data-handoff-audience maxlength="300"></label><label>Description<textarea data-handoff-description maxlength="4000" rows="3"></textarea></label><fieldset><legend>Optional launch checklist</legend><p>Select only the planning tasks you approve. All start in Backlog.</p>'+['Review lesson accuracy and accessibility','Review licence and asset rights','Test PDF fields and downloaded bundle','Choose pricing and an authorised sales channel','Review listing copy before manual publication'].map(function(title){return '<label class="sp-check"><input type="checkbox" data-launch-title="'+esc(title)+'">'+esc(title)+'</label>';}).join('')+'</fieldset><label class="sp-check"><input type="checkbox" data-handoff-approved>I reviewed this saved file and approve the private catalogue handoff.</label><button type="button" data-sp="handoff-create" disabled>Confirm catalogue handoff</button></div><p data-handoff-result role="status"></p><button type="button" data-go="income">Open product catalogue</button></section>');
+    host.querySelector('.sp-outline').insertAdjacentHTML('beforeend','<details data-recovery-panel><summary>Preserved browser drafts</summary><p>Recovery copies include private answer notes. Conflicting edits are kept separately.</p><label>Recovery copy<select data-recovery></select></label><button type="button" data-sp="recover">Load selected recovery copy</button><button type="button" data-sp="latest-draft">Load latest shared draft</button><button type="button" data-sp="replace-draft">Make this the shared draft</button><button type="button" data-sp="project">Export this editable draft</button><p data-draft-conflict role="alert" hidden></p></details>');
     function status(message, error) { if (!alive) return; var node = host.querySelector('[data-status]'); if(node){node.textContent = message; node.dataset.error = String(!!error);} }
-    function persist() { var okay = store(DRAFT, {format:'u1-studio-pro', schema:1, document:state}); host.querySelector('[data-draft]').textContent = okay ? 'Draft saved in this browser.' : 'Browser storage unavailable. Export your editable project to keep it.'; }
+    function refreshRecovery(){var node=host.querySelector('[data-recovery]');if(node)node.innerHTML=recoveryDrafts().slice(0,40).map(function(row){return '<option value="'+esc(row.key)+'">'+esc(row.draft.document.title||'Untitled draft')+' / '+esc(new Date(row.draft.updated_at||0).toLocaleString())+'</option>';}).join('');}
+    function draftNotice(message,conflict){var node=host.querySelector('[data-draft]');if(node)node.textContent=message;var warning=host.querySelector('[data-draft-conflict]');if(warning){warning.hidden=!conflict;warning.textContent=conflict?message:'';}}
+    function checkpoint(){if(draftDirty&&!draftSession.checkpoint(state))draftNotice('Browser recovery storage is unavailable. Export your editable project before leaving.',true);}
+    function persist(force){
+      if(!draftDirty&&!force)return;checkpoint();
+      function commit(){var result=draftSession.save(state,force===true);if(result.saved)draftDirty=false;
+        draftNotice(result.saved?'Draft saved in this browser. Recovery copy retained.':result.conflict?(result.recovered?'Another editor saved a different draft. Your edits are preserved separately; choose a recovery copy or explicitly replace the shared draft.':'Draft conflict and recovery storage unavailable. Export this editable project now.'):'Browser storage unavailable. Export your editable project to keep it.',!result.saved);refreshRecovery();return result;}
+      if(window.navigator&&window.navigator.locks&&typeof window.navigator.locks.request==='function')return window.navigator.locks.request(DRAFT,commit).catch(function(){draftNotice('Draft remains in recovery storage. Export it before closing this browser.',true);});
+      return commit();
+    }
+    function storageChanged(event){if(event.key===DRAFT&&draftSession.changedElsewhere()){draftNotice('Another editor changed the shared draft. This editor and its recovery copy are preserved; review before replacing either draft.',true);refreshRecovery();}}
     function controls() { var stale = !pdf || renderedRevision !== revision; host.querySelectorAll('[data-current]').forEach(function (button) { button.disabled = busy || stale; }); host.querySelector('[data-sp="generate"]').disabled = busy; host.querySelector('[data-page]').disabled = busy || stale; host.querySelector('[data-sp="previous"]').disabled = busy || stale || pageNumber <= 1; host.querySelector('[data-sp="next"]').disabled = busy || stale || pageNumber >= (pdf ? pdf.pages : 1); var savedCurrent = !stale && savedArtifact && savedArtifact.revision === revision && savedArtifact.receipt; host.querySelector('[data-sp="handoff-review"]').disabled = busy || !savedCurrent; host.querySelector('[data-sp="handoff-create"]').disabled = busy || !savedCurrent || !handoffReview || !host.querySelector('[data-handoff-approved]').checked; }
-    function changed() { revision++; zip = null; handoffReview = null; host.querySelector('[data-handoff-review]').hidden = true; host.querySelector('[data-handoff-approved]').checked = false; host.querySelector('[data-preview-state]').textContent = pdf ? 'PREVIEW OUT OF DATE' : 'NO PDF YET'; if (pdf) status('Draft changed. Generate a new PDF to review, download or save this version.'); controls(); clearTimeout(timer); timer = setTimeout(persist, 250); }
+    function changed() { revision++; draftDirty=true;checkpoint();zip = null; handoffReview = null; host.querySelector('[data-handoff-review]').hidden = true; host.querySelector('[data-handoff-approved]').checked = false; host.querySelector('[data-preview-state]').textContent = pdf ? 'PREVIEW OUT OF DATE' : 'NO PDF YET'; if (pdf) status('Draft changed. Generate a new PDF to review, download or save this version.'); controls(); clearTimeout(timer); timer = setTimeout(persist, 250); }
     function outline() {
       host.querySelector('[data-count]').textContent = state.sections.length + ' / 24';
       host.querySelector('[data-outline]').innerHTML = state.sections.map(function (s, index) { return '<li><button type="button" data-select="'+index+'" aria-current="'+String(index === selected)+'"><span>'+String(index+1).padStart(2,'0')+'</span><b>'+esc(s.title || 'Untitled section')+'</b></button><div><button type="button" data-move="'+index+'" data-direction="-1" aria-label="Move section '+(index+1)+' up" '+(index === 0 ? 'disabled' : '')+'>Up</button><button type="button" data-move="'+index+'" data-direction="1" aria-label="Move section '+(index+1)+' down" '+(index === state.sections.length-1 ? 'disabled' : '')+'>Down</button></div></li>'; }).join('');
@@ -141,10 +181,18 @@
       if (node.dataset.removeQuiz !== undefined) { state.sections[selected].quizzes.splice(Number(node.dataset.removeQuiz),1); changed(); editor(); return; }
       var action = node.dataset.sp; if (!action) return;
       if (action === 'previous' || action === 'next') { await showPage(pageNumber+(action === 'next' ? 1 : -1)); return; }
-      if (action === 'legacy') { if (window.U1Life && window.U1Life.renderStudio) { persist(); dispose(); host.onclick = null; host.oninput = null; window.U1Life.renderStudio(host); var back = document.createElement('button'); back.type = 'button'; back.className = 'u1-life-button'; back.textContent = 'Return to Studio Pro editor'; back.onclick = function () { render(host); }; host.prepend(back); } else status('The original printable library has not been loaded by the host.', true); return; }
+      if (action === 'legacy') { if (window.U1Life && window.U1Life.renderStudio) { destroy(); host.onclick = null; host.oninput = null; window.U1Life.renderStudio(host); var back = document.createElement('button'); back.type = 'button'; back.className = 'u1-life-button'; back.textContent = 'Return to Studio Pro editor'; back.onclick = function () { render(host); }; host.prepend(back); } else status('The original printable library has not been loaded by the host.', true); return; }
       if (action === 'prompts') { var platform = window.U1Platform || window.platform; if (platform && typeof platform.open === 'function') platform.open('prompts'); else { var launcher = document.querySelector('[data-platform="prompts"]'); if (launcher) launcher.click(); else status('Prompt Builder is not available in this host yet.', true); } return; }
       if (action === 'brand') { var brandSaved = store(BRAND,state.brand); status(brandSaved ? 'Brand preferences saved for new drafts in this browser.' : 'Brand preferences could not be saved in this browser.', !brandSaved); return; }
       if (action === 'project') { download(new Blob([JSON.stringify({format:'u1-studio-pro',schema:1,document:state},null,2)],{type:'application/json'}),'u1-studio-project.json'); status('Editable project download requested. This file includes operator answer notes.'); return; }
+      if(action==='replace-draft'){if(window.confirm('Make this editor the shared browser draft? The previous shared draft will be preserved as a separate recovery copy.'))persist(true);return;}
+      if(action==='recover'||action==='latest-draft'){
+        var restored=action==='recover'?read(host.querySelector('[data-recovery]').value):read(DRAFT);
+        if(!restored||!restored.document||!Array.isArray(restored.document.sections)||!restored.document.sections.length){status('Choose an available Studio recovery copy.',true);return;}
+        if(!window.confirm('Load this draft into the editor? Your current edits will first be preserved as a separate recovery copy.'))return;
+        if(!draftSession.checkpoint(state)){status('Could not preserve this editor. Export the project before replacing it.',true);return;}
+        draftSession=createDraftSession();state=JSON.parse(JSON.stringify(restored.document));selected=0;removed=null;clearPreview();sync();persist();return;
+      }
       if (action === 'new') { if (!window.confirm('Replace this browser draft with an empty project? Export the project first if you want to keep it.')) return; state = blank(); selected = 0; removed = null; clearPreview(); sync(); persist(); return; }
       if (action === 'structure') { var template = templates.find(function (t) { return t.id === state.template; }); if (!template) return; if (!window.confirm('Replace all sections with the selected empty structure? Your title, brand and bundle settings will be kept.')) return; state.sections = template.sections.map(function (title) { return section(title); }); selected = 0; removed = null; changed(); outline(); editor(); return; }
       if (action === 'add-section') { state.sections.push(section()); selected = state.sections.length-1; }
@@ -189,7 +237,7 @@
             var artifact = host.querySelector('[data-save-kind]').value === 'bundle' ? await bundle() : pdf;
             if (!artifact || !alive) return;
             var saved = await saveFile(artifact,function (percent) { status('Saving to managed Files: '+percent+'%'); });
-            savedArtifact = artifact.handoff_receipt ? {id:saved.id,receipt:artifact.handoff_receipt,revision:saveRevision} : null;
+            savedArtifact = artifact.handoff_receipt ? {id:saved.id,filename:saved.filename,receipt:artifact.handoff_receipt,revision:saveRevision} : null;
             handoffReview = null; host.querySelector('[data-handoff-review]').hidden = true;
             if (alive) { host.querySelector('[data-saved]').textContent = 'Saved '+saved.filename+' / File ID '+saved.id; status('Saved to managed Files / Digital Studio. Title, version and source are embedded in the PDF or ZIP metadata.'); }
           }
@@ -214,6 +262,11 @@
       finally { event.target.value = ''; }
     };
     host.querySelector('[data-page]').onchange = function (event) { showPage(Number(event.target.value)); };
+    var handlers={input:host.oninput,click:host.onclick,import:host.querySelector('[data-import]').onchange,page:host.querySelector('[data-page]').onchange};
+    var controller={deactivate:deactivate,activate:function(){if(active&&active!==controller)active.deactivate();active=controller;alive=true;host.classList.add('u1-native-workspace','u1-studio-pro');host.oninput=handlers.input;host.onclick=handlers.click;host.querySelector('[data-import]').onchange=handlers.import;host.querySelector('[data-page]').onchange=handlers.page;if(draftSession.changedElsewhere())storageChanged({key:DRAFT});if(savedArtifact)host.querySelector('[data-saved]').textContent='Saved '+savedArtifact.filename+' / File ID '+savedArtifact.id;controls();refreshRecovery();}};
+    controllers.set(host,controller);active=controller;
+    if(window.addEventListener){window.addEventListener('storage',storageChanged);window.addEventListener('pagehide',checkpoint);}
+    refreshRecovery();
     sync();
     window.U1Data.get(API,{fresh:true}).then(function (result) {
       if (!alive) return; templates = result.templates || [];
@@ -222,6 +275,8 @@
       if (!result.capabilities.pdf) status(result.notice+' PDF generation requires reportlab in the application runtime.',true);
     }).catch(function (error) { status('Studio Pro endpoint unavailable: '+error.message,true); host.querySelector('[data-capability]').textContent = 'LOCAL ENDPOINT NOT READY'; });
   }
-  window.U1StudioPro = Object.freeze({render:render,saveFile:saveFile});
-  if (window.U1CoreViews) window.U1CoreViews.register('studio',render);
+  function activate(host){var controller=host&&controllers.get(host);if(controller)controller.activate();}
+  function deactivate(host){var controller=host&&controllers.get(host);if(controller)controller.deactivate();}
+  window.U1StudioPro = Object.freeze({render:render,saveFile:saveFile,activate:activate,deactivate:deactivate,createDraftSession:createDraftSession,recoveryDrafts:recoveryDrafts});
+  if (window.U1CoreViews) window.U1CoreViews.register('studio',render,{activate:activate,deactivate:deactivate});
 })();

@@ -13,6 +13,9 @@ import queue
 import threading
 import mimetypes
 import traceback
+import hashlib
+from pathlib import Path
+from urllib.parse import unquote, urlsplit
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
@@ -41,6 +44,37 @@ from services.settings import SettingsService
 
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+
+def public_health_identity(root):
+    """Nonsecret installation identity, not an authentication credential."""
+    canonical = str(Path(root).resolve())
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def resolve_static_file(request_path, static_directory):
+    """Decode once and confine the canonical target to the static directory."""
+    if any(ord(character) < 32 or ord(character) == 127 for character in request_path):
+        raise ValueError("Invalid static path")
+    parsed = urlsplit(request_path)
+    if parsed.scheme or parsed.netloc:
+        raise ValueError("An origin-relative static path is required")
+    path = unquote(parsed.path, encoding="utf-8", errors="strict")
+    if not path.startswith("/") or "\\" in path or any(ord(character) < 32 or ord(character) == 127 for character in path):
+        raise ValueError("Invalid static path")
+    if path in ("/", "/index.html"):
+        relative = "u1os.html"
+    elif path in ("/classic", "/classic.html"):
+        relative = "index.html"
+    else:
+        relative = path.lstrip("/")
+        if relative.startswith("static/"):
+            relative = relative[len("static/"):]
+    root = Path(static_directory).resolve()
+    candidate = (root / relative).resolve()
+    if candidate == root or root not in candidate.parents:
+        raise ValueError("Static path is outside the asset root")
+    return str(candidate)
 
 class SSEEventBroker:
     """Thread-safe publish/subscribe broker for real-time Server-Sent Events."""
@@ -357,6 +391,18 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
         from utils.u1_safety import gate_request
         if not gate_request(self):
             return
+        if self.path.split("?", 1)[0] == "/healthz":
+            if self.command != "GET":
+                self.send_error(405, "Health identity supports GET only")
+                return
+            if not self.integration_request_allowed():
+                self.send_json({"success": False, "error": "Local same-origin request required"}, 403)
+                return
+            from utils.u1_safety import manager
+            self.send_json({"service": "u1-os", "protocol": 1,
+                            "installation_id": public_health_identity(BASE_DIR),
+                            "locked": bool(manager().blocked())})
+            return
         from utils import u1_native_routes
         if u1_native_routes.handle_request(self):
             return
@@ -486,18 +532,13 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.send_json(cfg)
             return
 
-        # Serve frontend files.
-        # The Command Centre shell is the front door; the previous shell
-        # stays reachable at /classic so nothing that worked is lost.
-        if path == "/" or path == "/index.html":
-            file_path = os.path.join(STATIC_DIR, "u1os.html")
-        elif path in ("/classic", "/classic.html"):
-            file_path = os.path.join(STATIC_DIR, "index.html")
-        else:
-            rel_path = path.lstrip("/")
-            if rel_path.startswith("static/"):
-                rel_path = rel_path[len("static/"):]
-            file_path = os.path.join(STATIC_DIR, rel_path)
+        # Keep assets and the canonical unlock shell reachable, never siblings
+        # of static or a symlink target outside it, including while locked.
+        try:
+            file_path = resolve_static_file(self.path, STATIC_DIR)
+        except (ValueError, OSError, RuntimeError):
+            self.send_error(403, "Static path is not allowed")
+            return
 
         if os.path.exists(file_path) and os.path.isfile(file_path):
             mime_type, _ = mimetypes.guess_type(file_path)
@@ -532,6 +573,9 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         from utils.u1_safety import gate_request
         if not gate_request(self):
+            return
+        if self.path.split("?", 1)[0] == "/healthz":
+            self.send_error(405, "Health identity supports GET only")
             return
         from utils import u1_native_routes
         if u1_native_routes.handle_request(self):

@@ -7,7 +7,7 @@
   let layoutActive = false, layoutFrame = 0, utilityShelf = null, shelfResize = null, shelfChanges = null, shelfDiscovery = null;
   const controllers = new Set();
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const locked = () => document.documentElement.dataset.u1Safety === 'locked';
+  const locked = () => document.documentElement.dataset.u1Safety === 'locked' || !!(window.U1Safety && window.U1Safety.isLocked());
   const when = value => typeof value === 'number' && Number.isFinite(value) ? new Date(value * 1000).toLocaleString() : 'Not checked';
   const safeLink = value => typeof value === 'string' && /^https:\/\/open\.spotify\.com\/(track|episode)\/[A-Za-z0-9]{1,64}$/.test(value) ? value : '';
 
@@ -107,11 +107,14 @@
     });
   }
   function mount(host) {
+    if (host.querySelector('[data-spotify-view]')) { activate(host); return; }
     view = host;
     host.innerHTML = '<section class="u1-spotify" data-spotify-view><header><p>ACCOUNT CONNECTION / READ ONLY</p><h1>Spotify</h1><p>Real playback observations from your account. This is not an audio player and does not control your separate local media player.</p></header><div data-spotify-live></div><p data-spotify-message role="status"></p><section class="u1-spotify-setup"><h2>Connect your Spotify app</h2><ol><li>Create or select your app in the <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">Spotify developer dashboard</a>. Check your app owner/account eligibility and development-mode allowlist.</li><li>Register exactly <code>http://127.0.0.1/spotify/callback</code> with no port. A temporary loopback port is assigned at Connect. Do not use localhost.</li><li>Enter only your public Client ID below. No client secret, password, or token is requested. Native macOS Keychain setup requires Apple command line developer tools and may ask for permission.</li><li>Start authorization, open the returned Spotify link, then review <code>user-read-playback-state</code>. Afterwards use Check playback once and compare with Spotify.</li></ol><label>Public Spotify Client ID <input data-spotify-client maxlength="32" autocomplete="off" spellcheck="false" placeholder="32 hexadecimal characters"></label><div class="u1-spotify-actions"><button type="button" data-spotify-action="configure">Save setup</button><button type="button" data-spotify-action="connect">Start authorization</button><button type="button" data-spotify-action="disconnect">Disconnect locally</button></div><div data-spotify-authorize></div><p>Opening Spotify or marking a checklist is not account verification. A 204 response means connected with no active playback; access restrictions and stale data stay explicit.</p><p><a href="https://www.spotify.com/account/apps/" target="_blank" rel="noopener noreferrer">Manage or revoke Spotify app permissions</a></p></section></section>';
     if (!host.dataset.u1SpotifyEvents) { events(host); host.dataset.u1SpotifyEvents = '1'; }
     render(); update();
   }
+  function deactivate(host) { if (view === host) view = null; }
+  function activate(host) { if (!host || !host.querySelector('[data-spotify-view]')) return; view = host; render(); update(); }
   function queueLayout() {
     if (layoutActive && !layoutFrame) layoutFrame = window.requestAnimationFrame(positionWidget);
   }
@@ -184,7 +187,7 @@
       style.textContent = '.u1-spotify{font:inherit;color:var(--text,#e8ede9);line-height:1.5}.u1-spotify p{margin:.45rem 0}.u1-spotify a{color:var(--accent,#87dca6);text-decoration:underline}.u1-spotify button,.u1-spotify input:not([type=checkbox]){font:inherit;border:1px solid var(--line,#47564c);border-radius:7px;padding:.55rem .8rem;background:var(--panel,#17211b);color:inherit}.u1-spotify button{cursor:pointer}.u1-spotify button:disabled{opacity:.5;cursor:default}.u1-spotify :focus-visible{outline:2px solid #79d99c;outline-offset:3px}.u1-spotify-status{font-weight:700}.u1-spotify-muted,.u1-spotify-widget summary span{font-size:.8rem;opacity:.75}.u1-spotify-opt{display:flex;gap:.55rem;align-items:flex-start;margin:.75rem 0;font-size:.82rem}.u1-spotify-opt input{width:auto;accent-color:#1db954;margin-top:.3rem}.u1-spotify-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.7rem;margin:.8rem 0}.u1-spotify-setup{margin-top:1.5rem;padding:1rem;border:1px solid var(--line,#47564c);border-radius:12px}.u1-spotify-setup li{margin:.6rem 0}.u1-spotify-setup code{overflow-wrap:anywhere}.u1-spotify-setup label{display:grid;gap:.4rem;max-width:32rem}.u1-spotify-widget{position:fixed;right:18px;bottom:12px;z-index:70;box-sizing:border-box;width:min(350px,calc(100vw - 32px));background:var(--panel,#17211b);border:1px solid var(--line,#47564c);box-shadow:0 12px 35px #0003;border-radius:12px;padding:.75rem 1rem;font-size:.88rem;max-height:65vh;overflow:auto;transition:none}.u1-spotify-widget summary{cursor:pointer;font-weight:700}.u1-spotify-widget summary span{display:block}.u1-spotify-widget strong{overflow-wrap:anywhere}.u1-spotify-consent{display:inline-block;padding:.7rem;border:1px solid currentColor;border-radius:7px}@media(max-width:600px){.u1-spotify-widget{right:12px;width:min(320px,calc(100vw - 24px))}}@media(prefers-reduced-motion:reduce){.u1-spotify-widget,.u1-spotify-widget *{animation:none!important;transition:none!important}}';
       document.head.appendChild(style);
     }
-    if (window.U1CoreViews) window.U1CoreViews.register('spotify', mount);
+    if (window.U1CoreViews) window.U1CoreViews.register('spotify', mount, {activate, deactivate});
     mountWidget(); update();
     timer = setInterval(() => {
       render();
@@ -197,6 +200,6 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) { generation += 1; controllers.forEach(controller => controller.abort()); } });
   window.addEventListener('pagehide', () => { stop(); stopLayout(); clearInterval(timer); });
   window.addEventListener('pageshow', event => { if (event.persisted) startLayout(); });
-  window.U1Spotify = {mount, mountWidget, stop, refresh:() => update({action:'refresh',confirmed:true})};
+  window.U1Spotify = {mount, activate, deactivate, mountWidget, stop, refresh:() => update({action:'refresh',confirmed:true})};
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true}); else start();
 }());

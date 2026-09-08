@@ -43,6 +43,17 @@ def _config(manager):
         return {}
 
 
+def retained_artifact(job):
+    """The same successful, retained job authorizes listing, reading and pinning.
+
+    Never infer authorization from a PNG's presence or a caller-supplied path.
+    MAX_IMAGES eviction and cancellation clear availability, releasing the pin.
+    """
+    artifact = job.get('artifact')
+    return (job.get('kind') == 'image' and job.get('status') == 'succeeded'
+            and isinstance(artifact, dict) and artifact.get('available') is True)
+
+
 def snapshot(manager=None):
     service = manager or assistant.manager()
     config = _config(service)
@@ -59,7 +70,7 @@ def snapshot(manager=None):
                 billing='Separate OpenAI API billing. ChatGPT/Codex subscription allowance does not cover this API request. Exact price is not calculated here.',
                 jobs=jobs, paused=state['paused'], storage_fault=state['storage_fault'],
                 images=[dict(job_id=j['id'], title=j['title'], created_at=j['finished_at'], **j['artifact'])
-                        for j in jobs if j['status'] == 'succeeded' and j.get('artifact', {}).get('available')])
+                        for j in jobs if retained_artifact(j)])
 
 
 def configure(body, manager=None):
@@ -213,8 +224,7 @@ def discard_result(service, job):
 def _image_reply(handler, service, identifier):
     identifier = assistant._id(identifier)
     with service.condition:
-        found = next((j for j in service.jobs if j['id'] == identifier and j['status'] == 'succeeded'
-                      and j.get('kind') == 'image' and j.get('artifact', {}).get('available')), None)
+        found = next((j for j in service.jobs if j['id'] == identifier and retained_artifact(j)), None)
         if found is None:
             raise assistant.AssistantError('Image not found or no longer retained.', 404)
         content = assistant._private_read(service.root / 'images' / (identifier + '.png'), MAX_PNG)

@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var P = window.U1ConnectionPolicy, active = null, sequence = 0, poll = null, busy = false;
-  var privacyKey = 'u1.connections.privacy.v1', sharing = false, bound = new WeakSet();
+  var privacyKey = 'u1.connections.privacy.v1', sharing = false, bound = new WeakSet(), hostStates = new WeakMap();
   var readPaths = ['/api/integrations', '/api/workspace/google', '/api/workspace/providers'];
   var writePaths = ['/api/integrations', '/api/workspace/google'];
   if (!P || !window.U1CoreViews || typeof window.U1CoreViews.register !== 'function') {
@@ -150,7 +150,7 @@
     if (!state.google) errors.push('Google status unavailable.');
     if (!state.providers) errors.push('Local AI detection unavailable.');
     state.loading = false; state.loadedAt = Date.now();
-    if (state.view === 'settings' && state.dirty) updateGoogle(state); else render(state);
+    if (state.dirty) updateGoogle(state); else render(state);
     status(state, errors.length ? errors.join(' ') + ' Available controls remain usable; refresh to retry.' : 'Local metadata loaded. Account actions run only when you select them.', errors.length > 0);
     state.pollUntil = Date.now() + 120000; schedule(state);
   }
@@ -240,6 +240,7 @@
   function mount(view, host) {
     stopPolling();
     var state = { host: host, view: view, sequence: ++sequence, loadSerial: 0, cards: [], google: null, providers: null, catalogueOK: false, loading: true, dirty: false, authURL: null, authExpires: 0, pollUntil: 0 };
+    hostStates.set(host, state);
     active = state; host.dataset.ucView = view; host.classList.add('u1-native-workspace', 'u1-connections-workspace');
     if (!bound.has(host)) {
       bound.add(host);
@@ -258,11 +259,23 @@
     }
     render(state); return load(state);
   }
+  function deactivate(host) {
+    var state = hostStates.get(host); if (!state) return;
+    state.loadSerial++;
+    if (active === state) { stopPolling(); active = null; }
+  }
+  function activate(view, host) {
+    var state = hostStates.get(host); if (!state) return mount(view, host);
+    if (active && active !== state) deactivate(active.host);
+    active = state; state.pollUntil = Date.now() + 120000;
+    if (state.loading) return load(state);
+    return refreshGoogle(state);
+  }
   document.addEventListener('visibilitychange', function () { if (document.hidden) stopPolling(); else if (active) schedule(active); });
   window.addEventListener('pagehide', stopPolling);
-  window.addEventListener('u1:navigate', function (event) { if (active && event.detail && event.detail.id !== active.view) { stopPolling(); active = null; } });
+  window.addEventListener('u1:navigate', function (event) { if (active && event.detail && event.detail.id !== active.view) deactivate(active.host); });
   window.addEventListener('storage', function (event) { if (event.key === privacyKey || event.key === null) { sharing = event.key !== null && event.newValue === 'true'; applyPrivacy(); document.querySelectorAll('[data-uc-privacy]').forEach(function (input) { input.checked = sharing; }); } });
-  window.U1CoreViews.register('integrations', function (host) { return mount('integrations', host); });
-  window.U1CoreViews.register('settings', function (host) { return mount('settings', host); });
+  window.U1CoreViews.register('integrations', function (host) { return mount('integrations', host); }, { activate: function (host) { return activate('integrations', host); }, deactivate: deactivate });
+  window.U1CoreViews.register('settings', function (host) { return mount('settings', host); }, { activate: function (host) { return activate('settings', host); }, deactivate: deactivate });
   window.U1Connections = Object.freeze({ ready: true, privacy: function () { return sharing; }, setPrivacy: setPrivacy, capabilities: function () { return active ? P.capabilities(active.cards, active.google, active.providers) : Object.freeze([]); } });
 })();

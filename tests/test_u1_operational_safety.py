@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import socket
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -77,10 +78,18 @@ class OperationalSafetyTests(unittest.TestCase):
                 side_effect=AssertionError("Real network/process operation forbidden")))
         self.start_monitor = self.mock(u1_safety.SafetyLock, "start", return_value=None)
         self.now = 1000.0
+        self.elapsed = 500.0
         self.online = True
         self.probe_calls = 0
-        self.lock = u1_safety.SafetyLock(self.base / "safety", self.probe, lambda: self.now)
+        self.lock = u1_safety.SafetyLock(self.base / "safety", self.probe, lambda: self.now,
+                                       elapsed_clock=lambda: self.elapsed)
         self.mock(u1_safety, "manager", side_effect=lambda: self.lock)
+        self.google = SimpleNamespace(LOCK=threading.RLock(), epoch=0, PAUSED=False,
+                                      pending=None, verified=True, running_cancelled=False)
+        self.google.cancel_all = self.cancel_google_fixture
+        google_patch = patch.dict(sys.modules, {"utils.u1_google": self.google})
+        google_patch.start()
+        self.addCleanup(google_patch.stop)
         self.spotify = u1_spotify.SpotifyManager(self.base)
         self.mock(u1_spotify, "_instance", self.spotify)
         self.mock(u1_spotify, "manager", side_effect=AssertionError("No Spotify manager startup"))
@@ -114,6 +123,24 @@ class OperationalSafetyTests(unittest.TestCase):
     def probe(self):
         self.probe_calls += 1
         return self.online
+
+    def cancel_google_fixture(self):
+        self.assertFalse(self.lock.mutex._is_owned(), "Google callback must be outside Safety mutex")
+        self.assertTrue(self.google.LOCK._is_owned(), "Google callback requires its own state lock")
+        self.google.epoch += 1
+        self.google.PAUSED = True
+        self.google.verified = False
+        self.google.running_cancelled = True
+        if self.google.pending is not None:
+            self.google.pending.set()
+            self.google.pending = None
+
+    def pending_google(self):
+        self.google.PAUSED = False  # Represents explicit reviewed fixture work, not unlock.
+        self.google.running_cancelled = False
+        self.google.verified = True
+        self.google.pending = threading.Event()
+        return self.google.pending
 
     def fake_execute(self, job):
         self.executed.append(job["id"])
@@ -321,6 +348,7 @@ class OperationalSafetyTests(unittest.TestCase):
         for method, path in (("GET", "/api/workspace/jobs"),
                              ("POST", "/api/workspace/assistant"),
                              ("POST", "/api/workspace/image-provider"),
+                             ("POST", "/api/workspace/prism/upload-abort"),
                              ("GET", "/api/integrations?rehearsal=1"),
                              ("GET", "/exports/synthetic.pdf?token=fake")):
             with self.subTest(method=method, path=path):
@@ -619,6 +647,214 @@ class OperationalSafetyTests(unittest.TestCase):
         self.mock(u1_spotify, "_instance", None)
         state = self.action("lock")
         self.assertFalse(state["spotify_oauth_cancel_pending"])
+
+    def test_google_each_lock_path_invalidates_local_work_outside_safety_mutex(self):
+        paths = ("manual", "browser_offline", "monitor_offline", "status_expiry",
+                 "gate_expiry", "tick_expiry", "action_expiry", "monitor_fault", "restart")
+        self.configure()
+        for path in paths:
+            with self.subTest(path=path):
+                self.unlock()
+                pending = self.pending_google()
+                epoch = self.google.epoch
+                if path == "manual":
+                    self.action("lock")
+                elif path == "browser_offline":
+                    self.action("offline")
+                elif path == "monitor_offline":
+                    self.lock.tick(False)
+                    self.assertFalse(pending.is_set())
+                    self.lock.tick(False)
+                elif path == "monitor_fault":
+                    self.lock._monitor_failure()
+                elif path == "restart":
+                    self.lock = u1_safety.SafetyLock(self.lock.directory, self.probe, lambda: self.now,
+                                                   elapsed_clock=lambda: self.elapsed)
+                    self.request()
+                else:
+                    self.now = self.lock.deadline
+                    if path == "status_expiry":
+                        self.request()
+                    elif path == "gate_expiry":
+                        self.assertEqual(self.request("/api/workspace/jobs").status, 423)
+                    elif path == "tick_expiry":
+                        self.lock.tick()
+                    else:
+                        self.action("checkin", 400)
+                self.assertTrue(pending.is_set())
+                self.assertGreater(self.google.epoch, epoch)
+                self.assertTrue(self.google.PAUSED)
+                self.assertTrue(self.google.running_cancelled)
+                self.assertFalse(self.google.verified)
+                self.assertTrue(self.lock.blocked())
+                self.assertFalse(self.request().body["google_cancel_pending"])
+
+    def test_google_manual_lock_does_not_cancel_running_assistant(self):
+        first, second = self.running_and_queued()
+        pending = self.pending_google()
+        self.action("lock")
+        self.assertTrue(pending.is_set())
+        self.assertEqual(self.job(first)["status"], "running")
+        self.assertEqual(self.job(second)["status"], "queued")
+        self.assertFalse(self.jobs.cancel_requested.is_set())
+
+    def test_google_callback_allows_other_thread_and_safety_reentry(self):
+        self.armed_session()
+        acquired = threading.Event()
+        def cancel():
+            def inspect():
+                if self.lock.mutex.acquire(timeout=.25):
+                    acquired.set()
+                    self.lock.mutex.release()
+            inspector = threading.Thread(target=inspect)
+            inspector.start()
+            inspector.join(.5)
+            self.assertTrue(acquired.is_set())
+            self.assertTrue(self.lock.blocked())
+            self.cancel_google_fixture()
+        callback = self.mock(self.google, "cancel_all", side_effect=cancel)
+        state = self.action("lock")
+        self.assertFalse(state["google_cancel_pending"])
+        callback.assert_called_once()
+
+    def test_google_busy_lock_does_not_delay_spotify_and_retries(self):
+        self.armed_session()
+        pending = self.pending_google()
+        spotify = self.pending_oauth()
+        held, release = threading.Event(), threading.Event()
+        def hold():
+            with self.google.LOCK:
+                held.set()
+                release.wait(2)
+        holder = threading.Thread(target=hold)
+        holder.start()
+        self.assertTrue(held.wait(1))
+        try:
+            state = self.action("lock")
+            self.assertTrue(state["google_cancel_pending"])
+            self.assertFalse(pending.is_set())
+            self.assertFalse(state["spotify_oauth_cancel_pending"])
+            self.assertTrue(spotify["stop"].is_set())
+        finally:
+            release.set()
+            holder.join(2)
+        self.assertFalse(holder.is_alive())
+        self.lock.tick()
+        self.assertTrue(pending.is_set())
+        self.assertFalse(self.request().body["google_cancel_pending"])
+
+    def test_google_exception_is_redacted_and_retries_independently(self):
+        self.armed_session()
+        pending = self.pending_google()
+        spotify = self.pending_oauth()
+        callback = self.mock(self.google, "cancel_all", side_effect=RuntimeError("fixture-private-google"))
+        state = self.action("lock")
+        self.assertTrue(state["google_cancel_pending"])
+        self.assertNotIn("fixture-private-google", json.dumps(state))
+        self.assertTrue(spotify["stop"].is_set())
+        callback.side_effect = self.cancel_google_fixture
+        self.lock.tick()
+        self.assertTrue(pending.is_set())
+        self.assertIsNone(self.request().body["google_cancel_error"])
+
+    def test_spotify_exception_does_not_suppress_google_notification(self):
+        self.armed_session()
+        pending = self.pending_google()
+        self.mock(u1_spotify, "cancel_all", side_effect=RuntimeError("fixture-spotify-error"))
+        state = self.action("lock")
+        self.assertTrue(state["spotify_oauth_cancel_pending"])
+        self.assertFalse(state["google_cancel_pending"])
+        self.assertTrue(pending.is_set())
+
+    def test_google_poll_reconnect_and_unlock_do_not_resume_or_repeat_cancellation(self):
+        self.armed_session()
+        callback = self.mock(self.google, "cancel_all", wraps=self.cancel_google_fixture)
+        self.action("lock")
+        for _ in range(3):
+            self.request()
+            self.lock.tick(True)
+        self.unlock()
+        self.assertTrue(self.google.PAUSED)
+        callback.assert_called_once()
+
+    def test_google_unloaded_provider_is_not_imported(self):
+        self.armed_session()
+        callback = self.mock(self.google, "cancel_all")
+        with patch.dict(sys.modules):
+            del sys.modules["utils.u1_google"]
+            state = self.action("lock")
+            self.assertNotIn("utils.u1_google", sys.modules)
+        self.assertFalse(state["google_cancel_pending"])
+        callback.assert_not_called()
+
+    def test_elapsed_deadline_expires_after_wall_clock_rollback(self):
+        self.armed_session()
+        pending = self.pending_google()
+        self.now -= 3600
+        self.elapsed += 299
+        self.assertFalse(self.lock.blocked())
+        self.elapsed += 1
+        self.assertEqual(self.request("/api/workspace/jobs").status, 423)
+        self.assertTrue(pending.is_set())
+
+    def test_elapsed_deadline_expires_with_frozen_wall_time(self):
+        self.armed_session()
+        self.elapsed += 300
+        self.assertTrue(self.lock.blocked())
+
+    def test_wall_fallback_expires_when_elapsed_clock_does_not_advance(self):
+        self.armed_session()
+        self.now += 300
+        self.assertTrue(self.lock.blocked())
+
+    def test_explicit_checkin_renews_both_clocks_after_wall_rollback(self):
+        self.armed_session()
+        self.now -= 3600
+        self.elapsed += 100
+        self.action("checkin")
+        self.elapsed += 299
+        self.assertFalse(self.lock.blocked())
+        self.elapsed += 1
+        self.assertTrue(self.lock.blocked())
+
+    def test_persisted_wall_deadline_never_restores_unlocked_session_on_restart(self):
+        self.armed_session()
+        persisted = json.loads(self.lock.path.read_text())
+        self.assertEqual(persisted["checkin_deadline_wall"], self.lock.deadline)
+        self.assertNotIn("elapsed", json.dumps(persisted))
+        self.now -= 3600
+        self.elapsed = 0
+        self.lock = u1_safety.SafetyLock(self.lock.directory, self.probe, lambda: self.now,
+                                       elapsed_clock=lambda: self.elapsed)
+        self.assertTrue(self.lock.blocked())
+        self.assertIsNone(self.lock.deadline)
+        self.assertIsNone(self.lock._elapsed_deadline)
+
+    def test_disabled_checkin_has_no_elapsed_or_persisted_wall_deadline(self):
+        self.configure(offline=False, minutes=0)
+        self.unlock()
+        self.now += 100000
+        self.elapsed += 100000
+        self.assertFalse(self.lock.blocked())
+        self.assertIsNone(self.lock._elapsed_deadline)
+        self.assertIsNone(json.loads(self.lock.path.read_text())["checkin_deadline_wall"])
+
+    def test_failed_deadline_persistence_does_not_unlock(self):
+        self.configure()
+        self.mock(self.lock, "_persist", side_effect=OSError("fixture write failure"))
+        self.action("unlock", 503, passphrase=self.PHRASE)
+        self.assertTrue(self.lock.blocked())
+        self.assertIsNone(self.lock._elapsed_deadline)
+
+    def test_failed_checkin_persistence_does_not_extend_elapsed_lease(self):
+        self.armed_session()
+        deadline = self.lock._elapsed_deadline
+        self.elapsed += 100
+        self.mock(self.lock, "_persist", side_effect=OSError("fixture write failure"))
+        self.action("checkin", 503)
+        self.assertEqual(self.lock._elapsed_deadline, deadline)
+        self.elapsed = deadline
+        self.assertTrue(self.lock.blocked())
 
 
 if __name__ == "__main__":

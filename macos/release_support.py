@@ -43,7 +43,11 @@ def require_bundle(path):
 
 
 def promote_bundle(staged, destination, replace=False):
-    """Same-volume rename, with an intact backup and rollback on promotion failure."""
+    """Same-volume rename with rollback for errors and catchable interruptions.
+
+    This is not a power-loss/SIGKILL-atomic exchange. Retain the backup for
+    explicit recovery, and never overwrite a destination created by another actor.
+    """
     staged, destination = Path(staged), Path(destination)
     require_bundle(staged)
     if destination.is_symlink() or destination.parent.is_symlink():
@@ -55,11 +59,12 @@ def promote_bundle(staged, destination, replace=False):
         require_bundle(destination)
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         backup = destination.with_name(destination.stem + ".backup-" + stamp + "-" + uuid.uuid4().hex[:8] + ".app")
-        destination.rename(backup)
     try:
-        staged.rename(destination)
-    except OSError:
         if backup is not None:
+            destination.rename(backup)
+        staged.rename(destination)
+    except BaseException:
+        if backup is not None and backup.exists() and not os.path.lexists(destination):
             backup.rename(destination)
         raise
     return backup

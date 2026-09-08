@@ -29,6 +29,67 @@ JOB=None
 GENERATION=0
 SESSION_VERIFIED=False
 STARTED=False
+PAUSED=False
+
+
+def _safety_blocked():
+    """Never call while holding LOCK: Safety may notify cancel_all()."""
+    try:
+        from utils.u1_safety import manager
+        return bool(manager().blocked())
+    except Exception:
+        return True
+
+
+def _check_epoch(epoch):
+    """Caller holds LOCK. This check performs no Safety or external operation."""
+    if epoch!=GENERATION or PAUSED:
+        raise ValueError('Google work was cancelled or paused. Unlock Safety and explicitly choose Sync now or Connect to resume.')
+
+
+def _epoch(resume=False):
+    global PAUSED
+    with LOCK:epoch=GENERATION
+    if _safety_blocked():raise ValueError('Safety is locked. No new Google operation was started.')
+    with LOCK:
+        if epoch!=GENERATION:raise ValueError('Google work was cancelled before dispatch.')
+        if resume:PAUSED=False
+        _check_epoch(epoch)
+        return epoch
+
+
+def _allowed(epoch):
+    blocked=_safety_blocked()
+    with LOCK:
+        if blocked:raise ValueError('Safety blocked this Google operation.')
+        _check_epoch(epoch)
+
+
+def _request(epoch,*args,**kwargs):
+    _allowed(epoch)
+    with LOCK:_check_epoch(epoch)
+    result=request(*args,**kwargs)
+    _allowed(epoch)
+    return result
+
+
+def paused():
+    with LOCK:return PAUSED
+
+
+def cancel_all():
+    """Safety hook, called outside its mutex. No DB, Keychain, network or startup."""
+    global GENERATION,PENDING,PAUSED,SESSION_VERIFIED
+    with LOCK:
+        GENERATION+=1;PAUSED=True;SESSION_VERIFIED=False
+        flow=PENDING;PENDING=None
+        if flow:
+            flow['status']='cancelled'
+            if flow.get('stop'):flow['stop'].set()
+        if JOB and JOB['status']=='running':
+            JOB.update(status='cancelling',message='Google cancellation requested; any in-flight read must finish before its result is discarded.')
+        return {'success':True,'paused':True,'generation':GENERATION,'oauth_pending':False,
+                'job':dict(JOB) if JOB else None}
 
 
 def stored():
@@ -83,7 +144,7 @@ def snapshot():
     with LOCK:
         value=stored()
         pending=PENDING
-        return {'success':True,**value,'keychain_helper':(ROOT/'.runtime/u1-keychain').is_file(),'session_verified':SESSION_VERIFIED,
+        return {'success':True,**value,'paused':PAUSED,'keychain_helper':(ROOT/'.runtime/u1-keychain').is_file(),'session_verified':SESSION_VERIFIED,
                 'stale':not SESSION_VERIFIED or time.time()-value.get('last_sync',0)>660,
                 'oauth_status':pending['status'] if pending else 'idle','job':dict(JOB) if JOB else None,'scopes':SCOPES,
                 'notice':'Google access is read-only. Local drafts, extracted text and imported PDFs are unencrypted workspace data. No email, calendar or AI-provider write is performed.'}
@@ -99,8 +160,10 @@ def configure(body):
     secret=client.get('client_secret','')
     if not isinstance(client_id,str) or not client_id.endswith('.apps.googleusercontent.com') or len(client_id)>300 or not isinstance(secret,str) or len(secret)>8192:
         raise ValueError('The desktop OAuth client fields are invalid.')
+    epoch=_epoch(resume=True)
     with LOCK:
-        if JOB and JOB['status']=='running':raise ValueError('Wait for the current sync before replacing the client.')
+        _check_epoch(epoch)
+        if JOB and JOB['status'] in {'running','cancelling'}:raise ValueError('Wait for the current sync before replacing the client.')
         if PENDING and PENDING['status'] in {'authorising','exchanging'} and time.time()<PENDING['expires']:
             raise ValueError('Finish or disconnect the pending Google sign-in before replacing the client.')
         keychain('set',{'client_id':client_id,'client_secret':secret})
@@ -112,53 +175,86 @@ def configure(body):
 
 def begin():
     global PENDING
+    epoch=_epoch(resume=True)
     with LOCK:
+        _check_epoch(epoch)
+        if JOB and JOB['status'] in {'running','cancelling'}:raise ValueError('Finish or cancel the current Google sync before connecting.')
         if PENDING and PENDING['status'] in {'authorising','exchanging'} and time.time()<PENDING['expires']:
             return {'success':True,'authorization_url':PENDING['url'],'expires':PENDING['expires']}
         credentials=keychain('get')
-        verifier=secrets.token_urlsafe(64)
-        flow={'state':secrets.token_urlsafe(32),'verifier':verifier,'expires':time.time()+600,'status':'authorising','generation':GENERATION}
-        class Callback(BaseHTTPRequestHandler):
-            def log_message(self,*args):pass
-            def do_GET(self):
-                global SESSION_VERIFIED
+    _allowed(epoch)
+    verifier=secrets.token_urlsafe(64)
+    flow={'state':secrets.token_urlsafe(32),'verifier':verifier,'expires':time.time()+600,
+          'status':'authorising','generation':epoch,'stop':threading.Event()}
+    class Callback(BaseHTTPRequestHandler):
+        def setup(self):
+            super().setup();self.connection.settimeout(2)
+        def log_message(self,*args):pass
+        def do_GET(self):
+            global SESSION_VERIFIED
+            completed=False
+            message='The authorisation could not be verified. Return to U1 OS and reconnect.'
+            try:
+                if len(self.path)>=8192:raise ValueError('Invalid callback')
                 parsed=urllib.parse.urlsplit(self.path)
-                values=urllib.parse.parse_qs(parsed.query)
-                state=values.get('state',[''])[0]
-                valid=(parsed.path=='/oauth2callback' and len(self.path)<8192 and self.headers.get('Host')==f'127.0.0.1:{self.server.server_port}' and secrets.compare_digest(state,flow['state']))
+                values=urllib.parse.parse_qs(parsed.query,max_num_fields=8)
+                states=values.get('state',[])
+                if (parsed.path!='/oauth2callback' or self.headers.get('Host')!=f'127.0.0.1:{self.server.server_port}'
+                        or len(states)!=1 or not re.fullmatch(r'[A-Za-z0-9_-]{43}',states[0])
+                        or not secrets.compare_digest(states[0],flow['state'])):raise ValueError('Invalid callback')
+                _allowed(epoch)
                 with LOCK:
-                    valid=valid and PENDING is flow and flow['status']=='authorising' and flow['generation']==GENERATION and time.time()<flow['expires']
-                    if valid:flow['status']='exchanging'
-                message='The authorisation could not be verified. Return to U1 OS and reconnect.'
-                if valid:
-                    try:
-                        code=values.get('code',[''])[0]
-                        if not code or values.get('error'):raise ValueError('Google authorisation was not completed.')
-                        token=request('https://oauth2.googleapis.com/token',{'client_id':credentials['client_id'],'client_secret':credentials.get('client_secret',''),'code':code,'code_verifier':flow['verifier'],'redirect_uri':flow['redirect'],'grant_type':'authorization_code'})
-                        if not token.get('refresh_token'):raise ValueError('Offline access was not granted. Reconnect and review consent.')
-                        with LOCK:
-                            if flow['generation']!=GENERATION or PENDING is not flow or flow['status']!='exchanging' or time.time()>=flow['expires']:raise ValueError('This connection attempt was cancelled or expired.')
-                            keychain('set',{**credentials,'refresh_token':token['refresh_token'],'scopes':token.get('scope','')})
-                            flow['status']='authorised';SESSION_VERIFIED=False
-                        message='Authorisation saved in Mac Keychain. Return to U1 OS and choose Sync now to verify access.'
-                    except ValueError:
-                        flow['status']='needs_attention'
-                        message='Authorisation was not saved. Return to U1 OS, check Keychain access and reconnect.'
-                self.send_response(200 if valid else 400)
-                self.send_header('Content-Type','text/plain; charset=utf-8');self.send_header('Cache-Control','no-store');self.send_header('Referrer-Policy','no-referrer');self.end_headers()
-                self.wfile.write(message.encode())
-        server=ThreadingHTTPServer(('127.0.0.1',0),Callback)
-        flow['redirect']=f'http://127.0.0.1:{server.server_port}/oauth2callback'
-        challenge=base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b'=').decode()
-        flow['url']='https://accounts.google.com/o/oauth2/v2/auth?'+urllib.parse.urlencode({'client_id':credentials['client_id'],'redirect_uri':flow['redirect'],'response_type':'code','scope':' '.join(SCOPES),'state':flow['state'],'code_challenge':challenge,'code_challenge_method':'S256','access_type':'offline','prompt':'consent'})
-        PENDING=flow
-        threading.Thread(target=server.serve_forever,name='u1-google-oauth',daemon=True).start()
-        def expire():
-            with LOCK:
-                if flow['status'] in {'authorising','exchanging'}:flow['status']='expired'
-            server.shutdown();server.server_close()
-        timer=threading.Timer(600,expire);timer.daemon=True;timer.start()
-        return {'success':True,'authorization_url':flow['url'],'expires':flow['expires']}
+                    _check_epoch(epoch)
+                    if PENDING is not flow or flow['status']!='authorising' or time.time()>=flow['expires']:raise ValueError('Expired callback')
+                    flow['status']='exchanging'
+                code=values.get('code',[])
+                if len(code)!=1 or not 1<=len(code[0])<=4096 or values.get('error'):raise ValueError('Consent not completed')
+                token=_request(epoch,'https://oauth2.googleapis.com/token',{'client_id':credentials['client_id'],'client_secret':credentials.get('client_secret',''),'code':code[0],'code_verifier':flow['verifier'],'redirect_uri':flow['redirect'],'grant_type':'authorization_code'})
+                if not token.get('refresh_token'):raise ValueError('Offline access not granted')
+                _allowed(epoch)
+                with LOCK:
+                    _check_epoch(epoch)
+                    if PENDING is not flow or flow['status']!='exchanging' or time.time()>=flow['expires']:raise ValueError('Expired callback')
+                    keychain('set',{**credentials,'refresh_token':token['refresh_token'],'scopes':token.get('scope','')})
+                    flow['status']='authorised';SESSION_VERIFIED=False;completed=True
+                message='Authorisation saved in Mac Keychain. Return to U1 OS and choose Sync now to verify access.'
+            except Exception:
+                with LOCK:
+                    if PENDING is flow and flow['status']=='exchanging':flow['status']='needs_attention'
+            finally:
+                with LOCK:
+                    if flow['status']!='authorising':flow['stop'].set()
+            self.send_response(200 if completed else 400)
+            self.send_header('Content-Type','text/plain; charset=utf-8');self.send_header('Cache-Control','no-store');self.send_header('Referrer-Policy','no-referrer');self.send_header('Connection','close');self.end_headers()
+            self.wfile.write(message.encode())
+    server=ThreadingHTTPServer(('127.0.0.1',0),Callback)
+    server.timeout=0.5
+    server.handle_error=lambda *args:None
+    flow['redirect']=f'http://127.0.0.1:{server.server_port}/oauth2callback'
+    challenge=base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b'=').decode()
+    flow['url']='https://accounts.google.com/o/oauth2/v2/auth?'+urllib.parse.urlencode({'client_id':credentials['client_id'],'redirect_uri':flow['redirect'],'response_type':'code','scope':' '.join(SCOPES),'state':flow['state'],'code_challenge':challenge,'code_challenge_method':'S256','access_type':'offline','prompt':'consent'})
+    try:
+        _allowed(epoch)
+        with LOCK:
+            _check_epoch(epoch)
+            PENDING=flow
+        def listen():
+            try:
+                while not flow['stop'].is_set() and time.time()<flow['expires']:server.handle_request()
+            finally:
+                server.server_close()
+                with LOCK:
+                    if flow['status'] in {'authorising','exchanging'}:flow['status']='expired'
+        threading.Thread(target=listen,name='u1-google-oauth',daemon=True).start()
+        _allowed(epoch)
+        with LOCK:
+            _check_epoch(epoch)
+            return {'success':True,'authorization_url':flow['url'],'expires':flow['expires']}
+    except Exception:
+        flow['stop'].set();server.server_close()
+        with LOCK:
+            if PENDING is flow:PENDING=None
+        raise
 
 
 def decode_body(payload):
@@ -196,28 +292,33 @@ def import_pdf(raw,name):
     return started['id']
 
 
-def sync():
+def sync(*,resume=True):
     global JOB,SESSION_VERIFIED
+    epoch=_epoch(resume=resume)
     with LOCK:
-        if JOB and JOB['status']=='running':return {'success':True,'job_id':JOB['id'],'already_running':True}
-        epoch=GENERATION
+        _check_epoch(epoch)
+        if JOB and JOB['status'] in {'running','cancelling'}:return {'success':True,'job_id':JOB['id'],'already_running':True}
+        if PENDING and PENDING['status'] in {'authorising','exchanging'}:raise ValueError('Complete or cancel Google authorisation before syncing.')
         JOB={'id':uuid.uuid4().hex,'status':'running','started':time.time(),'message':'Verifying read-only Google access...'}
         job=JOB
     def run():
         global SESSION_VERIFIED
         try:
-            credentials=keychain('get')
+            _allowed(epoch)
+            with LOCK:
+                _check_epoch(epoch)
+                credentials=keychain('get')
             if not credentials.get('refresh_token'):raise ValueError('Authorise Google before syncing.')
-            token=request('https://oauth2.googleapis.com/token',{'client_id':credentials['client_id'],'client_secret':credentials.get('client_secret',''),'refresh_token':credentials['refresh_token'],'grant_type':'refresh_token'}).get('access_token')
+            token=_request(epoch,'https://oauth2.googleapis.com/token',{'client_id':credentials['client_id'],'client_secret':credentials.get('client_secret',''),'refresh_token':credentials['refresh_token'],'grant_type':'refresh_token'}).get('access_token')
             if not token:raise ValueError('Google did not return an access token.')
-            profile=request('https://gmail.googleapis.com/gmail/v1/users/me/profile',token=token)
-            messages=request('https://gmail.googleapis.com/gmail/v1/users/me/messages?'+urllib.parse.urlencode({'maxResults':20,'q':'newer_than:14d -in:spam -in:trash'}),token=token)
+            profile=_request(epoch,'https://gmail.googleapis.com/gmail/v1/users/me/profile',token=token)
+            messages=_request(epoch,'https://gmail.googleapis.com/gmail/v1/users/me/messages?'+urllib.parse.urlencode({'maxResults':20,'q':'newer_than:14d -in:spam -in:trash'}),token=token)
             config=stored();mail=[];pdf_budget=3;warnings=[]
             for reference in messages.get('messages',[])[:20]:
                 with LOCK:
-                    if epoch!=GENERATION:raise ValueError('Sync cancelled by disconnect.')
+                    _check_epoch(epoch)
                 message_id=str(reference.get('id',''))
-                data=request('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+urllib.parse.quote(message_id,safe='')+'?format=full',token=token)
+                data=_request(epoch,'https://gmail.googleapis.com/gmail/v1/users/me/messages/'+urllib.parse.quote(message_id,safe='')+'?format=full',token=token)
                 headers={h.get('name','').lower():h.get('value','') for h in data.get('payload',{}).get('headers',[])}
                 text,attachments=decode_body(data.get('payload',{}))
                 row={'id':message_id,'title':str(headers.get('subject') or 'Untitled message')[:160],'from':str(headers.get('from',''))[:250],'date':str(headers.get('date',''))[:120],'text':text or str(data.get('snippet',''))[:12000],'attachments':attachments,'url':'https://mail.google.com/mail/u/0/#all/'+urllib.parse.quote(message_id,safe='')}
@@ -225,26 +326,27 @@ def sync():
                     for attachment in attachments:
                         if pdf_budget<=0 or not isinstance(attachment['size'],int) or not 0<attachment['size']<=5*1024*1024:continue
                         pdf_budget-=1
-                        part=request('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+urllib.parse.quote(message_id,safe='')+'/attachments/'+urllib.parse.quote(attachment['id'],safe=''),token=token)
+                        part=_request(epoch,'https://gmail.googleapis.com/gmail/v1/users/me/messages/'+urllib.parse.quote(message_id,safe='')+'/attachments/'+urllib.parse.quote(attachment['id'],safe=''),token=token)
                         encoded=part.get('data','');raw=base64.urlsafe_b64decode(encoded+'='*(-len(encoded)%4))
                         extracted=extract_pdf(raw)
                         with LOCK:
-                            if epoch!=GENERATION:raise ValueError('Sync cancelled by disconnect.')
+                            _check_epoch(epoch)
                             attachment['local_file_id']=import_pdf(raw,attachment['name'])
                         attachment['extraction_notice']=extracted.get('notice','')
                         if extracted.get('text'):row['text']=(row['text']+'\nPDF '+attachment['name']+':\n'+extracted['text'])[:12000]
                 mail.append(row)
             now=datetime.now(timezone.utc)
             query=urllib.parse.urlencode({'timeMin':(now-timedelta(days=7)).isoformat(),'timeMax':(now+timedelta(days=90)).isoformat(),'singleEvents':'true','showDeleted':'true','maxResults':100})
-            calendar=request('https://www.googleapis.com/calendar/v3/calendars/primary/events?'+query,token=token)
+            calendar=_request(epoch,'https://www.googleapis.com/calendar/v3/calendars/primary/events?'+query,token=token)
             events=[]
             for event in calendar.get('items',[])[:100]:
                 start=event.get('start') or {};end=event.get('end') or {}
                 events.append({'id':str(event.get('id',''))[:300],'version':str(event.get('etag',''))[:300],'title':str(event.get('summary') or 'Calendar event')[:160],
                                'status':event.get('status','confirmed'),'start':start.get('dateTime') or start.get('date',''),'end':end.get('dateTime') or end.get('date',''),
                                'location':str(event.get('location',''))[:200],'notes':str(event.get('description',''))[:7500],'url':str(event.get('htmlLink',''))[:1200]})
+            _allowed(epoch)
             with LOCK:
-                if epoch!=GENERATION:raise ValueError('Sync cancelled by disconnect.')
+                _check_epoch(epoch)
                 value=stored()
                 for row in mail:
                     if re.search(r'appoint|meeting|booking|deadline|invoice|schedule|due date',row['title']+' '+row['text'],re.I):
@@ -256,8 +358,9 @@ def sync():
                 save(value);SESSION_VERIFIED=True;job.update(status='complete',finished=time.time(),message='Read-only sync completed; proposed actions still require review.')
         except Exception as error:
             with LOCK:
-                SESSION_VERIFIED=False
-                job.update(status='failed',finished=time.time(),message=str(error) if isinstance(error,ValueError) else 'Sync failed. Previously stored data was retained and is not a live result.')
+                cancelled=epoch!=GENERATION or PAUSED
+                if epoch==GENERATION:SESSION_VERIFIED=False
+                job.update(status='cancelled' if cancelled else 'failed',finished=time.time(),message='Google work was cancelled; late results were discarded.' if cancelled else str(error) if isinstance(error,ValueError) else 'Sync failed. Previously stored data was retained and is not a live result.')
     threading.Thread(target=run,name='u1-google-sync',daemon=True).start()
     return {'success':True,'job_id':job['id']}
 
@@ -305,13 +408,15 @@ def action(body):
             save(value)
         return {'success':True,'message':'Read-only sync preferences saved. Automatic sync runs only while the local server runs.'}
     if operation=='disconnect':
+        cancel_all()
         with LOCK:
-            GENERATION+=1;PENDING=None;SESSION_VERIFIED=False
             value=stored();value.update(auto_sync=False,configured=False);save(value)
             try:
                 credentials=keychain('get')
-                if credentials.get('refresh_token'):request('https://oauth2.googleapis.com/revoke',{'token':credentials['refresh_token']},raw=True)
-                revoked=True
+                revoked=False
+                if credentials.get('refresh_token'):
+                    request('https://oauth2.googleapis.com/revoke',{'token':credentials['refresh_token']},raw=True)
+                    revoked=True
             except ValueError:revoked=False
             keychain('delete')
         return {'success':True,'message':'Local connection removed. '+('Google grant revocation confirmed.' if revoked else 'Provider revocation was not confirmed; review Google Account permissions.')+' Existing imported data was retained.'}
@@ -326,8 +431,9 @@ def start():
     def loop():
         while True:
             try:
-                value=stored()
-                if value.get('auto_sync') and value.get('configured') and time.time()-value.get('last_sync',0)>300 and (not JOB or time.time()-JOB['started']>300):sync()
+                if not _safety_blocked() and not paused():
+                    value=stored()
+                    if value.get('auto_sync') and value.get('configured') and time.time()-value.get('last_sync',0)>300 and (not JOB or time.time()-JOB['started']>300):sync(resume=False)
             except Exception:pass
             time.sleep(60)
     threading.Thread(target=loop,name='u1-google-autosync',daemon=True).start()

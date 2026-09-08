@@ -18,6 +18,9 @@ ROOT = Path(__file__).resolve().parents[1] / 'data' / 'recovery'
 LOCK = threading.RLock()
 JOBS = {}
 LIMIT = workspace.MAX_STORAGE + 64*1024*1024
+MAX_MANAGED_FILES = 2000
+MAX_MEMBERS = MAX_MANAGED_FILES + 2  # Database and manifest also occupy members.
+MAX_MANIFEST_BYTES = 512 * 1024
 IDENTIFIER = re.compile(r'^[a-f0-9]{32}$')
 
 
@@ -48,6 +51,7 @@ def digest_file(path):
 
 def make_backup():
     directories()
+    workspace.expire_uploads()
     identifier = uuid.uuid4().hex
     target = ROOT/'backups'/(identifier+'.zip')
     with tempfile.TemporaryDirectory(prefix='.building-', dir=ROOT) as temporary:
@@ -61,16 +65,23 @@ def make_backup():
             with sqlite3.connect(db_copy) as backup:
                 connection.backup(backup)
             db_copy.chmod(0o600)
-            rows = connection.execute("SELECT id,size,checksum FROM files WHERE status='ready'").fetchall()
+            rows = connection.execute("SELECT * FROM files WHERE status='ready' ORDER BY id LIMIT ?", (MAX_MANAGED_FILES + 1,)).fetchall()
+            if len(rows) > MAX_MANAGED_FILES:
+                raise ValueError('Backup exceeds the 2,000 managed-file limit. No backup was published.')
+            if any(type(row['size']) is not int or not 0 <= row['size'] <= workspace.MAX_FILE for row in rows):
+                raise ValueError('Managed file size metadata is invalid. No backup was published.')
             if sum(row['size'] for row in rows) > workspace.MAX_STORAGE:
                 raise ValueError('Managed file storage exceeds the supported backup size.')
+            excluded = connection.execute("SELECT COUNT(*),COALESCE(SUM(received),0) FROM files WHERE status!='ready'").fetchone()
             manifest = {'format':'u1-managed-workspace','version':1,'created':time.time(),'files':{},
                         'coverage':['Managed records, local preferences and business data','Imported file contents, including managed Trash'],
-                        'excluded':['Provider credentials','Other plugin databases','Source code and native app binaries'],
+                        'excluded':['Provider credentials','Other plugin databases','Source code and native app binaries','Unfinished upload contents (retained in the active workspace)'],
+                        'excluded_uploads':{'count':excluded[0],'retained_bytes':excluded[1]},
                         'encrypted':False}
             archive_path = directory/'archive.zip'
+            total_size = 0
             with zipfile.ZipFile(archive_path, 'x', compression=zipfile.ZIP_DEFLATED, compresslevel=4) as archive:
-                for source, name, expected in [(db_copy, 'workspace.sqlite3', None)] + [(workspace.DATA/'files'/row['id'], 'files/'+row['id'], row['checksum']) for row in rows]:
+                for source, name, expected in [(db_copy, 'workspace.sqlite3', None)]:
                     digest=hashlib.sha256();size=0
                     flags=os.O_RDONLY | getattr(os,'O_NOFOLLOW',0)
                     with os.fdopen(os.open(source,flags),'rb') as input_file, archive.open(name,'w') as output_file:
@@ -86,10 +97,25 @@ def make_backup():
                     if expected and checksum != expected:
                         raise ValueError('An imported file failed its stored checksum. No backup was published.')
                     manifest['files'][name] = {'sha256':checksum,'size':size}
-                archive.writestr('manifest.json', json.dumps(manifest))
+                    total_size += size
+                for row in rows:
+                    metadata, content = workspace._read_verified_row(row)
+                    name = 'files/' + workspace.identifier(row['id'])
+                    total_size += len(content)
+                    if total_size > LIMIT:
+                        raise ValueError('The complete backup exceeds the restore size limit. No backup was published.')
+                    archive.writestr(name, content)
+                    manifest['files'][name] = {'sha256':metadata['checksum'],'size':len(content)}
+                encoded_manifest = json.dumps(manifest).encode('utf-8')
+                if len(encoded_manifest) > MAX_MANIFEST_BYTES or total_size + len(encoded_manifest) > LIMIT:
+                    raise ValueError('The complete backup exceeds the manifest or restore size limit. No backup was published.')
+                archive.writestr('manifest.json', encoded_manifest)
+            if archive_path.stat().st_size > LIMIT:
+                raise ValueError('The backup archive exceeds the restore size limit. No backup was published.')
             archive_path.chmod(0o600)
             os.replace(archive_path, target)
-    return {'backup_id':identifier,'size':target.stat().st_size,'managed_files':len(rows),'created':manifest['created']}
+    return {'backup_id':identifier,'size':target.stat().st_size,'managed_files':len(rows),'created':manifest['created'],
+            'excluded_uploads':manifest['excluded_uploads']}
 
 
 def restore_backup(identifier):
@@ -106,12 +132,12 @@ def restore_backup(identifier):
         stage.mkdir(mode=0o700)
         with zipfile.ZipFile(archive_path) as archive:
             members = archive.infolist()
-            if len(members)>2000 or len({m.filename for m in members}) != len(members) or sum(m.file_size for m in members)>LIMIT:
+            if len(members)>MAX_MEMBERS or len({m.filename for m in members}) != len(members) or sum(m.file_size for m in members)>LIMIT:
                 raise ValueError('Backup members exceed the supported limits.')
             if any(m.file_size<0 or stat.S_ISLNK(m.external_attr>>16) for m in members):
                 raise ValueError('Symbolic links are not supported in backups.')
             manifest_info = archive.getinfo('manifest.json')
-            if manifest_info.file_size>512*1024:
+            if manifest_info.file_size>MAX_MANIFEST_BYTES:
                 raise ValueError('Backup manifest is too large.')
             manifest=json.loads(archive.read('manifest.json'))
             if manifest.get('format')!='u1-managed-workspace' or manifest.get('version')!=1:
@@ -143,9 +169,13 @@ def restore_backup(identifier):
             if connection.execute('PRAGMA integrity_check').fetchone()[0]!='ok':
                 raise ValueError('The restored database failed its integrity check.')
             rows=connection.execute("SELECT id,size,checksum FROM files WHERE status='ready'").fetchall()
+            if len(rows)>MAX_MANAGED_FILES or {name for name in files if name!='workspace.sqlite3'} != {'files/'+row[0] for row in rows}:
+                raise ValueError('Restored file membership does not match the database.')
+            if any(type(size) is not int or not 0 <= size <= workspace.MAX_FILE for _,size,_ in rows) or sum(row[1] for row in rows)>workspace.MAX_STORAGE:
+                raise ValueError('Restored managed file sizes exceed the supported limits.')
             for file_id,size,checksum in rows:
                 expected=files.get('files/'+file_id)
-                if not expected or expected['size']!=size or (checksum and expected['sha256']!=checksum):
+                if not expected or expected['size']!=size or not isinstance(checksum,str) or not re.fullmatch(r'[a-f0-9]{64}',checksum) or expected['sha256']!=checksum:
                     raise ValueError('Restored file metadata does not match its contents.')
             record_count=connection.execute('SELECT COUNT(*) FROM records').fetchone()[0]
         os.replace(stage,destination)

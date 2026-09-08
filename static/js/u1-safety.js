@@ -1,14 +1,17 @@
 /* A passphrase-protected application lock, backed by the local server gate. */
 (function () {
  'use strict';
- var state=null,dialog,mode='',busy=false,polling=false,incident=false,lastError='',clockOffset=0;
+  var state=null,dialog,mode='',busy=false,polling=false,incident=false,lastError='',clockOffset=0,lastLock=null;
  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
  function locked(){return incident||!state||state.locked;}
- function message(value){var node=dialog&&dialog.querySelector('[data-safety-message]');if(node)node.textContent=value;}
+  function message(value){var node=dialog&&dialog.querySelector('[data-safety-message]');if(node)node.textContent=value;}
+  function containDialogs(){if(locked())document.querySelectorAll('dialog[open]').forEach(function(other){if(other!==dialog)other.close();});}
  function contain(){
   var yes=locked();document.documentElement.dataset.u1Safety=yes?'locked':'open';
-  document.querySelectorAll('.shell,#dock,#u1-utility-shelf').forEach(function(node){if(yes){if(!node.inert){node.dataset.u1SafetyInert='true';node.inert=true;}}else if(node.dataset.u1SafetyInert){node.inert=false;delete node.dataset.u1SafetyInert;}});
-  if(yes){document.querySelectorAll('audio,video').forEach(function(media){media.pause();});if(window.speechSynthesis)window.speechSynthesis.cancel();}
+   document.querySelectorAll('.shell,#dock,#u1-utility-shelf').forEach(function(node){if(yes){if(!node.inert||node.dataset.u1BootInert)node.dataset.u1SafetyInert='true';node.inert=true;node.setAttribute('inert','');}else if(node.dataset.u1SafetyInert){delete node.dataset.u1SafetyInert;node.inert=!!node.dataset.u1BootInert;if(node.inert)node.setAttribute('inert','');else node.removeAttribute('inert');}});
+   if(yes){document.querySelectorAll('audio,video').forEach(function(media){media.pause();});if(window.speechSynthesis)window.speechSynthesis.cancel();}
+   if(lastLock!==yes){lastLock=yes;document.dispatchEvent(new CustomEvent('u1:safety-change',{detail:{locked:yes,configured:!!(state&&state.configured)}}));}
+   containDialogs();
  }
  function show(next){
   if(!dialog)return;mode=next;
@@ -33,7 +36,6 @@
   contain();updateLabels();
   if(locked()) {if(!dialog.open||mode==='unavailable'||(!previous||!previous.locked)&&data.locked)show(data.fault?'unavailable':'unlock');}
   else if(previous&&previous.locked&&dialog.open){dialog.close();mode='';}
-  document.dispatchEvent(new CustomEvent('u1:safety-change',{detail:{locked:locked(),configured:data.configured}}));
  }
  async function request(body){
   var controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},15000);
@@ -54,7 +56,8 @@
   try{apply(await request({action:action||'lock'}));}catch(error){lastError=error.message;message('Workspace concealed locally. Server lock not confirmed; it will be requested when the local service reconnects.');}
  }
  function init(){
-  dialog=document.createElement('dialog');dialog.id='u1-safety-dialog';dialog.setAttribute('aria-labelledby','u1-safety-title');document.body.append(dialog);
+   dialog=document.createElement('dialog');dialog.id='u1-safety-dialog';dialog.setAttribute('aria-labelledby','u1-safety-title');document.body.append(dialog);
+   if(typeof MutationObserver==='function'){var modalObserver=new MutationObserver(containDialogs);modalObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open']});window.addEventListener('pagehide',function(){modalObserver.disconnect();});}
   dialog.addEventListener('cancel',function(event){if(locked())event.preventDefault();});
   dialog.addEventListener('click',function(event){var button=event.target.closest('[data-safety-action]');if(!button)return;var action=button.dataset.safetyAction;if(action==='close'){dialog.close();return;}if(action==='settings'){lastError='';show('setup');return;}if(action==='retry'){poll();return;}if(action==='lock'){lockNow();return;}if(action==='checkin'){button.disabled=true;request({action:'checkin'}).then(function(data){apply(data);message('Check-in received by the server.');}).catch(function(error){message(error.message);}).finally(function(){button.disabled=false;});}});
   dialog.addEventListener('submit',async function(event){event.preventDefault();if(busy)return;var form=event.target,values=Object.fromEntries(new FormData(form));if(form.dataset.safetyForm==='configure'&&values.passphrase!==values.confirm_passphrase){message('The passphrases do not match.');return;}busy=true;var button=form.querySelector('[type=submit]');button.disabled=true;message('Waiting for the local safety service...');try{var payload={action:form.dataset.safetyForm,passphrase:values.passphrase};if(payload.action==='configure')Object.assign(payload,{current_passphrase:values.current_passphrase,minutes:Number(values.minutes),offline:form.elements.offline.checked,confirmed:form.elements.confirmed.checked});var data=await request(payload);form.reset();lastError='';incident=false;apply(data);if(data.locked)show('unlock');}catch(error){message(error.message);}finally{busy=false;button.disabled=false;}});

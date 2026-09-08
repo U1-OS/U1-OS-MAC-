@@ -10,9 +10,12 @@ not notarisation, Gatekeeper approval, or proof of a trusted publisher.
 
 ## Desktop behaviour
 
-- Check the server's `installation_root` before loading the workspace. Canonical
-  paths accept the same installation through a symlink. Health requests use an
-  ephemeral session, bypass proxies and do not follow redirects.
+- Check the minimal `/healthz` identity before loading the workspace: service
+  `u1-os`, protocol `1`, a SHA-256 `installation_id` of the canonical workspace
+  root, and a boolean `locked` flag. This works while protected APIs are locked,
+  without returning a root path, credential, CSRF token or an unlock exemption.
+  Canonical paths accept the same installation through a symlink. Health requests
+  use an ephemeral session, bypass proxies and do not follow redirects.
 - Connect to an already running workspace first. On connection failure invoke the
   existing launcher once per connection attempt. Its port and launch-lock guards
   remain authoritative. Never terminate another app or delete its lock.
@@ -113,7 +116,10 @@ Report paths must not already exist. Reports contain only timestamps, validated
 revision IDs, relative source names, statuses and counts. A Python-only report
 explicitly labels native build and interactive Mac checks `NOT_RUN`.
 
-The exact modules under `tests/`, each with `.py` suffix, are:
+The original sidecar modules under `tests/` are shown below as historical
+context. The current authoritative explicit allowlist is in
+`macos/release_checks.py`; the [rounded audit record](AUDIT-ROUNDED-20260908.md)
+records the expanded 30-module, 17-Node-suite acceptance result.
 
 ```text
 test_u1_business          test_u1_reliability      test_u1_autopilot
@@ -160,12 +166,13 @@ exit code zero and the exact `PASS 6 native registration and direct-entry contra
 marker; missing, altered or contradictory output fails the gate. All named
 JavaScript files receive syntax checks.
 
-The exact synthetic media integration test
-`SyntheticFFmpegTests.test_generated_owned_video_exports_real_mp4_and_wav` is
-excluded from the unit gate and reported as `OPT-IN NOT_RUN`. Its real FFmpeg
-processes require a separate deliberately opted-in run. This exclusion does not
-waive any other skipped test or count the real integration as passed. The parent
-reported a prior passing run; this gate does not reassert that as its own evidence.
+The three explicitly named `SyntheticFFmpegTests` integration methods, including
+`test_generated_owned_video_exports_real_mp4_and_wav`, are excluded from the unit
+gate and reported separately as `OPT-IN NOT_RUN`. Real FFmpeg processes require a
+separate deliberately opted-in run. These exclusions do not waive any other
+skipped test or count a real integration as passed. The parent records a separate
+38-test opted-in synthetic-media run in the rounded audit; the strict gate does
+not reassert that separate run as its own evidence.
 The existing runtime also contains `pypdfium2 5.13.0` for Studio PDF previews;
 the parent confirmed its matching pin in `requirements-personal.txt`. Dependency
 installation follows that requirements file.
@@ -275,8 +282,9 @@ Keychain helper is edited, compiled or invoked by this sidecar.
 
 ## Observed sidecar evidence: 2026-09-08
 
-The current final result is the frozen-source `r4` record below. Earlier snapshots
-are retained as superseded history and must not replace the final counts.
+The original sidecar's frozen-source `r4` record and the later operational runs
+below are preserved history. The newer rounded-rebuild R2 evidence at the end of
+this guide supersedes their counts for the current audit, without rewriting them.
 
 Source state: local checkout; no commit or push performed and no source revision
 asserted. This observation is dated and does not automatically cover later parent
@@ -521,3 +529,28 @@ No source edits, native rebuild, Desktop installation, account action or Git
 operation occurred during r6. Only this guide and the Safety rehearsal guide
 received post-run evidence appendices. Native build and interactive Mac checks
 remain NOT_RUN in the r6 JSON; historical native build evidence stays separate.
+
+## Rounded rebuild audit R2: 2026-09-08
+
+The complete strict report passed at `2026-09-08T11:42:22.619604+00:00`:
+**805 tests/contracts** (570 Python across 30 named modules, 235 Node across 17
+suites), **116 syntax checks**, zero required failures/errors/skips/missing.
+Its source revision is explicitly `unrecorded`. The initial expanded failing
+report is retained, not relabelled as a pass.
+
+The first run exposed a runner-only mismatch around safe directory-descriptor
+opens. Thread-local audit context was corrected without widening allowed roots
+or changing actual `dir_fd`/`O_NOFOLLOW` operations; five new guard regressions
+passed. Three synthetic FFmpeg integration methods are now explicitly separate
+NOT_RUN entries, not silent skips in the unit total.
+
+The outer R2 console-mirroring pipeline returned 1 because sandboxed `tee` could
+not open `/dev/fd/3`. All canonical report and suite records are PASS, and the
+full console was retained separately. A separate inner-process exit code was
+not captured; do not describe the outer command as recorded exit zero.
+
+The new minimal-identity policy separately passed 31 native checks and temporary
+Swift compilation. This audit did not replace Desktop, run native interactive
+acceptance, perform Developer ID signing or notarise the app. See the
+[dated audit report](AUDIT-ROUNDED-20260908.md) for evidence paths, browser captures,
+known remaining limitations and the replacement-PR publication boundary.

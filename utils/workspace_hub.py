@@ -300,25 +300,9 @@ def run_tool(payload):
 
 
 def run_ai(payload):
-    provider=payload.get('provider');prompt=str(payload.get('prompt','')).strip()
-    if not prompt or len(prompt)>30000:raise ValueError('Prompt must contain 1 to 30000 characters')
-    if provider not in {'claude','codex'}:raise ValueError('This provider uses a prompt handoff rather than a local execution API')
-    executable=HOME/'.local/bin'/provider
-    if not executable.exists():raise ValueError('Provider CLI is not installed')
-    def execute():
-        run_dir=ROOT/'data'/'ai-runs'/uuid.uuid4().hex;run_dir.mkdir(parents=True,mode=0o700)
-        if provider=='claude':
-            command=[str(executable),'-p','--tools','','--permission-mode','dontAsk','--output-format','json','--no-session-persistence']
-        else:
-            command=[str(executable),'exec','--sandbox','read-only','--skip-git-repo-check','-C',str(run_dir),'--output-last-message',str(run_dir/'result.txt'),'-']
-        result=subprocess.run(command,input=prompt,cwd=run_dir,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=180)
-        if result.returncode:raise RuntimeError((result.stderr or result.stdout)[-3000:] or 'Provider did not complete')
-        if provider=='claude':
-            data=json.loads(result.stdout)
-            if data.get('is_error'):raise RuntimeError(data.get('result','Claude returned an error'))
-            return dict(output=data.get('result',''),usage=data.get('usage',{}),provider=provider)
-        return dict(output=(run_dir/'result.txt').read_text(),provider=provider)
-    return job_start(provider.title()+' prompt',execute)
+    # Keep old clients fail-closed. Never translate a legacy payload into consent
+    # for a different pipeline, or retain an unmanaged provider execution path.
+    raise ValueError('Legacy AI execution is retired. Open AI Command, review your prompt, selected context and conversation history, then explicitly confirm a native managed request. No provider request was started.')
 
 
 def handle_get(path,query):

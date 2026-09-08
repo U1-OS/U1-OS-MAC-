@@ -436,7 +436,7 @@ input.on('line',line=>{
         self.assertEqual({row["id"] for row in exported["files"]},set(rows))
         for row in exported["files"]:
             self.assertEqual(row["status"],"ready"); self.assertEqual(row["checksum"],rows[row["id"]]["checksum"])
-        self.assertIn("File metadata only",exported["notice"])
+        self.assertIn("file metadata only",exported["notice"].lower())
 
         downloaded_pdf = prism_workspace.handle_get("prism/file",{"id":[saved[0]["id"]]})
         code, preview = self.dispatch(studio.ROUTE,{"action":"preview","content":downloaded_pdf["content"],
@@ -622,6 +622,8 @@ class CatalogueHandoffTests(unittest.TestCase):
         self.assertTrue(partial["partial"])
         self.assertEqual(partial["pending_checklist"],["Second task"])
         self.assertEqual(len(self.rows("product")),1); self.assertEqual(len(self.rows("launch")),1)
+        self.post(request,409)
+        request = self.request(checklist=["First task","Second task"])
         retried = self.post(request)
         self.assertFalse(retried["partial"]); self.assertTrue(retried["reused"])
         self.assertEqual(retried["product"]["id"],partial["product"]["id"])
@@ -640,6 +642,73 @@ class CatalogueHandoffTests(unittest.TestCase):
         self.personal.action({"action":"archive","id":changed["id"],"expected_version":changed["version"]})
         self.post({"action":"handoff-review","file_id":self.file_id,"receipt":self.artifact["handoff_receipt"]},400)
         self.assertEqual(len(self.rows("product")),1)
+
+
+    def test_corrupt_or_missing_ready_bytes_cannot_be_handed_off(self):
+        path = prism_workspace.DATA / "files" / self.file_id
+        path.write_bytes(b"X" * self.artifact["size"])
+        self.post({"action":"handoff-review","file_id":self.file_id,"receipt":self.artifact["handoff_receipt"]},400)
+        path.unlink()
+        handler = Handler({"action":"handoff-review","file_id":self.file_id,"receipt":self.artifact["handoff_receipt"]})
+        studio.handle_request(handler)
+        self.assertIn(handler.status,(400,503))
+        self.assertEqual(self.rows("product"),[])
+
+    def test_durable_product_origin_survives_replaced_notes_and_another_upload(self):
+        original = self.post(self.request())["product"]
+        self.personal.action({"action":"update","id":original["id"],"expected_version":original["version"],"payload":{"notes":"Operator replaced all notes."}})
+        second = self.upload(self.artifact)
+        review = self.review(second)
+        self.assertEqual(review["existing"]["id"],original["id"])
+        result = self.post(self.request(review,second))
+        self.assertEqual(result["product"]["payload"]["notes"],"Operator replaced all notes.")
+        self.assertEqual(len(self.rows("product")),1)
+        with prism_workspace.database() as conn:
+            bound = conn.execute("SELECT product_id FROM studio_product_origins").fetchone()[0]
+        self.assertEqual(bound,original["id"])
+
+    def test_confirmation_rechecks_bytes_changed_after_review(self):
+        review = self.review()
+        path = prism_workspace.DATA / "files" / self.file_id
+        path.write_bytes(b"X" * self.artifact["size"])
+        self.post(self.request(review),400)
+        self.assertEqual(self.rows("product"),[])
+
+    def test_pending_origin_recovers_product_committed_before_binding(self):
+        original = studio._bind_origin
+        def interrupted(artifact, file_id, product_id=None):
+            if product_id:
+                raise OSError("Isolated interruption after personal record commit")
+            return original(artifact,file_id,product_id)
+        with patch.object(studio,"_bind_origin",side_effect=interrupted):
+            self.post(self.request(),503)
+        self.assertEqual(len(self.rows("product")),1)
+        reviewed = self.review()
+        self.assertIsNotNone(reviewed["existing"])
+        result = self.post(self.request(reviewed))
+        self.assertTrue(result["reused"])
+        self.assertEqual(len(self.rows("product")),1)
+
+    def test_stale_review_rejects_new_tasks_but_completed_retry_is_safe(self):
+        request = self.request(checklist=["Existing approved task"])
+        created = self.post(request)["product"]
+        reviewed = self.review()
+        self.personal.action({"action":"update","id":created["id"],"expected_version":created["version"],"payload":{"status":"launched"}})
+        self.post(self.request(reviewed,checklist=["Brand new task"]),409)
+        self.assertEqual(len(self.rows("launch")),1)
+        repeated = self.post(request)
+        self.assertTrue(repeated["reused"])
+        self.assertEqual(len(repeated["launches"]),1)
+        self.post(self.request(checklist=["Brand new task"]))
+        self.assertEqual(len(self.rows("launch")),2)
+
+    def test_launch_origin_survives_renaming_and_notes_replacement(self):
+        request = self.request(checklist=["Original approved task"])
+        launched = self.post(request)["launches"][0]
+        self.personal.action({"action":"update","id":launched["id"],"expected_version":launched["version"],"title":"Operator renamed task","payload":{"notes":"Replaced notes"}})
+        repeated = self.post(request)
+        self.assertEqual(repeated["launches"][0]["id"],launched["id"])
+        self.assertEqual(len(self.rows("launch")),1)
 
 
 if __name__ == "__main__":

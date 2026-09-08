@@ -97,7 +97,9 @@ final class U1Application: NSObject, NSApplicationDelegate, WKNavigationDelegate
         guard !sleeping, healthTask == nil else { return }
         let requestGeneration = generation
         attempts += 1
-        var request = URLRequest(url: base.appendingPathComponent("api/integrations"))
+        // Health identity remains readable while Safety protects all workspace
+        // APIs. A locked healthy installation must load its canonical unlock UI.
+        var request = URLRequest(url: base.appendingPathComponent("healthz"))
         request.timeoutInterval = 2
         request.cachePolicy = .reloadIgnoringLocalCacheData
         healthTask = healthSession.dataTask(with: request) { [weak self] data, response, _ in
@@ -107,7 +109,7 @@ final class U1Application: NSObject, NSApplicationDelegate, WKNavigationDelegate
                 if let data = data,
                    (response as? HTTPURLResponse)?.statusCode == 200,
                    let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                   NavigationPolicy.matchesWorkspace(object["installation_root"], root: self.root) {
+                   NavigationPolicy.matchesHealthIdentity(object, root: self.root) {
                     self.ready = true
                     self.attempts = 0
                     self.scheduleChecks(every: 20)
@@ -117,8 +119,8 @@ final class U1Application: NSObject, NSApplicationDelegate, WKNavigationDelegate
                     }
                 } else if let data = data,
                           let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                          object["installation_root"] != nil,
-                          !NavigationPolicy.matchesWorkspace(object["installation_root"], root: self.root) {
+                          let identity = object["installation_id"] as? String,
+                          identity != NavigationPolicy.installationID(root: self.root) {
                     self.cancelConnection()
                     self.statusPage("Another workspace is using this port", detail: "Port 8788 belongs to a different installation. No process was stopped. Close that installation yourself, then retry.")
                 } else if self.attempts >= 40 {

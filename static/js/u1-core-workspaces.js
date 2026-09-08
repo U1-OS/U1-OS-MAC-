@@ -2,6 +2,44 @@
   'use strict';
   var views = { projects: ['project', 'Projects', 'Give your next idea a clear direction.'], tasks: ['task', 'Tasks', 'A clear list. A focused day.'], calendar: ['event', 'Calendar', 'Your schedule, with room for what matters.'], notes: ['note', 'Notes', 'Capture an idea before it disappears.'], files: ['file', 'Files', 'Your private, local working library.'] };
   var hosts = new Map(), extensions = new Map(), snapshot = null, dialog = null, activeRecord = null, sourceButton = null, routeEpoch = 0;
+  var lifecycle = new WeakMap(), activeExtension = null;
+  function own(object, id) { return Object.prototype.hasOwnProperty.call(object, id); }
+  function locked() { return !!((document.documentElement && document.documentElement.dataset.u1Safety === 'locked') || (window.U1Safety && window.U1Safety.isLocked && window.U1Safety.isLocked())); }
+  function deactivate(id, host) {
+    var item = host && lifecycle.get(host);
+    if (!item || item.id !== id || !item.active) return;
+    item.active = false; item.epoch++;
+    if (activeExtension === item) activeExtension = null;
+    if (item.entry.deactivate) {
+      try { var stopped = Promise.resolve(item.entry.deactivate(host)).catch(function () {}); item.pending = Promise.allSettled([item.pending, stopped]); }
+      catch (_) { /* Deactivation must not prevent navigation or the Safety lock. */ }
+    }
+  }
+  function activate(id, host) {
+    if (!host || locked() || !extensions.has(id)) return Promise.resolve();
+    var entry = extensions.get(id), item = lifecycle.get(host);
+    if (!item || item.id !== id || item.entry !== entry) {
+      if (item) deactivate(item.id, host);
+      item = { id: id, host: host, entry: entry, active: false, initialized: false, epoch: 0, pending: null };
+      lifecycle.set(host, item);
+    }
+    if (item.active) return item.pending || Promise.resolve();
+    if (activeExtension && activeExtension !== item) deactivate(activeExtension.id, activeExtension.host);
+    activeExtension = item; item.active = true;
+    var serial = ++item.epoch, previous = item.pending;
+    function run() {
+      if (!item.active || serial !== item.epoch || locked()) return;
+      if (!item.initialized) { item.initialized = true; return entry.render(host); }
+      if (entry.activate) return entry.activate(host);
+    }
+    var operation = (previous ? Promise.resolve(previous).then(run) : Promise.resolve().then(run)).catch(function (error) {
+      if (item.active && serial === item.epoch && !locked()) {
+        item.initialized = false;
+        host.innerHTML = '<section class="u1-core-empty"><h2>Workspace unavailable</h2><p>' + esc(error.message || 'The workspace could not open.') + '</p></section>';
+      }
+    }).finally(function () { if (item.pending === operation) item.pending = null; });
+    item.pending = operation; return operation;
+  }
   var icons = {
     project: '<path d="M3 7h6l2 2h10v11H3zM3 7V4h7l2 3"/>',
     task: '<rect x="4" y="3" width="16" height="18" rx="3"/><path d="m8 12 3 3 6-7"/>',
@@ -43,13 +81,14 @@
     }).join('') : '<div class="u1-core-empty"><span class="u1-core-empty-icon">' + icon(kind) + '</span><h3>Your ' + esc(config[1].toLowerCase()) + ' start here.</h3><p>' + (kind === 'file' ? 'Upload documents, images or media. Originals stay on this Mac.' : 'Create your first ' + kind + '. Real records, saved locally. No sample data.') + '</p><button class="u1-core-primary" data-core-new>' + (kind === 'file' ? 'Choose files' : 'Create ' + kind) + '</button></div>') + '</div>';
   }
   async function mount(id, host) {
-    if (extensions.has(id)) return extensions.get(id)(host);
-    if (!views[id]) return;
+    if (locked()) return;
+    if (extensions.has(id)) return activate(id, host);
+    if (!own(views, id)) return;
     hosts.set(id, host);
     var serial = ++routeEpoch;
     if (!snapshot) host.innerHTML = '<div class="u1-core-loading" role="status">Opening your workspace...</div>';
-    try { var result = await window.U1Data.get('/api/workspace/prism/summary'); if (serial !== routeEpoch) return; snapshot = result; render(id, host); }
-    catch (error) { host.innerHTML = '<section class="u1-core-empty"><h2>Workspace unavailable</h2><p>' + esc(error.message) + '</p><button data-core-refresh>Try again</button></section>'; }
+    try { var result = await window.U1Data.get('/api/workspace/prism/summary'); if (serial !== routeEpoch || locked()) return; snapshot = result; render(id, host); }
+    catch (error) { if (serial !== routeEpoch || locked()) return; host.innerHTML = '<section class="u1-core-empty"><h2>Workspace unavailable</h2><p>' + esc(error.message) + '</p><button data-core-refresh>Try again</button></section>'; }
     if (!host.dataset.coreBound) { host.dataset.coreBound = 'true'; host.addEventListener('click', function (event) { handle(event, id, host); }); }
   }
   function getDialog() {
@@ -62,6 +101,7 @@
   function field(label, name, value, type, required) { return '<label>' + esc(label) + '<input name="' + name + '" type="' + (type || 'text') + '" value="' + esc(value || '') + '"' + (required ? ' required' : '') + (name === 'title' ? ' maxlength="180"' : '') + '></label>'; }
   function select(label, name, value, values) { return '<label>' + esc(label) + '<select name="' + name + '">' + values.map(function (v) { return '<option value="' + v + '"' + (v === value ? ' selected' : '') + '>' + v.charAt(0).toUpperCase() + v.slice(1) + '</option>'; }).join('') + '</select></label>'; }
   function editor(kind, row, button, id, host) {
+    if (locked()) return;
     sourceButton = button; activeRecord = row || null; var p = row && row.payload || {}, form = field('Title', 'title', row && row.title, 'text', true);
     if (kind === 'project') form += '<div class="u1-core-form-row">' + field('Category', 'category', p.category || 'Personal') + select('Status', 'status', p.status || 'planned', ['planned', 'active', 'paused', 'done']) + '</div><label>Progress (%)<input type="number" name="progress" min="0" max="100" step="1" value="' + esc(p.progress == null ? '' : p.progress) + '" placeholder="Leave blank if not measured"></label>' + field('Project link (optional)', 'url', p.url, 'url');
     if (kind === 'task') form += '<div class="u1-core-form-row">' + field('Due date (optional)', 'due', p.due, 'date') + select('Priority', 'priority', p.priority || 'normal', ['low', 'normal', 'high']) + '</div><label class="u1-core-check"><input type="checkbox" name="done"' + (p.done ? ' checked' : '') + '>Completed</label>';
@@ -83,8 +123,11 @@
     dialog.showModal();
   }
   async function trashView(id, host, button) {
+    if (locked()) return;
+    var serial = routeEpoch;
     sourceButton = button;
     var result = await window.U1Data.get('/api/workspace/prism/trash', { fresh: true });
+    if (locked() || serial !== routeEpoch) return;
     var items = (Array.isArray(result.records) ? result.records : Object.values(result.records || {}).flat()).concat((result.files || []).map(function (f) { return Object.assign({}, f, { kind: 'file', title: f.name }); }));
     getDialog().innerHTML = '<header><h2 id="u1-core-editor-title">Trash</h2><button data-core-close>Close</button></header><p class="u1-core-meta">Restoring returns a record to this workspace. Nothing is permanently deleted here.</p><div class="u1-core-trash-list">' + (items.length ? items.map(function (r) { return '<article><div><strong>' + esc(r.title) + '</strong><p>' + esc(r.kind) + '</p></div><button data-restore-id="' + esc(r.id) + '" data-restore-kind="' + esc(r.kind) + '">Restore</button></article>'; }).join('') : '<p>Your Trash is empty.</p>') + '</div><p data-core-status aria-live="polite"></p>';
     dialog.querySelectorAll('[data-restore-id]').forEach(function (b) { b.addEventListener('click', async function () { b.disabled = true; try { await window.U1Data.post('/api/workspace/prism/restore', { id: b.dataset.restoreId, kind: b.dataset.restoreKind }); b.closest('article').remove(); await mount(id, host); } catch (e) { showError(dialog, e); b.disabled = false; } }); });
@@ -113,6 +156,7 @@
     input.click();
   }
   async function handle(event, id, host) {
+    if (locked()) return;
     var button = event.target.closest('button'); if (!button) return;
     var kind = views[id][0];
     try {
@@ -160,10 +204,11 @@
     document.addEventListener('visibilitychange', function () { document.body.classList.toggle('u1-page-idle', document.hidden); if (!document.hidden) { window.U1Data.invalidate(); refreshActive(); } });
   }
   window.U1CoreViews = Object.freeze({
-    supports: function (id) { return !!views[id] || extensions.has(id); },
-    register: function (id, render) {
-      if (typeof render !== 'function' || views[id]) return;
-      extensions.set(id, render);
+    supports: function (id) { return typeof id === 'string' && (own(views, id) || extensions.has(id)); },
+    register: function (id, render, hooks) {
+      if (typeof id !== 'string' || !/^[a-z][a-z0-9_-]{0,63}$/.test(id) || typeof render !== 'function' || own(views, id)) return;
+      hooks = hooks || {};
+      extensions.set(id, { render: render, activate: typeof hooks.activate === 'function' ? hooks.activate : null, deactivate: typeof hooks.deactivate === 'function' ? hooks.deactivate : null });
       // A direct hash entry can precede a DOM-ready extension registration.
       // Retire that cached fallback rather than leaving a valid route stranded.
       var host = document.getElementById('body-' + id);
@@ -176,7 +221,16 @@
       }
     },
     mount: mount,
+    activate: activate,
+    deactivate: deactivate,
     icon: icon
+  });
+  window.addEventListener('u1:navigate', function (event) { if (activeExtension && event.detail && event.detail.id !== activeExtension.id) deactivate(activeExtension.id, activeExtension.host); });
+  document.addEventListener('u1:safety-change', function (event) {
+    if (!event.detail || !event.detail.locked) return;
+    routeEpoch++; snapshot = null; activeRecord = null;
+    if (activeExtension) deactivate(activeExtension.id, activeExtension.host);
+    if (dialog && dialog.open) dialog.close();
   });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
