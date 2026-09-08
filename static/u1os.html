@@ -8,23 +8,32 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/u1os.css">
+<link rel="stylesheet" href="/css/u1-cinematic.css">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="color-scheme" content="dark">
 </head>
 <body>
 
-<div id="boot">
+<div id="boot" role="region" aria-label="U1 OS startup">
+  <div class="u1-boot-halo" aria-hidden="true"></div>
   <div class="bi">
-    <svg class="mark" viewBox="0 0 40 40" fill="none" style="width:52px;height:52px">
-      <path d="M20 3 L35 32 L27 32 L20 18 L13 32 L5 32 Z" fill="url(#bg1)"/>
-      <circle cx="20" cy="27" r="4.2" fill="#04060D" stroke="url(#bg1)" stroke-width="2"/>
-      <defs><linearGradient id="bg1" x1="0" y1="0" x2="40" y2="40">
-        <stop stop-color="#4FD8FF"/><stop offset="1" stop-color="#A98BFF"/></linearGradient></defs>
-    </svg>
-    <div class="bar"><i></i></div>
-    <p>Initialising command centre</p>
+    <img class="u1-boot-logo" src="/assets/u1-logo.svg" alt="U1 OS" width="112" height="112">
+    <div class="u1-boot-wordmark">U1 OS</div>
+    <p class="u1-boot-tagline">YOUR WORLD. AMPLIFIED.</p>
+    <h1>Initialising your workspace</h1>
+    <ul class="u1-boot-checks" aria-live="polite">
+      <li data-boot-stage="core"><span>CORE</span><b>Waiting</b></li>
+      <li data-boot-stage="data"><span>DATA</span><b>Waiting</b></li>
+      <li data-boot-stage="services"><span>SERVICES</span><b>Waiting</b></li>
+      <li data-boot-stage="ai"><span>AI</span><b>Not verified</b></li>
+      <li data-boot-stage="integrations"><span>INTEGRATIONS</span><b>Not verified</b></li>
+    </ul>
+    <div class="u1-boot-progress" aria-hidden="true"><i></i></div>
+    <p id="u1-boot-message">Checking actual local services. Account access is never assumed.</p>
+    <button type="button" class="btn" id="u1-skip-boot">Enter workspace</button>
   </div>
 </div>
+<noscript><style>#boot{display:none}</style><p>This workspace requires JavaScript. The local server can still be managed with the U1 OS launcher.</p></noscript>
 
 <div id="aurora"></div>
 <canvas id="stars"></canvas>
@@ -33,12 +42,7 @@
 
   <!-- BRAND -->
   <div class="brand">
-    <svg class="mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <path d="M20 3 L35 32 L27 32 L20 18 L13 32 L5 32 Z" fill="url(#bg2)"/>
-      <circle cx="20" cy="27" r="4.2" fill="#04060D" stroke="url(#bg2)" stroke-width="2"/>
-      <defs><linearGradient id="bg2" x1="0" y1="0" x2="40" y2="40">
-        <stop stop-color="#4FD8FF"/><stop offset="1" stop-color="#A98BFF"/></linearGradient></defs>
-    </svg>
+    <img class="mark" src="/assets/u1-logo.svg" alt="" width="40" height="40">
     <div>
       <h1>U1 OS</h1>
       <small>Your world. Amplified.</small>
@@ -47,6 +51,7 @@
 
   <!-- TOP BAR -->
   <header class="top">
+    <button class="iconbtn u1-menu-toggle" id="u1-menu-toggle" aria-label="Open navigation" aria-controls="rail" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <div class="omni">
       <svg class="mag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
@@ -55,6 +60,7 @@
       <kbd>⌘K</kbd>
     </div>
     <div class="topright">
+      <div class="u1-top-clock"><div class="clock"><b id="clock">--:--</b><i id="meridiem"></i></div><span class="stamp" id="today">Local time</span></div>
       <span class="creed">FOCUS <i>•</i> CREATE <i>•</i> AUTOMATE <i>•</i> ACHIEVE</span>
       <button class="iconbtn" id="bell" aria-label="Notifications">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -84,17 +90,30 @@
     <!-- HOME -->
     <section class="view on" id="v-home">
       <div class="hero">
-        <canvas id="globe" aria-hidden="true"></canvas>
+        <div class="u1-planet">
+          <div class="u1-earth-fallback" aria-hidden="true"></div>
+          <canvas id="globe" aria-hidden="true"></canvas>
+          <div class="u1-orbit u1-orbit-one" aria-hidden="true"></div><div class="u1-orbit u1-orbit-two" aria-hidden="true"></div>
+          <button class="u1-orbit-label u1-orbit-ideas" data-go="projects">IDEAS</button>
+          <button class="u1-orbit-label u1-orbit-ai" data-go="ai">AI</button>
+          <button class="u1-orbit-label u1-orbit-work" data-go="automation">AUTOMATION</button>
+          <span class="u1-earth-credit">Decorative Earth / NASA archived imagery</span>
+        </div>
         <div class="herotext">
-          <div class="stamp" id="today">—</div>
-          <div class="clock"><b id="clock">--:--</b><i id="meridiem"></i></div>
           <h2 class="greet">Good morning, <em id="userName">Operator</em></h2>
-          <p class="sub">Big ideas. Real progress.</p>
-          <div class="quotecard" id="quote">“Discipline today, freedom tomorrow.”</div>
+          <h1 class="u1-hero-title">YOUR WORLD.<br><span>AMPLIFIED.</span></h1>
+          <p class="sub">PEOPLE &nbsp; / &nbsp; IDEAS &nbsp; / &nbsp; TECHNOLOGY &nbsp; / &nbsp; FREEDOM</p>
+          <div class="quotecard" id="quote">A more efficient, creative<br>and connected tomorrow.</div>
         </div>
-        <div class="pillars">
-          <span>Ideas</span><span>Projects</span><span>AI</span><span>Automation</span><span>Freedom</span>
-        </div>
+      </div>
+
+      <div class="u1-quick-actions" aria-label="Quick actions">
+        <button data-go="ai"><span class="u1-action-symbol">AI</span><strong>AI Command</strong><small>Think. Create. Build.</small></button>
+        <button data-go="projects"><span class="u1-action-symbol">01</span><strong>Projects</strong><small>Organise your next move.</small></button>
+        <button data-go="calendar"><span class="u1-action-symbol">31</span><strong>Calendar</strong><small>Make room for what matters.</small></button>
+        <button data-go="files"><span class="u1-action-symbol">FS</span><strong>Files</strong><small>Your work, within reach.</small></button>
+        <button data-go="tasks"><span class="u1-action-symbol">TO</span><strong>Tasks</strong><small>Turn intention into progress.</small></button>
+        <button data-go="automation"><span class="u1-action-symbol">FX</span><strong>Automation</strong><small>Give routine work a system.</small></button>
       </div>
 
       <div class="row r-tools" id="tools"></div>
@@ -159,6 +178,7 @@
 
   <!-- ASIDE -->
   <aside class="aside" id="aside">
+    <article class="card u1-activity-card"><div class="chead"><h3>Latest activity</h3><span class="tag idle" id="u1-stream-status">CONNECTING</span></div><div id="u1-live-activity" class="empty">Waiting for genuine server events.</div></article>
     <article class="card" style="animation-delay:.05s">
       <div class="chead">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
@@ -242,6 +262,12 @@
 
 <div id="toasts"></div>
 
-<script src="/js/u1os.js"></script>
+<button class="u1-nav-scrim" id="u1-nav-scrim" aria-label="Close navigation" hidden></button>
+<script src="/js/u1-cinematic.js"></script>
+<script src="/js/u1-workspaces.js"></script>
+<script src="/js/u1os.js?v=20260908.2"></script>
+<link rel="stylesheet" href="/css/u1-platform.css">
+<script src="/js/u1-platform-core.js"></script>
+<script src="/js/u1-platform.js?v=20260908.2"></script>
 </body>
 </html>

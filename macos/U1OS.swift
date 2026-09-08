@@ -1,5 +1,6 @@
 import AppKit
 import WebKit
+import ServiceManagement
 
 final class U1Application: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate {
     var window: NSWindow!
@@ -28,8 +29,20 @@ final class U1Application: NSObject, NSApplicationDelegate, WKNavigationDelegate
         window.makeKeyAndOrderFront(nil)
         createMenu()
         NSApp.activate(ignoringOtherApps: true)
+        startWorkspace()
+    }
+
+    func startWorkspace() {
+        timer?.invalidate()
+        attempts = 0
+        polling = false
         statusPage("Starting your workspace", detail: "Connecting to your private local U1 OS installation.")
         guard !root.isEmpty else { statusPage("Installation path is missing", detail: "Rebuild the desktop application from your U1 OS workspace."); return }
+        if launcher?.isRunning == true {
+            timer = Timer.scheduledTimer(withTimeInterval: 0.75, repeats: true) { [weak self] _ in self?.connect() }
+            connect()
+            return
+        }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = [root + "/start-u1-os.command", "--no-browser"]
@@ -70,8 +83,8 @@ final class U1Application: NSObject, NSApplicationDelegate, WKNavigationDelegate
     func statusPage(_ heading: String, detail: String) {
         web.loadHTMLString("""
         <!doctype html><html><meta name="viewport" content="width=device-width"><style>
-        body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#103a63,#020915 65%);color:#e0f2ff;font:17px -apple-system,sans-serif;text-align:center}main{max-width:540px;padding:30px}.mark{font-size:82px;font-weight:750;letter-spacing:-8px;color:#99edff;text-shadow:0 0 36px #219ddd}h1{font-size:25px;font-weight:500;letter-spacing:-.5px}p{color:#99b6d4;line-height:1.7}small{letter-spacing:5px;color:#72d8ff}
-        </style><main><div class="mark">U1</div><small>BUSINESS OS</small><h1>\(heading)</h1><p>\(detail)</p></main></html>
+        body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#103a63,#020915 65%);color:#e0f2ff;font:17px -apple-system,sans-serif;text-align:center}main{max-width:560px;padding:42px;border:1px solid #286185;border-radius:30px;background:#061224bc;box-shadow:0 30px 100px #0007}.mark{font-size:94px;font-weight:750;letter-spacing:-8px;color:#99edff;text-shadow:0 0 36px #219ddd;animation:breathe 3s ease-in-out infinite}h1{font-size:25px;font-weight:500;letter-spacing:-.5px}p{color:#a7c6e4;line-height:1.7}small{letter-spacing:4px;color:#72d8ff;font-size:10px}a{display:inline-block;color:#caf2ff;padding:12px 20px;border:1px solid #397aa2;border-radius:12px;text-decoration:none;font-size:13px}.status{display:flex;gap:9px;justify-content:center;margin:24px 0;color:#8abdd7;font-size:10px;letter-spacing:1px}.status span{padding:8px;border-radius:7px;background:#12334b}@keyframes breathe{50%{text-shadow:0 0 58px #21c5ed;transform:translateY(-3px)}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+        </style><main><div class="mark" aria-label="U1 OS">U1</div><small>YOUR WORLD. AMPLIFIED.</small><h1>\(heading)</h1><p>\(detail)</p><div class="status"><span>LOCAL WORKSPACE</span><span>ACCOUNT ACCESS SEPARATE</span></div><a href="u1os://retry">Retry connection</a></main></html>
         """, baseURL: nil)
     }
 
@@ -80,6 +93,11 @@ final class U1Application: NSObject, NSApplicationDelegate, WKNavigationDelegate
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: "About U1 OS", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        if #available(macOS 13.0, *) {
+            let login = appMenu.addItem(withTitle: "Start U1 OS at Login", action: #selector(toggleLogin(_:)), keyEquivalent: "")
+            login.target = self
+            login.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        }
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit U1 OS", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
@@ -101,13 +119,37 @@ final class U1Application: NSObject, NSApplicationDelegate, WKNavigationDelegate
 
     @objc func reloadWorkspace() {
         if web.url?.host == "127.0.0.1" { web.reload() }
-        else { attempts = 0; connect() }
+        else { startWorkspace() }
+    }
+
+    @objc func toggleLogin(_ sender: NSMenuItem) {
+        if #available(macOS 13.0, *) {
+            do {
+                if SMAppService.mainApp.status == .enabled { try SMAppService.mainApp.unregister() }
+                else { try SMAppService.mainApp.register() }
+                sender.state = SMAppService.mainApp.status == .enabled ? .on : .off
+                if SMAppService.mainApp.status == .requiresApproval {
+                    SMAppService.openSystemSettingsLoginItems()
+                }
+            } catch {
+                let alert = NSAlert()
+                alert.messageText = "Login startup was not changed"
+                alert.informativeText = "macOS did not authorise this local app as a login item. You can add the Desktop app in System Settings > General > Login Items."
+                alert.addButton(withTitle: "OK")
+                alert.beginSheetModal(for: window)
+            }
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url else { decisionHandler(.cancel); return }
+        if url.scheme == "u1os", url.host == "retry" {
+            decisionHandler(.cancel)
+            startWorkspace()
+            return
+        }
         if action.shouldPerformDownload { decisionHandler(.download); return }
         if action.targetFrame?.isMainFrame == true || action.targetFrame == nil {
             let local = url.scheme == "http" && url.host == "127.0.0.1" && url.port == 8788

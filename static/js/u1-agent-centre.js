@@ -35,15 +35,15 @@ function render() {
   <details class="u1-agent-history"><summary>Run history and permissions</summary><p>Feedback changes future suggestion ranking, not model weights. Safety findings retain priority. Monitoring runs bounded checks while the local server is running; it never invokes AI automatically.</p><ul>${history.map(r=>`<li>${esc(timestamp(r.created))} / ${esc(r.engine)} / ${r.findings.length} findings</li>`).join('')||'<li>No runs recorded.</li>'}</ul><p>Cannot execute trades, access wallets, edit code, read email, send messages, publish, or expand permissions.</p></details>`;
 }
 async function refresh() {const r=await fetch('/api/workspace/agents',{cache:'no-store',signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('Agent Centre backend is unavailable. Restart the local U1 OS server to load the new module.');state=await r.json();render();}
-async function execute(action) {if(busy)return;busy=true;dialog.setAttribute('aria-busy','true');try{await action();await refresh();}catch(e){notice(e.message,true);}finally{busy=false;dialog.removeAttribute('aria-busy');}}
+async function execute(action) {if(busy)return;busy=true;dialog.setAttribute('aria-busy','true');try{await action();await refresh();}catch(e){notice(e.message,true);}finally{busy=false;dialog.removeAttribute('aria-busy');dialog.querySelectorAll('[data-agent-run],[data-agent-monitor]').forEach(button=>{button.disabled=false;});}}
 function init() {
-  if (new URLSearchParams(location.search).has('u1-frame') || !document.getElementById('prism-shell')) return;
+  if (new URLSearchParams(location.search).has('u1-frame') || !(document.getElementById('prism-shell') || document.querySelector('.shell'))) return;
   const sheet=document.createElement('link');sheet.rel='stylesheet';sheet.href='/css/u1-agent-centre.css';document.head.append(sheet);
   dialog=document.createElement('dialog');dialog.className='u1-agent-centre';dialog.id='u1-agent-centre';dialog.setAttribute('aria-labelledby','u1-agent-title');
   dialog.innerHTML=`<header>${mark()}<div><span class="u1-agent-eyebrow">U1 OS / BUSINESS INTELLIGENCE</span><h1 id="u1-agent-title">Agent Centre</h1></div><button type="button" data-agent-close aria-label="Close Agent Centre">${icon('close')}</button></header><div class="u1-agent-layout"><nav data-agent-tabs aria-label="Agents"></nav><main><p data-agent-notice role="status">Loading local agent history...</p><div data-agent-content></div></main></div>`;
   document.body.append(dialog);
-  const nav=document.querySelector('.prism-sidebar nav');
-  if(nav){const button=document.createElement('button');button.type='button';button.dataset.u1OpenAgents='';button.innerHTML=`${icon('ai')}<span>Agent Centre</span>`;button.setAttribute('aria-haspopup','dialog');button.addEventListener('click',()=>{dialog.showModal();refresh().then(()=>notice('Evidence stays local. Review suggestions before acting.')).catch(e=>notice(e.message,true));});nav.append(button);}
+  const nav=document.querySelector('.prism-sidebar nav') || document.getElementById('rail');
+  if(nav){const button=document.createElement('button');button.type='button';button.className='navitem';button.dataset.u1OpenAgents='';button.innerHTML=`${icon('ai')}<span>Agent Centre</span>`;button.setAttribute('aria-haspopup','dialog');button.addEventListener('click',()=>{dialog.showModal();refresh().then(()=>notice('Evidence stays local. Review suggestions before acting.')).catch(e=>notice(e.message,true));});nav.append(button);}
   dialog.addEventListener('click',event=>{
     const b=event.target.closest('button');if(!b)return;
     if(b.hasAttribute('data-agent-close'))return dialog.close();

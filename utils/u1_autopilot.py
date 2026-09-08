@@ -60,6 +60,7 @@ def tick(now=None):
         due = [r for r in tasks if r["payload"].get("due") and r["payload"]["due"] <= today]
         projects = [r for r in records if r["kind"] == "project"]
         events = []
+        upcoming = []
         for record in records:
             if record["kind"] != "event":
                 continue
@@ -67,6 +68,8 @@ def tick(now=None):
                 start = datetime.fromisoformat(record["payload"]["start"])
                 if start.tzinfo is None:
                     start = start.replace(tzinfo=zone)
+                if start >= now:
+                    upcoming.append((start, record))
                 if start.astimezone(zone).date() == local.date():
                     events.append((start, record))
             except (TypeError, ValueError, KeyError):
@@ -92,10 +95,22 @@ def tick(now=None):
             if config["reminders"]:
                 for task in due:
                     notify("task:" + today + ":" + task["id"], "Task needs attention", task["title"], "reminder")
-                for start, record in events:
-                    minutes = (start - now).total_seconds() / 60
-                    if 0 <= minutes <= 15:
-                        notify("event:" + record["id"] + ":" + record["payload"]["start"], "Upcoming local event", record["title"], "reminder")
+                marks = read_value("u1_event_reminder_marks", {})
+                marks = {key: stamp for key, stamp in marks.items() if isinstance(stamp, (int, float)) and stamp >= now.timestamp()}
+                for start, record in upcoming:
+                    hours = (start - now).total_seconds() / 3600
+                    # Only the nearest current lead time is emitted after a
+                    # restart; older lead times are not replayed in a burst.
+                    stage = next(((limit, label) for limit, label in
+                                  ((0.25, "15 minutes"), (8, "8 hours"), (24, "1 day"), (72, "3 days"))
+                                  if hours <= limit), None)
+                    if stage is None:
+                        continue
+                    key = "event:" + record["id"] + ":" + start.isoformat() + ":" + str(stage[0])
+                    if key not in marks:
+                        notify(key, "Event within " + stage[1], record["title"] + " / " + start.astimezone(zone).strftime("%a %d %b, %H:%M"), "reminder")
+                        marks[key] = start.timestamp()
+                save_value("u1_event_reminder_marks", marks)
             if config["health"]:
                 disk = workspace.system_metrics().get("disk", {})
                 if disk.get("percent", 0) >= 90:

@@ -28,10 +28,11 @@
      ================================================================ */
   var Sound = (function () {
     var ctx = null, master = null;
-    var on = ls('u1.sound', '1') === '1';
-    var vol = parseFloat(ls('u1.vol', '0.5')); if (isNaN(vol)) vol = 0.5;
+    var on = ls('u1.sound', '0') === '1';
+    var vol = parseFloat(ls('u1.vol', '0.22')); if (isNaN(vol)) vol = 0.22;
 
     function ac() {
+      if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return null;
       if (!ctx) {
         var C = window.AudioContext || window.webkitAudioContext;
         if (!C) return null;
@@ -186,6 +187,7 @@
      3. SERVER
      ================================================================ */
   function api(service, action, payload) {
+    if (window.U1Workspaces) return window.U1Workspaces.action(service, action, payload);
     return fetch('/api/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -429,8 +431,10 @@
 
   /* --- radial gauge --- */
   function gauge(cv, pct, colour) {
+    if (!cv || cv.clientWidth <= 10 || cv.clientHeight <= 10) return;
     var c = fit(cv);
     var w = c.w, h = c.h, R = Math.min(w, h) / 2 - 5;
+    if (!Number.isFinite(R) || R <= 0) return;
     var cx = w / 2, cy = h / 2;
     c.g.clearRect(0, 0, w, h);
     c.g.beginPath(); c.g.arc(cx, cy, R, 0, Math.PI * 2);
@@ -491,7 +495,7 @@
     sparkline: sparkline, gauge: gauge, trend: trend, countUp: countUp,
     esc: esc, reduced: reduced,
     // Ambient canvas scenes, started once the shell has booted.
-    scenes: function () { stars(); globe(); }
+    scenes: function () { if (window.U1Motion) window.U1Motion.start(); }
   };
 })();
 
@@ -808,9 +812,9 @@
 
   function buildDock() {
     $('dock').innerHTML = DOCK.map(function (d) {
-      if (d.orb) return '<div class="dockorb" data-go="home" title="Home"></div>';
+      if (d.orb) return '<button class="dockorb" data-go="ai" title="Open AI Command" aria-label="Open AI Command"></button>';
       return '<button class="dockitem" data-go="' + d.id + '" data-label="' + esc(d.label) + '">' +
-        svg(d.icon) + '</button>';
+        svg(d.icon) + '<span class="u1-sr-only">' + esc(d.label) + '</span></button>';
     }).join('');
   }
 
@@ -832,6 +836,7 @@
   function fillView(id) {
     var body = $('body-' + id);
     if (!body || body.dataset.filled) return;
+    if (window.U1Workspaces) { window.U1Workspaces.mount(id, body); body.dataset.filled = '1'; return; }
     body.dataset.filled = '1';
     var meta = VIEWS[id] || {};
     var nav = NAV.filter(function (n) { return n.id === id; })[0] || {};
@@ -862,6 +867,8 @@
       b.classList.toggle('on', b.dataset.go === id);
     });
     current = id;
+    document.body.dataset.u1View = id;
+    window.dispatchEvent(new CustomEvent('u1:navigate', { detail: { id: id } }));
     try { history.replaceState(null, '', '#' + id); } catch (e) {}
     $('main').scrollTop = 0;
     if (!opts.silent) Sound.nav();
@@ -876,7 +883,7 @@
     $('today').textContent = d.toLocaleDateString('en-AU',
       { weekday:'short', day:'numeric', month:'short', year:'numeric' }).toUpperCase();
     var greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-    var name = localStorage.getItem('u1.name') || 'Operator';
+    var name = (window.U1Workspaces && window.U1Workspaces.profile.name) || localStorage.getItem('u1.name') || 'Operator';
     var g = document.querySelector('.greet');
     if (g) g.innerHTML = esc(greet) + ', <em>' + esc(name) + '</em>';
   }
@@ -935,6 +942,7 @@
 
   /* ---------------- data refresh ---------------- */
   function refresh(first) {
+    if (window.U1Workspaces) return window.U1Workspaces.refresh(first);
     fetch('/api/state').then(function (r) { return r.json(); }).then(function (st) {
       U.render.toolCards(st);
       U.render.projects(st);
@@ -956,6 +964,7 @@
 
   /* ---------------- boot ---------------- */
   function boot() {
+    document.body.dataset.u1View = 'home';
     buildRail(); buildDock(); buildPalette();
     tick(); setInterval(tick, 1000);
     Notify.paint();
@@ -1031,9 +1040,10 @@
     if (hash && hash !== 'home') go(hash, { silent: true });
 
     refresh(true);
-    setInterval(function () { refresh(false); }, 20000);
+    setInterval(function () { if (!document.hidden) refresh(false); }, 20000);
 
-    setTimeout(function () { $('boot').classList.add('gone'); Sound.boot(); }, 900);
+    if (window.U1Launch) window.U1Launch.start();
+    else $('boot').classList.add('gone');
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

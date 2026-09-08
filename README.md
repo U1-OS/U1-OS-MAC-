@@ -14,6 +14,38 @@
 
 ## A more personal workspace
 
+### September 2026: unified business workspace
+
+The current local build adds a native Desktop launcher, a real-readiness startup
+screen, textured decorative Earth, shared appearance controls and embedded
+workspaces using the preserved `/classic` route. Home now has editable widget
+visibility, column ordering and layout presets.
+
+New local tools include a review queue for manually supplied source text, a
+currency-separated manual ledger, six offline printable PDF templates, a
+structured prompt builder, source-labelled information snapshots, persistent
+local media playback, provider allowance visibility and metadata exports.
+Calendar reminder lead times are three days, one day, eight hours and fifteen
+minutes, while the local server is running.
+
+**These additions do not establish Gmail, banking, social, Canva or streaming
+account access.** Source text stays in review until explicitly confirmed.
+Business amounts are operator-entered, not bank-synchronised. No trading,
+publishing, quota merging or protected-media bypass is enabled.
+
+Open `Launch U1 OS.command`, or build the local Desktop application:
+
+```sh
+./macos/install-u1.sh --install
+```
+
+The app remains an ad-hoc-signed local launcher, not a notarised standalone
+distribution. Login startup can be requested from its application menu on
+supported macOS versions, subject to macOS approval.
+
+See [Build progress](docs/U1-OS-REBUILD-PROGRESS.md) and
+[Test results](docs/U1-OS-TEST-RESULTS.md) for implemented versus pending scope.
+
 U1 OS brings a configurable desktop-style dashboard, public information feeds, AI handoffs and local research tools into a localhost web app. The interface uses translucent panels, colourful wordmarks, purposeful animation and reduced-motion support.
 
 | Workspace | Included in this rebuild |

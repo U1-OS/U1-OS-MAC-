@@ -1,0 +1,14 @@
+/* Same-origin application surfaces retain their functionality and one outer shell. */
+:root{--prism-accent:#66ddff;--prism-cyan:#66ddff;--prism-text:#e8f5ff;--prism-muted:#a4b6cc;--prism-radius:18px}
+html,body{background:#04101c!important;color:#e8f5ff!important;color-scheme:dark}
+#prism-shell{display:block!important;min-height:100dvh!important;height:auto!important}
+#prism-shell>.prism-main{height:100dvh!important;display:flex!important;flex-direction:column!important}
+#prism-scroll{display:block!important;height:auto!important;min-height:0!important;flex:1!important;overflow:auto!important}
+.prism-topbar,.prism-sidebar,.prism-dock,.prism-footer,#prism-live-bar,#u1-global-widgets,#u1-boot-screen{display:none!important}
+#prism-page{padding:22px!important}
+#prism-shell>dialog:not([open]),#prism-shell>input[type=file]{display:none!important}
+#prism-shell>dialog[open]{position:fixed!important;inset:0!important;margin:auto!important;width:min(680px,94vw)!important;height:auto!important;max-height:88dvh!important;display:block!important;overflow:auto!important}
+.prism-panel,.prism-card,.studio-panel{border-color:#224766!important;border-radius:18px!important;background:linear-gradient(145deg,#101f33ed,#06111eed)!important}
+button,input,select,textarea{font-family:inherit}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #67dfff!important;outline-offset:3px}
+@media(max-width:700px){#prism-page{padding:12px!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

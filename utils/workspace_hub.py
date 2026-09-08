@@ -456,3 +456,18 @@ def handle_post(path, payload, *args, **kwargs):
     return _u1_agents_previous_post(path, payload, *args, **kwargs)
 
 u1_agent_centre.start()
+
+# Local document drafts and an operator-entered ledger. No provider execution.
+from utils import u1_business
+_u1_business_previous_get = handle_get
+_u1_business_previous_post = handle_post
+
+def handle_get(path, *args, **kwargs):
+    if path in ('business', '/api/workspace/business'):
+        return u1_business.snapshot()
+    return _u1_business_previous_get(path, *args, **kwargs)
+
+def handle_post(path, payload, *args, **kwargs):
+    if path in ('business', '/api/workspace/business'):
+        return u1_business.action(payload)
+    return _u1_business_previous_post(path, payload, *args, **kwargs)
