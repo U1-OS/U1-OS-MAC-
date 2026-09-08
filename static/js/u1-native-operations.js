@@ -1,7 +1,20 @@
 /* Native operational surfaces. No legacy shell frames or recursive navigation. */
 (function(){
  'use strict';
- var updaterTimer=null;
+ var updaterTimer=null,chromeReady=false;
+ var operationalRoutes=[
+  ['daily','Start my day','Focus, schedule and review your actual local day.','life'],
+  ['activate','Activate connections','Review provider setup and authorised activation.','more'],
+  ['osint-tools','Local OSINT inventory','Inspect allowlisted local research tools and their availability.','more'],
+  ['media-downloads','Source intake','Review permitted media sources and intake options.','more'],
+  ['tech-gaming','Tech & gaming','Source-labelled technology and gaming discovery.','discovery'],
+  ['sports-news','Sports & news','Available sports and news snapshots with clear sources.','discovery'],
+  ['spotify','Spotify','Authorised Spotify metadata and explicit connection controls.','discovery']
+ ];
+ var operationalMeta={};operationalRoutes.forEach(function(row){operationalMeta[row[0]]={t:row[1],s:row[2]};});
+ operationalMeta.activation=operationalMeta.activate;
+ if(window.U1&&window.U1.model)Object.assign(window.U1.model.VIEWS,operationalMeta);
+ if(window.U1Life)Object.assign(window.U1Life.meta,operationalMeta);
  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
  function button(text,attrs){return '<button type="button" class="u1-life-button" '+attrs+'>'+esc(text)+'</button>';}
  function heading(title,detail,actions){return '<header class="u1-life-hero"><div><p class="u1-life-eyebrow">U1 OS / NATIVE WORKSPACE</p><h2>'+esc(title)+'</h2><p>'+esc(detail)+'</p><div class="u1-life-actions">'+(actions||'')+'</div></div></header>';}
@@ -31,14 +44,28 @@
  Object.keys(aliases).forEach(function(id){window.U1CoreViews.register(id,function(host){window.U1CoreViews.mount(aliases[id],host);});});
  try{var old=decodeURIComponent(location.hash.slice(1));if(old.startsWith('legacy:')){var next=old.replace(/^(?:legacy:)+/,'');history.replaceState(null,'','/#'+encodeURIComponent(aliases[next]||next));}}catch(e){}
  function chrome(){
-  var nativeTools={media:'media',studio:'studio',connections:'integrations',osint:'osint',build:'roadmap'};
+  if(chromeReady)return;chromeReady=true;
+  var nativeTools={media:'media',studio:'studio',connections:'integrations',osint:'osint',build:'roadmap',spotify:'spotify'};
   function enter(id){var dialog=document.getElementById('u1-platform-dialog');if(dialog&&dialog.open)dialog.close();var entry=document.querySelector('#rail [data-go="'+id+'"]');if(entry)entry.click();else location.hash=id;}
   if(window.U1Platform){var toolOpen=window.U1Platform.open;window.U1Platform.open=function(name){var destination=nativeTools[name];if(destination&&window.U1CoreViews.supports(destination)){enter(destination);return Promise.resolve();}return toolOpen(name);};}
   window.addEventListener('click',function(event){var control=event.target.closest('[data-platform]');if(!control)return;var destination=nativeTools[control.dataset.platform];if(!destination||!window.U1CoreViews.supports(destination))return;event.preventDefault();event.stopImmediatePropagation();enter(destination);},true);
-  var rail=document.getElementById('rail');if(rail){[['osint','OSINT'],['communications','Communications'],['research','Paper research'],['images','Image studio'],['jobs','Managed jobs'],['war-room','Agent War Room'],['security','Safety & recovery'],['roadmap','Build status']].forEach(function(row){if(rail.querySelector('[data-go="'+row[0]+'"]'))return;var b=document.createElement('button');b.type='button';b.className='navitem';b.dataset.go=row[0];b.innerHTML=window.U1.icons.svg(row[0]==='osint'?'system':'settings')+'<span>'+row[1]+'</span>';if(row[0]==='osint'){var integrations=rail.querySelector('[data-go="integrations"]');if(integrations)integrations.before(b);else rail.append(b);}else{var more=rail.querySelector('.u1-rail-more');(more||rail).append(b);}});}
+  var rail=document.getElementById('rail');if(rail){
+   var more=rail.querySelector('.u1-rail-more');
+   if(!more){more=document.createElement('details');more.className='u1-rail-more';more.innerHTML='<summary>More workspaces</summary>';rail.append(more);}
+   function entry(id,label,group){var b=rail.querySelector('[data-go="'+id+'"]');if(!b){b=document.createElement('button');b.type='button';b.className='navitem';b.dataset.go=id;b.innerHTML=window.U1.icons.svg(id==='daily'?'calendar':id==='osint'?'system':'settings')+'<span>'+esc(label)+'</span>';}if(group)group.append(b);return b;}
+   [['osint','OSINT'],['communications','Communications'],['research','Paper research'],['images','Image studio'],['jobs','Managed jobs'],['war-room','Agent War Room'],['security','Safety & recovery'],['roadmap','Build status']].forEach(function(row){entry(row[0],row[1],more);});
+   var discovery=document.getElementById('u1-discovery-navigation');if(!discovery){discovery=document.createElement('details');discovery.id='u1-discovery-navigation';discovery.className='u1-rail-more';discovery.innerHTML='<summary>Discovery &amp; media</summary>';more.before(discovery);}
+   entry('media','Media',discovery);
+   operationalRoutes.forEach(function(row){var b=entry(row[0],row[1],row[3]==='discovery'?discovery:row[3]==='more'?more:null);if(row[3]==='life'){var life=rail.querySelector('[data-go="life"]'),home=rail.querySelector('[data-go="home"]');if(life)life.before(b);else if(home)home.after(b);else rail.prepend(b);}});
+   var active=rail.querySelector('[data-go="'+document.body.dataset.u1View+'"]');if(active){active.classList.add('on');active.setAttribute('aria-current','page');var activeGroup=active.closest('details');if(activeGroup)activeGroup.open=true;}
+  }
+  var contextLinks={integrations:[['activate','Activate connections']],osint:[['osint-tools','Local OSINT inventory']],media:[['media-downloads','Source intake'],['tech-gaming','Tech & gaming'],['sports-news','Sports & news'],['spotify','Spotify']],activate:[['integrations','Connections'],['security','Safety & recovery']],'osint-tools':[['osint','OSINT casebook']],'media-downloads':[['media','Media library']],'tech-gaming':[['sports-news','Sports & news'],['media','Media library']],'sports-news':[['tech-gaming','Tech & gaming'],['media','Media library']],spotify:[['activate','Activate connections'],['media','Media library']]};
+  function contextual(id){var rows=contextLinks[id],view=document.getElementById('v-'+id);if(!rows||!view||view.querySelector('[data-u1-native-context]'))return;var nav=document.createElement('nav');nav.className='u1-life-actions';nav.setAttribute('data-u1-native-context',id);nav.setAttribute('aria-label','Related native workspaces');nav.innerHTML=rows.map(function(row){return button(row[1],'data-go="'+row[0]+'"');}).join('');var host=document.getElementById('body-'+id);if(host)host.before(nav);else view.append(nav);}
+  window.addEventListener('u1:navigate',function(event){if(event.detail)contextual(event.detail.id);});contextual(document.body.dataset.u1View);
   var shelf=document.getElementById('u1-utility-shelf'),media=document.getElementById('u1-local-media');if(shelf&&!document.getElementById('u1-player-entry')){var player=document.createElement('button');player.type='button';player.id='u1-player-entry';player.className='u1-life-button';player.dataset.go='media';player.textContent='Media / choose music or video';shelf.append(player);if(media){function update(){player.textContent=media.currentSrc?(media.paused?'Paused':'Playing')+' / '+(document.getElementById('u1-player-title').textContent||'Local media'):'Media / choose music or video';}['loadedmetadata','play','pause','emptied','ended'].forEach(function(event){media.addEventListener(event,update);});}}
   var previous=true;document.addEventListener('u1:safety-change',function(event){var blocked=event.detail.locked;if(blocked&&window.U1Data)window.U1Data.invalidate();if(previous&&!blocked&&window.U1Workspaces)window.U1Workspaces.refresh(false);previous=blocked;});
  }
  if(window.U1Life)Object.assign(window.U1Life.meta,{system:{t:'System',s:'Local service status'},automation:{t:'Automation',s:'Explicit actions and review'},updater:{t:'Release & recovery',s:'Reviewed source updates'},communications:{t:'Communications',s:'Sources, review and calendar'},osint:{t:'OSINT',s:'Authorised source-linked research'},security:{t:'Safety & privacy',s:'Clear controls and recovery'},jobs:{t:'Managed jobs',s:'Actual work and cancellation'},'war-room':{t:'Agent War Room',s:'Roles and evidence'},roadmap:{t:'Build status',s:'Capability evidence and setup requirements'}});
+ window.U1NativeNavigation=Object.freeze({routes:operationalRoutes,meta:operationalMeta,install:chrome});
  if(document.readyState==='complete')chrome();else window.addEventListener('load',chrome,{once:true});
 })();

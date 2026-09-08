@@ -21,13 +21,26 @@ ROOT = Path(__file__).resolve().parents[1]
 TEST_FILES = tuple("tests/test_" + name + ".py" for name in (
     "u1_business", "u1_reliability", "u1_autopilot", "u1_reminders", "u1_launcher", "u1_agent_centre",
     "updater", "integrations_hub", "u1_studio_pro", "u1_personal_core", "u1_assistant", "u1_safety",
-    "u1_private_backup", "u1_release_guard", "u1_native_routes", "u1_media_research", "u1_image_provider", "u1_macos_release"))
+    "u1_private_backup", "u1_release_guard", "u1_native_routes", "u1_media_research", "u1_image_provider", "u1_macos_release",
+    "u1_operational_safety", "u1_usage_windows", "u1_osint_tools", "u1_media_download",
+    "u1_discovery", "u1_spotify", "u1_connection_preflight"))
 TEST_FIXTURES = {"tests/test_u1_image_provider.py": ("tests/test_u1_assistant.py",)}
 JS_TESTS = {
     "tests/test_u1_connections.cjs": ("static/js/u1-connection-policy.js", "static/js/u1-connections-workspace.js", "static/css/u1-connections-workspace.css"),
     "tests/test_u1_media.mjs": ("static/js/u1-media-core.mjs",),
     "tests/test_u1_shell_navigation.cjs": ("static/js/u1-core-workspaces.js",),
     "tests/test_u1_build_status.cjs": ("static/js/u1-build-status.js", "docs/BUILD-STATUS.md"),
+    "tests/test_u1_daily_flow.cjs": ("static/js/u1-daily-flow.js", "static/css/u1-daily-flow.css"),
+    "tests/test_u1_usage_selection.cjs": ("static/js/u1-platform-core.js",),
+    "tests/test_u1_operational_polish.cjs": ("static/js/u1-operational-polish.js",),
+    "tests/test_u1_operational_navigation.cjs": (
+        "static/u1os.html", "static/js/u1-native-operations.js", "static/js/u1os.js",
+        "static/js/u1-platform.js", "utils/u1_native_routes.py", "server.py"),
+}
+PYTHON_NODE_FIXTURES = {
+    "tests/test_u1_studio_pro.py": "static/js/u1-studio-pro.js",
+    "tests/test_u1_discovery.py": "static/js/u1-discovery-workspace.js",
+    "tests/test_u1_osint_tools.py": "static/js/u1-media-research.js",
 }
 JS_CONTRACT_MARKERS = {
     "tests/test_u1_shell_navigation.cjs": ("PASS 6 native registration and direct-entry contracts", 6),
@@ -35,10 +48,14 @@ JS_CONTRACT_MARKERS = {
 OPT_IN_TESTS = {
     "tests/test_u1_media_research.py": {"SyntheticFFmpegTests.test_generated_owned_video_exports_real_mp4_and_wav"},
 }
-JS_SYNTAX_FILES = ("static/js/u1-image-provider.js",)
+JS_SYNTAX_FILES = ("static/js/u1-image-provider.js", "static/js/u1-spotify-widget.js",
+                   "static/js/u1-activation-workspace.js", "static/js/u1-discovery-workspace.js",
+                   "static/js/u1-osint-tools.js", "static/js/u1-media-download.js")
 PYTHON_FILES = ("macos/release_checks.py", "macos/release_support.py",
                 "utils/u1_studio_pro.py", "utils/u1_personal_core.py", "utils/u1_assistant.py",
-                "utils/u1_credentials.py", "utils/u1_image_provider.py")
+                "utils/u1_credentials.py", "utils/u1_image_provider.py", "utils/u1_safety.py",
+                "utils/u1_usage_windows.py", "utils/u1_discovery.py", "utils/u1_osint_tools.py",
+                "utils/u1_media_download.py", "utils/u1_spotify.py", "utils/u1_connection_preflight.py")
 SHELL_FILES = ("scripts/check-personal-release.sh", "macos/build-desktop.sh", "macos/install-u1.sh", "macos/bootstrap-personal.sh")
 WORKFLOW = ".github/workflows/personal-os-quality.yml"
 
@@ -102,14 +119,25 @@ def javascript_result(name, returncode, stdout):
                 skipped=counts.get("skipped", 0) + counts.get("todo", 0))
 
 
-def node_command(command, root, node):
-    script = Path(root) / "static/js/u1-studio-pro.js"
-    if (not node or not isinstance(command, (list, tuple)) or len(command) != 4
-            or list(command[:2]) != ["node", "-e"] or str(command[3]) != str(script)
-            or script.is_symlink()):
-        raise PermissionError("Only the reviewed Studio JavaScript harness may run")
+def node_command(command, root, node, fixture="tests/test_u1_studio_pro.py"):
+    relative = PYTHON_NODE_FIXTURES.get(fixture)
+    if (not relative or not node or not isinstance(command, (list, tuple))
+            or len(command) not in (3, 4) or command[0] not in ("node", node)
+            or command[1] != "-e" or not isinstance(command[2], str)):
+        raise PermissionError("Only an explicitly named JavaScript helper may run")
+    script = Path(root) / relative
+    if script.is_symlink():
+        raise PermissionError("JavaScript helper sources cannot be symlinks")
+    harness = command[2]
+    if fixture == "tests/test_u1_discovery.py":
+        reference = "require('./static/js/u1-discovery-workspace.js')"
+        if len(command) != 3 or harness.count(reference) != 1:
+            raise PermissionError("Discovery requires its exact reviewed helper reference")
+        harness = harness.replace(reference, "require(" + json.dumps(str(script)) + ")")
+    elif len(command) != 4 or str(command[3]) != str(script):
+        raise PermissionError("JavaScript helper source must match its named Python fixture")
     prelude = "if(Number(process.versions.node.split('.')[0])<26)throw Error('Release harness requires Node 26 or later');\n"
-    return [node, "--permission", "--allow-fs-read=" + str(script), "-e", prelude + command[2], str(script)]
+    return [node, "--permission", "--allow-fs-read=" + str(script), "-e", prelude + harness, str(script)]
 
 
 def node_launch_options(options, temporary):
@@ -206,10 +234,12 @@ def worker(name, output, temporary):
     sys.dont_write_bytecode = True
     sys.path.insert(0, str(ROOT))
     allowed_processes = set()
-    if name == "tests/test_u1_studio_pro.py":
+    if name in PYTHON_NODE_FIXTURES:
         original_popen = subprocess.Popen
+        original_which = shutil.which
+        shutil.which = lambda command, *args, **kwargs: node if command == "node" else original_which(command, *args, **kwargs)
         def isolated_node(command, *arguments, **options):
-            command = node_command(command, ROOT, node)
+            command = node_command(command, ROOT, node, name)
             options = node_launch_options(options, temporary)
             allowed_processes.add(tuple(command))
             return original_popen(command, *arguments, **options)
@@ -245,6 +275,42 @@ def worker(name, output, temporary):
         print(name + ": import/fixture failure: " + type(error).__name__ + ": " + str(error), file=sys.stderr)
     Path(output).write_text(json.dumps(record), encoding="utf-8")
     return 0 if record["status"] == "PASS" else 1
+
+
+def navigation_preload(folder, env):
+    """Execute Mill's exact embedded Python once, without granting Node children.
+
+    The unchanged Node assertion receives that actual completed process result.
+    A preload checks its exact invocation and requires exactly one consumption.
+    """
+    source = (folder / "tests/test_u1_operational_navigation.cjs").read_text()
+    matches = re.findall(r"const code = String\.raw`([^`]*)`;", source)
+    if len(matches) != 1:
+        raise ValueError("Expected exactly one reviewed operational Python fixture")
+    code = matches[0]
+    bootstrap = (
+        "import importlib.util, pathlib, sys\n"
+        "spec=importlib.util.spec_from_file_location('release_guard', " + repr(str(Path(__file__).resolve())) + ")\n"
+        "guard=importlib.util.module_from_spec(spec); spec.loader.exec_module(guard)\n"
+        "root=pathlib.Path(" + repr(str(folder)) + ")\n"
+        "sys.path.insert(0, str(root))\n"
+        "sys.addaudithook(lambda event,args: guard.guard_event(event,args,root,root))\n"
+        "exec(compile(" + repr(code) + ", '<operational-navigation-fixture>', 'exec'))\n"
+    )
+    result = subprocess.run([sys.executable, "-I", "-B", "-c", bootstrap],
+                            cwd=str(folder), env=env, capture_output=True, text=True, timeout=10)
+    record = dict(status=result.returncode, stdout=result.stdout, stderr=result.stderr)
+    if result.returncode:
+        raise ValueError("Operational navigation Python fixture failed: " + result.stderr[-2000:])
+    shim = folder / "operational-python-result.cjs"
+    shim.write_text(
+        "'use strict';\nconst cp=require('node:child_process');let calls=0;\n"
+        "cp.spawnSync=(command,args,options)=>{if(command!=='python3'||"
+        "JSON.stringify(args)!==JSON.stringify(['-c'," + json.dumps(code) + "])||"
+        "options.cwd!==" + json.dumps(str(folder)) + ")throw Error('Unreviewed child invocation');"
+        "calls++;return " + json.dumps(record) + ";};\n"
+        "process.on('exit',()=>{if(calls!==1)process.exitCode=1;});\n", encoding="utf-8")
+    return shim
 
 
 def main(argv=None):
@@ -330,6 +396,9 @@ def main(argv=None):
                     shutil.copyfile(ROOT / relative, staged)
                 command = js_command(name, folder, node)
                 env = {"PATH": "/usr/bin:/bin", "HOME": str(folder), "TMPDIR": str(folder)}
+                if name == "tests/test_u1_operational_navigation.cjs":
+                    shim = navigation_preload(folder, env)
+                    command[1:1] = ["--require=" + str(shim), "--allow-fs-read=" + str(shim)]
                 version = subprocess.run([node, "--version"], capture_output=True, text=True, timeout=10, env=env)
                 if version.returncode or int(version.stdout.strip().lstrip("v").split(".")[0]) < 26:
                     raise ValueError("The guarded JavaScript checks require Node 26 or later")

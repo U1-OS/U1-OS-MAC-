@@ -109,3 +109,11 @@
   color:#c3d6e8!important;
   -webkit-text-fill-color:#c3d6e8!important;
 }
+.u1-studio-pro .sp-handoff{margin-top:18px;padding:16px;border:1px solid var(--sp-line);border-radius:9px;background:var(--sp-surface,#081827);color:var(--sp-ink)}
+.u1-studio-pro .sp-handoff h4{font-size:14px;color:var(--sp-ink);margin-bottom:8px}
+.u1-studio-pro .sp-handoff p{font-size:11px;overflow-wrap:anywhere;margin:10px 0 14px;color:var(--sp-muted)}
+.u1-studio-pro .sp-handoff button{margin:5px 0;max-width:100%}
+.u1-studio-pro [data-handoff-review]{margin-top:18px}
+.u1-studio-pro .sp-handoff fieldset{min-width:0;border:1px solid var(--sp-line);background:var(--u1-bg-space,#071323);padding:12px;margin:14px 0;border-radius:8px}
+.u1-studio-pro .sp-handoff legend{color:var(--sp-ui-accent,#52d9ff);font-size:12px;padding:0 5px}
+.u1-studio-pro .sp-handoff input[readonly],.u1-studio-pro .sp-handoff textarea[readonly]{color:var(--sp-muted);border-style:dashed}

@@ -419,3 +419,105 @@ separate native-build NOT_RUN field; this section records the subsequent build.
 No Git operation, GitHub workflow execution, public deployment or Desktop
 replacement was performed. The exact user-authorised installation command and
 backup behaviour are documented above.
+
+### Operational release r5: explicit gate PASS, provider race still open
+
+The parent authorised this combined run after Mill's operational wiring report.
+On 2026-09-08 at 09:54:08 UTC the following command exited 0:
+
+```bash
+cd "/Users/u1/Documents/ChatGPT/U1 OS ( MAC )"
+bash scripts/check-personal-release.sh --require-all \
+  --report /private/tmp/u1-personal-release-sidecar-20260908-r5.json
+```
+
+Evidence: `/private/tmp/u1-personal-release-sidecar-20260908-r5.json`.
+The exclusive report writer preserved prior r4 evidence.
+
+- PASS 511 tests/contracts: 412 Python tests in 25 explicitly named modules and
+  99 JavaScript contracts in eight explicitly named suites.
+- PASS 69 syntax checks; zero failures, errors, skips or missing required tests.
+- Studio now reports 24 tests; macOS release contracts report 27 tests.
+- Operational Safety reports 40, usage windows 8, OSINT tools 8, media intake 7,
+  Discovery 13, Spotify 27, and connection preflight 10 Python tests.
+- New standalone Node suites report daily flow 16, usage selection 7, operational
+  polish 13 and operational navigation 9. Existing Node suites retain 23
+  connections, 9 media, 6 shell navigation and 16 build-status contracts.
+- The embedded OSINT and Discovery Node assertions remain part of their Python
+  module counts. They run with exact helper-file permissions and no network,
+  filesystem write or child-process permission. Studio's pipe acceptance is
+  preserved. No broad test discovery or unrestricted Node exception was added.
+- Mill's exact embedded routing Python assertions execute separately in a
+  disposable, audit-guarded Python process against staged source copies. The
+  unchanged Node assertion consumes that actual result through an exact-call,
+  single-consumption preload. Node receives no child-process permission. This
+  tests the supplied Python assertions, not live server startup or HTTP traffic.
+- `SyntheticFFmpegTests.test_generated_owned_video_exports_real_mp4_and_wav`
+  remains OPT-IN NOT_RUN. It is neither added to the passing count nor hidden
+  among skips.
+
+The new central Safety notification is Spotify-only and is delivered outside
+Safety's mutex. It does not change assistant access-lock versus explicit
+pause/cancel semantics. Its standalone fixture run passed 40 tests in 7.116
+seconds before r5. See `docs/SAFETY-REHEARSAL.md` for the bounded retry behavior,
+coverage and limitations.
+
+**Open security follow-up, separate from the passing gate:** a disposable
+ordering reproduction found that Spotify can publish a pending OAuth listener
+if cancellation occurs between its Safety check and pending assignment. The
+result was `stale_pending=True`, `listener_stop_set=False`. This was reported
+for the parent/provider owner before shared edits. The central notification
+alone does not close that provider publication race, and r5 must not be cited
+as proof that it does. A provider-side epoch recheck at pending publication and
+an isolated regression are still required before calling that exposure resolved.
+
+No native rebuild, Desktop installation, live account/Keychain operation,
+interactive browser acceptance, Git operation or GitHub workflow execution was
+performed by r5. Its `native_build` field is correctly NOT_RUN. The previous
+native build remains dated historical evidence; the parent owns installation,
+browser acceptance and the replacement-PR publication preserving main.
+
+### Frozen operational release r6: strict gate PASS
+
+After C's Spotify fixes, D's late-created control-label fixes, and Mill's final
+cache-version/fixture update, the parent authorised a frozen-source strict run.
+It completed on 2026-09-08 at 10:08:00 UTC with exit 0:
+
+```bash
+cd "/Users/u1/Documents/ChatGPT/U1 OS ( MAC )"
+bash scripts/check-personal-release.sh --require-all \
+  --report /private/tmp/u1-personal-release-sidecar-20260908-r6.json
+```
+
+Evidence: `/private/tmp/u1-personal-release-sidecar-20260908-r6.json`.
+
+- PASS 516 tests/contracts: 414 Python tests across all 25 named modules and
+  102 JavaScript contracts across all eight named suites.
+- PASS 69 syntax checks. Zero failures, errors, skips or missing required tests.
+- Spotify now passes 29 isolated tests, versus 27 in r5. Operational polish now
+  passes 16 Node tests, versus 13 in r5. These five additional tests account for
+  the increase from 511 to 516; no projected count is substituted for execution.
+- The 40-test central Safety-hook rehearsal and nine operational-navigation
+  contracts also pass. The latter includes the updated mixed cache-version
+  expectations: only operational polish and Spotify widget use 20260908.7.
+- The exact real-FFmpeg fixture remains OPT-IN NOT_RUN, separate from the zero
+  skipped-test count.
+
+Targeted closure: C reported the OAuth pending-publication race fixed and added
+isolated Spotify regressions; D reported the late-created mobile Control Centre
+label fixed and added isolated polish regressions. Their updated suites passed
+in r6. The r5 open-race follow-up above is therefore superseded at this targeted
+fixture-coverage level, not rewritten as if r5 had tested the fix. This is not
+proof of a real OAuth exchange, live listener termination, paid-provider access,
+Keychain access, or comprehensive concurrency correctness.
+
+C's measured shelf-plus-12px widget layout fix is included in the frozen source
+and its JavaScript passes syntax checking. Actual widget overlap, browser/mobile
+accessibility and screenshots remain the parent's separate browser acceptance;
+they are not inferred from these test counts.
+
+The existing r5 JSON and its dated open-race record were preserved unchanged.
+No source edits, native rebuild, Desktop installation, account action or Git
+operation occurred during r6. Only this guide and the Safety rehearsal guide
+received post-run evidence appendices. Native build and interactive Mac checks
+remain NOT_RUN in the r6 JSON; historical native build evidence stays separate.

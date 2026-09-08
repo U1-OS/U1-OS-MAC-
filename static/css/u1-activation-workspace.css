@@ -1,0 +1,24 @@
+.u1-activation-workspace { --activation-edge: var(--u1-core-edge, #62b4ec38); --activation-muted: var(--u1-core-muted, #a2b8cd); --activation-accent: var(--u1-core-accent, #6be4ff); min-width: 0; color: var(--u1-core-ink, #edf6ff); }
+.u1-activation-workspace * { box-sizing: border-box; }
+.u1-activation-intro { padding: 20px 24px; border: 1px solid var(--activation-edge); border-radius: 16px; background: linear-gradient(110deg, #0b3546a8, #081521aa); }
+.u1-activation-intro strong { color: var(--activation-accent); font-size: 15px; }
+.u1-activation-workspace p { font-size: 13px; line-height: 1.75; overflow-wrap: anywhere; }
+.u1-activation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.u1-activation-card { min-width: 0; padding: 24px; border: 1px solid var(--activation-edge); border-radius: 20px; background: radial-gradient(ellipse at top right, #12416440, transparent 65%), linear-gradient(135deg, #091b2de6, #040e1be8); }
+.u1-activation-card-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.u1-activation-card h3 { margin: 0; font-size: 21px; font-weight: 550; }
+.u1-activation-badge { border: 1px solid var(--activation-edge); border-radius: 30px; padding: 6px 10px; font-size: 11px; color: var(--activation-accent); }
+.u1-activation-evidence, .u1-activation-meta, .u1-activation-footer { color: var(--activation-muted); }
+.u1-activation-billing { border-left: 2px solid var(--activation-accent); padding-left: 14px; }
+.u1-activation-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.u1-activation-actions a { color: var(--activation-accent); font-size: 12px; line-height: 1.6; text-underline-offset: 4px; }
+.u1-activation-workspace fieldset { min-width: 0; border: 1px solid var(--activation-edge); border-radius: 12px; margin-top: 22px; padding: 16px; }
+.u1-activation-workspace legend { padding: 0 8px; font-size: 11px; color: var(--activation-muted); }
+.u1-activation-workspace fieldset label { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 12px; margin: 14px 0; font-size: 13px; line-height: 1.7; }
+.u1-activation-workspace input[type=checkbox] { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--activation-accent); }
+.u1-activation-manual { border-top: 1px solid var(--activation-edge); padding-top: 14px; color: #dfccb1; }
+.u1-activation-status { min-height: 1.5em; }
+.u1-activation-status[role=alert] { color: #ffc5ae; }
+.u1-activation-workspace :focus-visible { outline: 2px solid var(--activation-accent); outline-offset: 4px; }
+@media (max-width: 900px) { .u1-activation-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) { .u1-activation-card { padding: 17px; } .u1-activation-actions button { flex-grow: 1; } }

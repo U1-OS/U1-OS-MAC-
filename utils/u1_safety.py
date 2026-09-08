@@ -4,15 +4,54 @@ import hmac
 import json
 import os
 import secrets
+import sys
 import threading
 import time
 import urllib.error
 import urllib.request
+from functools import wraps
 from pathlib import Path
 
 
 class SafetyError(ValueError):
     pass
+
+
+def _notify_after_state(method):
+    """Drain one notification only after the outermost state operation exits."""
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        depth = getattr(self._notification_local, "depth", 0)
+        self._notification_local.depth = depth + 1
+        result = None
+        try:
+            result = method(self, *args, **kwargs)
+            return result
+        finally:
+            self._notification_local.depth = depth
+            if depth == 0:
+                self._notify_spotify_lock()
+                if isinstance(result, dict):
+                    with self.mutex:
+                        result["spotify_oauth_cancel_pending"] = self._lock_epoch > self._notified_epoch
+                        result["spotify_oauth_cancel_error"] = self._notification_error
+    return wrapped
+
+
+def _cancel_spotify_oauth():
+    """No import, manager startup, account call, or unbounded provider-lock wait."""
+    provider = sys.modules.get("utils.u1_spotify")
+    instance = getattr(provider, "_instance", None) if provider is not None else None
+    if instance is None:
+        return
+    # Spotify uses an RLock. Its cancel_all only invalidates an epoch and sets an
+    # existing listener's stop event. All of this runs without the Safety mutex.
+    if not instance.lock.acquire(timeout=0.05):
+        raise SafetyError("Spotify cancellation is pending")
+    try:
+        provider.cancel_all()
+    finally:
+        instance.lock.release()
 
 
 def internet_reachable():
@@ -40,6 +79,11 @@ class SafetyLock:
         self.probe = probe
         self.clock = clock
         self.mutex = threading.RLock()
+        self._notification_local = threading.local()
+        self._notification_mutex = threading.Lock()
+        self._lock_epoch = 0
+        self._notified_epoch = 0
+        self._notification_error = None
         self.token = secrets.token_urlsafe(32)
         self.config = None
         self.locked = False
@@ -53,6 +97,8 @@ class SafetyLock:
         self.retry_at = 0
         self.started = False
         self._load()
+        if self.locked:
+            self._lock_epoch += 1
 
     def _load(self):
         try:
@@ -120,11 +166,36 @@ class SafetyLock:
         self.locked = True
         self.reason = reason
         self.deadline = None
+        self._lock_epoch += 1
+
+    def _notify_spotify_lock(self):
+        # Nonblocking serialization also prevents callback re-entry from nesting
+        # notifications. Failed/busy delivery stays observable and is retried by
+        # the next outermost Safety operation or monitor tick; never spin/spawn.
+        if not self._notification_mutex.acquire(blocking=False):
+            return
+        try:
+            with self.mutex:
+                epoch = self._lock_epoch
+                if epoch <= self._notified_epoch:
+                    return
+            try:
+                _cancel_spotify_oauth()
+            except Exception:
+                with self.mutex:
+                    self._notification_error = "Spotify OAuth cancellation pending; retry on the next Safety update."
+            else:
+                with self.mutex:
+                    self._notified_epoch = epoch
+                    self._notification_error = None
+        finally:
+            self._notification_mutex.release()
 
     def _expire(self):
         if self.config and not self.locked and self.deadline is not None and self.clock() >= self.deadline:
             self._lock("Dead-man check-in expired")
 
+    @_notify_after_state
     def snapshot(self):
         with self.mutex:
             self._expire()
@@ -137,6 +208,7 @@ class SafetyLock:
                     "retry_after": max(0, int(self.retry_at - self.clock())),
                     "scope": "U1 OS UI and new API requests only. Existing jobs, streams, other apps and exchange orders are not cancelled."}
 
+    @_notify_after_state
     def blocked(self):
         with self.mutex:
             self._expire()
@@ -146,6 +218,7 @@ class SafetyLock:
         minutes = self.config["minutes"]
         self.deadline = self.clock() + minutes * 60 if minutes else None
 
+    @_notify_after_state
     def tick(self, network=None):
         with self.mutex:
             self._expire()
@@ -156,6 +229,12 @@ class SafetyLock:
                 if self.config and self.config["offline"] and self.network_failures >= 2:
                     if not self.locked:
                         self._lock("Internet reachability failed twice")
+
+    @_notify_after_state
+    def _monitor_failure(self):
+        with self.mutex:
+            if self.config:
+                self._lock("Safety monitor encountered an error")
 
     def start(self):
         with self.mutex:
@@ -175,13 +254,12 @@ class SafetyLock:
                     else:
                         self.tick()
                 except Exception:
-                    with self.mutex:
-                        if self.config:
-                            self._lock("Safety monitor encountered an error")
+                    self._monitor_failure()
                 time.sleep(1)
 
         threading.Thread(target=watch, name="U1SafetyWatch", daemon=True).start()
 
+    @_notify_after_state
     def action(self, body):
         if body.get("action") in {"pause_jobs", "resume_jobs", "stop_jobs"}:
             with self.mutex:

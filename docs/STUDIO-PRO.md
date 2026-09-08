@@ -201,6 +201,60 @@ contract using a mocked U1Data transport. No test calls a real account.
 The parent owns script/style inclusion and endpoint wiring. Full workspace
 navigation and live managed Files behaviour require that integration.
 
+## Reviewed Studio-to-product handoff
+
+After a current generated PDF or ZIP is confirmed ready in managed Files, the
+editor enables **Review catalogue handoff**. The review displays the real ready
+file ID, filename, checksum and artifact version. The operator reviews title,
+audience and description and explicitly approves the handoff. Optional checklist
+items are individually unchecked until selected. Draft edits invalidate the
+handoff review and require a current preview/save again; regenerating an identical
+document may reuse the already saved artifact during the same editor session.
+
+Two additional POST actions use the existing Studio route and its origin/CSRF
+guards. Parent routes and assets need no additional wiring:
+
+```text
+{action:"handoff-review", file_id, receipt}
+{action:"handoff", file_id, receipt, reviewed:true,
+ product:{title,audience,description}, expected_product_version:0, checklist:[]}
+```
+
+`receipt` is the `handoff_receipt` returned by PDF/ZIP generation. Its signed
+artifact metadata binds the filename, MIME, size, checksum, title, version and
+canonical document fingerprint. The backend verifies it against an undeleted,
+fully received `ready` Files row. Receipts are process-bound; after a server
+restart, regenerate/save to obtain a current receipt. Arbitrary file paths or
+unsigned metadata cannot be used. The review response includes `file`, `artifact`,
+proposed `product`, `existing`, `expected_product_version`, and `publishes:false`.
+Pass its expected version into confirmation.
+
+Confirmation delegates to the same `u1_personal_core.action` operation used by
+`POST /api/workspace/personal`, with `action:create` and `kind:product`. A new
+record has status `review`, the actual artifact `current_version`, and a version
+entry referencing the ready file. No publication, scheduling, pricing claim or
+account action is performed. No new record store is introduced.
+
+Duplicate checks include active and archived products. A stable document marker
+or the same file/version reuses the matching product. PDF and ZIP exports of the
+same canonical document can link to one product/version. Existing catalogue
+details are preserved. Archived products, ambiguous matches and changed current
+versions require operator resolution in Income. Optimistic record versions
+reject conflicting updates with `409`. Exact retries reuse the prior record.
+The shared application lock serializes concurrent Studio handoffs in the normal
+single-process server; this is not a distributed idempotency mechanism across
+independent server processes.
+
+At most six distinct operator-approved checklist titles (160 characters each)
+create ordinary `kind:launch` records linked to the product in `backlog`. Existing
+matching tasks are reused, including archived tasks with an explanatory warning.
+If checklist creation partially fails, the product and completed tasks are
+returned with `partial:true`, `pending_checklist`, and `warnings`. Retrying adds
+only missing tasks; it does not duplicate the product. The success response also
+includes `product`, `reused`, `file_id`, `launches`, and `publishes:false`.
+Catalogue title/audience/description limits are 160/300/4000 characters. These
+actions retain the standard 256 KB creation-request bound.
+
 Verification on 2026-09-08: 15 focused unittest cases passed in the project's
 `.runtime`; both studio JavaScript files passed Node syntax checks. An isolated
 loopback browser test exercised content and quiz editing, local draft reload,

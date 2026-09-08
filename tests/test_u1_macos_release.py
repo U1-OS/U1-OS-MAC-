@@ -264,6 +264,29 @@ class MacReleaseTests(unittest.TestCase):
         self.assertFalse(artifact_steps[0]["with"]["include-hidden-files"])
         self.assertEqual(workflow["jobs"]["macos-build"]["needs"], "personal-tests")
 
+    def test_operational_release_modules_are_explicit_not_discovered(self):
+        for name in ("operational_safety", "usage_windows", "osint_tools", "media_download",
+                     "discovery", "spotify", "connection_preflight"):
+            self.assertIn("tests/test_u1_" + name + ".py", checks.TEST_FILES)
+        for name in ("daily_flow", "usage_selection", "operational_polish", "operational_navigation"):
+            self.assertIn("tests/test_u1_" + name + ".cjs", checks.JS_TESTS)
+
+    def test_discovery_node_helper_is_exact_and_has_no_child_or_network_permission(self):
+        command = checks.node_command(["node", "-e", "require('./static/js/u1-discovery-workspace.js')"],
+                                      self.root, "/node", "tests/test_u1_discovery.py")
+        self.assertIn("--allow-fs-read=" + str(self.root / "static/js/u1-discovery-workspace.js"), command)
+        self.assertNotIn("--allow-child-process", command)
+        self.assertNotIn("--allow-net", command)
+        with self.assertRaises(PermissionError):
+            checks.node_command(["node", "-e", "require('./other.js')"], self.root, "/node", "tests/test_u1_discovery.py")
+
+    def test_osint_helper_accepts_resolved_node_but_not_another_source(self):
+        script = self.root / "static/js/u1-media-research.js"
+        command = checks.node_command(["/node", "-e", "void 0", str(script)], self.root, "/node", "tests/test_u1_osint_tools.py")
+        self.assertEqual(command[-1], str(script))
+        with self.assertRaises(PermissionError):
+            checks.node_command(["/node", "-e", "void 0", "/other.js"], self.root, "/node", "tests/test_u1_osint_tools.py")
+
 
 if __name__ == "__main__":
     unittest.main()

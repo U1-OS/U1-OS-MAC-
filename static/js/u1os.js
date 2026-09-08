@@ -857,7 +857,8 @@
   }
 
   function go(id, opts) {
-    if (!id) return;
+    if (typeof id !== 'string' || !/^[a-z][a-z0-9_-]{0,63}$/.test(id)) return;
+    if (id !== 'home' && !VIEWS[id] && !(window.U1Life && window.U1Life.meta[id]) && !(window.U1CoreViews && window.U1CoreViews.supports(id))) return;
     opts = opts || {};
     var target = ensureView(id);
     if (!target) return;
@@ -865,14 +866,27 @@
     target.classList.add('on');
     Array.prototype.forEach.call(document.querySelectorAll('.navitem'), function (b) {
       b.classList.toggle('on', b.dataset.go === id);
+      if (b.dataset.go === id) {
+        b.setAttribute('aria-current', 'page');
+        var group = b.closest('details');
+        while (group) { group.open = true; group = group.parentElement && group.parentElement.closest('details'); }
+      } else b.removeAttribute('aria-current');
     });
     current = id;
     document.body.dataset.u1View = id;
     window.dispatchEvent(new CustomEvent('u1:navigate', { detail: { id: id } }));
-    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+    try { history.replaceState(null, '', '#' + encodeURIComponent(id)); } catch (e) {}
     $('main').scrollTop = 0;
     if (!opts.silent) Sound.nav();
     if (id !== 'home') fillView(id);
+  }
+  U.navigate = go;
+
+  function routeHash() {
+    var id;
+    try { id = decodeURIComponent((location.hash || '').slice(1)) || 'home'; }
+    catch (_) { return; }
+    go(id, { silent: true });
   }
 
   /* ---------------- clock ---------------- */
@@ -891,7 +905,11 @@
   /* ---------------- palette ---------------- */
   var items = [], sel = 0;
   function buildPalette() {
-    items = NAV.filter(function (n) { return !n.sep; }).map(function (n) {
+    var entries = NAV.filter(function (n) { return !n.sep; }).slice();
+    Object.keys(VIEWS).forEach(function (id) {
+      if (!entries.some(function (n) { return n.id === id; })) entries.push({ id: id, label: VIEWS[id].t });
+    });
+    items = entries.map(function (n) {
       return { label: n.label, hint: 'Section', run: function () { go(n.id); } };
     }).concat([
       { label:'Toggle interface sound', hint:'Sound', run: toggleSound },
@@ -907,7 +925,7 @@
             Notify.push(r.message || 'Baseline captured.', { tone: r.success ? 'ok' : 'bad', src:'Measurement' });
           });
         } },
-      { label:'Open classic shell', hint:'Navigate', run: function () { window.location.href = '/'; } }
+      { label:'Open Home', hint:'Native workspace', run: function () { go('home'); } }
     ]);
   }
   function paint(q) {
@@ -922,6 +940,7 @@
     }).join('');
   }
   function openPal() {
+    buildPalette();
     $('scrim').classList.add('on');
     $('palInput').value = ''; sel = 0; paint('');
     setTimeout(function () { $('palInput').focus(); }, 30);
@@ -1036,8 +1055,10 @@
 
     if (U.scenes) U.scenes();
 
-    var hash = (location.hash || '').replace('#', '');
-    if (hash && hash !== 'home') go(hash, { silent: true });
+    // Workspace scripts may register during later DOMContentLoaded listeners.
+    // A new task waits for that registration before mounting a direct hash.
+    setTimeout(routeHash, 0);
+    window.addEventListener('hashchange', routeHash);
 
     refresh(true);
     setInterval(function () { if (!document.hidden) refresh(false); }, 20000);

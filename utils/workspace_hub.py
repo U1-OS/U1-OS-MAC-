@@ -136,15 +136,8 @@ def codex_limits():
         reply=receive(1)
         if 'error' in reply:return dict(success=False,error='Sign in to Codex to read account limits.',windows=[])
         result=reply.get('result',{})
-        buckets=result.get('rateLimitsByLimitId') or {'codex':result.get('rateLimits',{})}
-        windows=[]
-        for key,bucket in buckets.items():
-            if not bucket:continue
-            for period in ['primary','secondary']:
-                window=bucket.get(period)
-                if window:
-                    windows.append(dict(name=bucket.get('limitName') or key,period=period,used_percent=window.get('usedPercent'),duration_minutes=window.get('windowDurationMins'),resets_at=window.get('resetsAt')))
-        return dict(success=True,windows=windows,source='Codex account/rateLimits/read')
+        from utils.u1_usage_windows import normalize_rate_limits
+        return dict(success=True,windows=normalize_rate_limits(result),primary_limit_id='codex',source='Codex account/rateLimits/read')
     finally:
         proc.terminate()
         try:proc.wait(timeout=2)

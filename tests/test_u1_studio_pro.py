@@ -13,6 +13,7 @@ import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 
 from utils import prism_workspace, u1_life_studio, u1_studio_pro as studio
 
@@ -505,6 +506,140 @@ input.on('line',line=>{
         studio.handle_request(handler); self.assertEqual(handler.status,403)
         handler = Handler(request,allowed=False)
         studio.handle_request(handler); self.assertEqual(handler.status,403)
+
+
+@unittest.skipUnless(studio.canvas and studio.PdfReader,"Studio PDF dependencies required")
+class CatalogueHandoffTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.artifact = studio.create({"document":document()})
+        cls.bundle = studio.create({"action":"bundle","document":document()})
+
+    def setUp(self):
+        from utils import u1_personal_core
+        self.personal = u1_personal_core
+        self.temp = tempfile.TemporaryDirectory(prefix="u1-studio-catalogue-")
+        self.addCleanup(self.temp.cleanup)
+        data_patch = patch.object(prism_workspace,"DATA",Path(self.temp.name))
+        data_patch.start(); self.addCleanup(data_patch.stop)
+        self.file_id = self.upload(self.artifact)
+
+    def upload(self,artifact,complete=True):
+        raw = base64.b64decode(artifact["content"])
+        started = prism_workspace.handle_post("prism/upload-start",{"name":artifact["filename"],"mime":artifact["mime"],"size":len(raw),"folder":"Digital Studio"})
+        if complete:
+            for offset in range(0,len(raw),32768):
+                prism_workspace.handle_post("prism/upload-chunk",{"id":started["id"],"offset":offset,"content":base64.b64encode(raw[offset:offset+32768]).decode()})
+        return started["id"]
+
+    def post(self,body,status=200):
+        handler = Handler(body)
+        self.assertTrue(studio.handle_request(handler))
+        self.assertEqual(handler.status,status,handler.result())
+        return handler.result()
+
+    def review(self,file_id=None,artifact=None):
+        return self.post({"action":"handoff-review","file_id":file_id or self.file_id,"receipt":(artifact or self.artifact)["handoff_receipt"]})
+
+    def request(self,review=None,file_id=None,artifact=None,checklist=None):
+        review = review or self.review(file_id,artifact)
+        return {"action":"handoff","file_id":file_id or self.file_id,"receipt":(artifact or self.artifact)["handoff_receipt"],
+                "reviewed":True,"product":review["product"],"expected_product_version":review["expected_product_version"],"checklist":checklist or []}
+
+    def rows(self,kind):
+        return self.personal.snapshot({"kind":kind,"archived":"all"})["records"]
+
+    def test_review_creates_nothing_and_confirmation_links_real_ready_file(self):
+        review = self.review()
+        self.assertEqual(review["file"]["status"],"ready")
+        self.assertEqual(review["artifact"]["version"],document()["version"])
+        self.assertFalse(review["publishes"]); self.assertEqual(self.rows("product"),[])
+        request = self.request(review)
+        self.post({**request,"reviewed":False},400)
+        self.assertEqual(self.rows("product"),[])
+        created = self.post(request)
+        row = created["product"]
+        self.assertEqual(row["kind"],"product")
+        self.assertEqual(row["payload"]["status"],"review")
+        self.assertEqual(row["payload"]["current_version"],document()["version"])
+        self.assertEqual(row["payload"]["versions"][0]["file_id"],self.file_id)
+        self.assertIn(self.artifact["sha256"],row["payload"]["versions"][0]["notes"])
+        self.assertEqual(created["launches"],[]); self.assertEqual(self.rows("launch"),[])
+        retry = self.post(request)
+        self.assertTrue(retry["reused"]); self.assertEqual(retry["product"]["id"],row["id"])
+        self.assertEqual(len(self.rows("product")),1)
+
+    def test_concurrent_retries_create_one_product_and_only_approved_tasks(self):
+        request = self.request(checklist=["Review content","Review rights"])
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(lambda _:studio.create(copy.deepcopy(request)),range(8)))
+        self.assertEqual(len({result["product"]["id"] for result in results}),1)
+        self.assertEqual(sum(not result["reused"] for result in results),1)
+        self.assertEqual(len(self.rows("product")),1)
+        tasks = self.rows("launch")
+        self.assertEqual({row["title"] for row in tasks},{"Review content","Review rights"})
+        self.assertTrue(all(row["payload"]["status"] == "backlog" for row in tasks))
+        self.assertTrue(all(row["payload"]["product_id"] == results[0]["product"]["id"] for row in tasks))
+        self.assertTrue(all(result["publishes"] is False for result in results))
+
+    def test_pdf_and_zip_share_product_and_repeated_link_is_idempotent(self):
+        created = self.post(self.request())
+        zip_id = self.upload(self.bundle)
+        review = self.review(zip_id,self.bundle)
+        self.assertEqual(review["existing"]["id"],created["product"]["id"])
+        request = self.request(review,zip_id,self.bundle)
+        linked = self.post(request)
+        self.assertTrue(linked["reused"])
+        self.assertEqual({v["file_id"] for v in linked["product"]["payload"]["versions"]},{self.file_id,zip_id})
+        repeated = self.post(request)
+        self.assertEqual(repeated["product"]["id"],created["product"]["id"])
+        self.assertEqual(len(repeated["product"]["payload"]["versions"]),2)
+        self.assertEqual(len(self.rows("product")),1)
+
+    def test_wrong_unready_trashed_or_tampered_files_rejected(self):
+        unready = self.upload(self.artifact,complete=False)
+        request = {"action":"handoff-review","file_id":unready,"receipt":self.artifact["handoff_receipt"]}
+        self.post(request,400)
+        wrong = self.upload(self.bundle)
+        self.post({**request,"file_id":wrong},400)
+        self.post({**request,"file_id":"a"*32},400)
+        forged = copy.deepcopy(self.artifact["handoff_receipt"]); forged["artifact"]["version"] = "Unreviewed version"
+        self.post({**request,"file_id":self.file_id,"receipt":forged},400)
+        review = self.review()
+        prism_workspace.handle_post("prism/trash",{"id":self.file_id,"kind":"file"})
+        self.post(self.request(review),400)
+        self.assertEqual(self.rows("product"),[])
+
+    def test_partial_checklist_retry_preserves_product_and_completed_tasks(self):
+        request = self.request(checklist=["First task","Second task"])
+        original = self.personal.action
+        def fail_second(body):
+            if body.get("kind") == "launch" and body.get("title") == "Second task":
+                raise self.personal.PersonalError("Isolated fixture record limit",409,"record_limit")
+            return original(body)
+        with patch.object(self.personal,"action",side_effect=fail_second):
+            partial = self.post(request)
+        self.assertTrue(partial["partial"])
+        self.assertEqual(partial["pending_checklist"],["Second task"])
+        self.assertEqual(len(self.rows("product")),1); self.assertEqual(len(self.rows("launch")),1)
+        retried = self.post(request)
+        self.assertFalse(retried["partial"]); self.assertTrue(retried["reused"])
+        self.assertEqual(retried["product"]["id"],partial["product"]["id"])
+        self.assertEqual(len(self.rows("product")),1); self.assertEqual(len(self.rows("launch")),2)
+
+    def test_conflicts_archives_and_bounded_operator_fields(self):
+        request = self.request()
+        for bad in ({"checklist":["Same"]*2},{"checklist":[str(i) for i in range(7)]},{"checklist":["x"*161]},
+                    {"expected_product_version":False},{"product":{"title":"x"*161}},{"publish":True}):
+            self.post({**request,**bad},400)
+        self.assertEqual(self.rows("product"),[])
+        row = self.post(request)["product"]
+        reviewed = self.review()
+        changed = self.personal.action({"action":"update","id":row["id"],"expected_version":row["version"],"title":"Changed elsewhere"})["record"]
+        self.post(self.request(reviewed),409)
+        self.personal.action({"action":"archive","id":changed["id"],"expected_version":changed["version"]})
+        self.post({"action":"handoff-review","file_id":self.file_id,"receipt":self.artifact["handoff_receipt"]},400)
+        self.assertEqual(len(self.rows("product")),1)
 
 
 if __name__ == "__main__":

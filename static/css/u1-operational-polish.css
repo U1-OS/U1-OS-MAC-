@@ -1,0 +1,17 @@
+body[data-u1-operational-polish] :is(#rail, #dock, #u1-utility-shelf) button:focus-visible,
+body[data-u1-operational-polish] #u1-menu-toggle:focus-visible { outline: 3px solid #75e6f4; outline-offset: 3px; }
+body[data-u1-operational-polish] button[data-u1-redundant-entry="true"][hidden] { display: none !important; }
+body[data-u1-operational-polish] .u1-native-workspace button:disabled { cursor: not-allowed; }
+body[data-u1-operational-polish] .u1-native-workspace [aria-busy="true"] button:disabled,
+body[data-u1-operational-polish] .u1-native-workspace[aria-busy="true"] button:disabled { cursor: progress; }
+@media (max-width: 700px) {
+  body[data-u1-operational-polish] :is(#rail, #u1-utility-shelf) button,
+  body[data-u1-operational-polish] #u1-menu-toggle { min-height: 44px; min-width: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-u1-operational-polish] :is(#u1-menu-toggle, #u1-player-entry) { animation: none !important; transition: none !important; }
+}
+@media (forced-colors: active) {
+  body[data-u1-operational-polish] :is(#rail, #dock, #u1-utility-shelf) button:focus-visible,
+  body[data-u1-operational-polish] #u1-menu-toggle:focus-visible { outline-color: Highlight; }
+}

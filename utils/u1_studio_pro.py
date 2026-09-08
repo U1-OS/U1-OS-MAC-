@@ -361,6 +361,148 @@ def _artifact(raw, name, mime):
             "size": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
 
 
+def _receipt_signature(value):
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+    return hmac.new(_PREVIEW_KEY, b"studio-product-v1:"+encoded, hashlib.sha256).hexdigest()
+
+
+def _handoff_receipt(doc, artifact):
+    document_key = hashlib.sha256(json.dumps(doc,sort_keys=True,separators=(",", ":"),ensure_ascii=True).encode("ascii")).hexdigest()
+    value = {"document_key": document_key, "title": doc["title"], "version": doc["version"],
+             "audience": doc["audience"], "description": doc["subtitle"], "content_source": doc["source"],
+             "filename": artifact["filename"], "mime": artifact["mime"], "size": artifact["size"], "sha256": artifact["sha256"]}
+    return {"artifact": value, "signature": _receipt_signature(value)}
+
+
+def _handoff_file(body):
+    from utils import prism_workspace as workspace
+    receipt = _object(body.get("receipt"), {"artifact", "signature"}, "Artifact receipt")
+    value = receipt.get("artifact")
+    _object(value, {"document_key","title","version","audience","description","content_source","filename","mime","size","sha256"}, "Signed artifact")
+    signature = receipt.get("signature")
+    if not isinstance(signature,str) or not re.fullmatch(r"[a-f0-9]{64}",signature) or not hmac.compare_digest(signature,_receipt_signature(value)):
+        raise ValueError("The artifact receipt is invalid or expired. Generate and save the current document again.")
+    file_id = workspace.identifier(body.get("file_id"))
+    with workspace.database() as conn:
+        row = conn.execute("SELECT id,name,mime,size,received,status,checksum,deleted FROM files WHERE id=?",(file_id,)).fetchone()
+    if not row or row["deleted"] is not None or row["status"] != "ready" or row["received"] != row["size"]:
+        raise ValueError("Choose the successfully saved, ready file. Missing, uploading and trashed files cannot be handed off.")
+    if any(row[key] != value[other] for key,other in (("name","filename"),("mime","mime"),("size","size"),("checksum","sha256"))):
+        raise ValueError("The saved file does not match this generated artifact receipt.")
+    if value["mime"] not in {"application/pdf","application/zip"}:
+        raise ValueError("Only generated PDF or ZIP files can become catalogue products.")
+    return value, dict(row)
+
+
+def _personal_rows(personal, kind):
+    rows, offset = [], 0
+    while True:
+        result = personal.snapshot({"kind":kind,"archived":"all","limit":"200","offset":str(offset)})
+        rows.extend(result["records"])
+        if not result["has_more"]:
+            return rows
+        offset += len(result["records"])
+        if offset >= personal.MAX_RECORDS:
+            raise ValueError("Catalogue duplicate checks exceeded the record limit")
+
+
+def _handoff_existing(personal, artifact, file_id):
+    marker = "[u1-studio-product:"+artifact["document_key"]+"]"
+    matches = []
+    for row in _personal_rows(personal,"product"):
+        payload = row["payload"]
+        if marker in payload.get("notes", "") or any(v["file_id"] == file_id and v["version"] == artifact["version"] for v in payload.get("versions", [])):
+            matches.append(row)
+    if len(matches) > 1:
+        raise ValueError("More than one catalogue record already matches this artifact. Resolve those records in Income before handing off.")
+    existing = matches[0] if matches else None
+    if existing and existing["archived"]:
+        raise ValueError("This product is archived. Restore it in Income instead of creating a duplicate.")
+    if existing and existing["payload"]["current_version"] != artifact["version"]:
+        raise ValueError("The existing product now has a different current version. Review its versions in Income; Studio will not overwrite them.")
+    return marker, existing
+
+
+def _handoff(body):
+    from utils import prism_workspace as workspace
+    from utils import u1_personal_core as personal
+    review = body.get("action") == "handoff-review"
+    allowed = {"action","file_id","receipt"}
+    if not review:
+        allowed |= {"reviewed","product","checklist","expected_product_version"}
+    _object(body, allowed, "Catalogue handoff")
+    if not review and body.get("reviewed") is not True:
+        raise ValueError("Review the saved artifact and explicitly approve the catalogue handoff first.")
+    # The application's shared reentrant lock serializes Studio retries and
+    # concurrent requests with PRISM/personal actions. Records themselves remain
+    # in the existing personal store and are created through its public action.
+    with workspace.LOCK:
+        artifact, saved = _handoff_file(body)
+        marker, existing = _handoff_existing(personal, artifact, saved["id"])
+        proposed = {"title":existing["title"] if existing else artifact["title"],
+                    "audience":existing["payload"]["audience"] if existing else artifact["audience"],
+                    "description":existing["payload"]["description"] if existing else artifact["description"]}
+        if review:
+            return {"success":True,"file":saved,"artifact":artifact,"product":proposed,"existing":existing,
+                    "expected_product_version":existing["version"] if existing else 0,"publishes":False}
+        product = _object(body.get("product"), {"title","audience","description"}, "Product")
+        product = {key:_text(product.get(key,""),limit,"Product "+key,required=key == "title",single=key == "title")
+                   for key,limit in (("title",160),("audience",300),("description",4000))}
+        checklist = body.get("checklist",[])
+        if not isinstance(checklist,list) or len(checklist) > 6:
+            raise ValueError("Approve at most six launch checklist tasks")
+        checklist = [_text(value,160,"Launch task",True,True) for value in checklist]
+        if len(set(checklist)) != len(checklist):
+            raise ValueError("Launch checklist tasks must be distinct")
+        expected = body.get("expected_product_version")
+        if type(expected) is not int or expected < 0:
+            raise ValueError("Use the catalogue version returned by the handoff review")
+        reused = existing is not None
+        version_link = {"version":artifact["version"],"file_id":saved["id"],
+                        "notes":f"Studio artifact SHA-256: {artifact['sha256']}\nSource: {SOURCE}\n{artifact['content_source']}"}
+        if existing:
+            payload = existing["payload"]
+            linked = any(v["file_id"] == saved["id"] and v["version"] == artifact["version"] for v in payload["versions"])
+            retry = linked and marker in payload["notes"] and product == proposed
+            if expected != existing["version"] and not (expected <= existing["version"] and retry):
+                raise personal.PersonalError("The product changed after review. Review the latest catalogue record before continuing.",409,"version_conflict")
+            if product != proposed:
+                raise ValueError("Edit existing product details in Income. This handoff preserves the reviewed catalogue record.")
+            changes = {}
+            if not linked:
+                changes["versions"] = payload["versions"]+[version_link]
+            if marker not in payload["notes"]:
+                changes["notes"] = (payload["notes"]+"\n"+marker).strip()
+            record = personal.action({"action":"update","id":existing["id"],"expected_version":existing["version"],"payload":changes})["record"] if changes else existing
+        else:
+            if expected != 0:
+                raise personal.PersonalError("The reviewed product is no longer available. Review the handoff again.",409,"version_conflict")
+            record = personal.action({"action":"create","kind":"product","title":product["title"],"payload":{
+                "status":"review","audience":product["audience"],"description":product["description"],
+                "current_version":artifact["version"],"versions":[version_link],
+                "notes":marker+"\nCreated from an operator-reviewed Studio file. Private catalogue record; no publication performed."}})["record"]
+        launches, pending, warnings = [], [], []
+        existing_tasks = _personal_rows(personal,"launch") if checklist else []
+        for title in checklist:
+            key = hashlib.sha256((record["id"]+"\n"+title).encode("utf-8")).hexdigest()
+            task_marker = "[u1-studio-launch:"+key+"]"
+            found = next((row for row in existing_tasks if row["payload"]["product_id"] == record["id"] and
+                          (task_marker in row["payload"].get("notes","") or row["title"] == title)),None)
+            if found:
+                if found["archived"]:
+                    warnings.append("An approved launch task is archived; restore it in Income: "+title)
+                launches.append(found)
+                continue
+            try:
+                launches.append(personal.action({"action":"create","kind":"launch","title":title,"payload":{
+                    "product_id":record["id"],"status":"backlog","notes":task_marker+"\nOperator-approved planning task. No publication or account action is scheduled."}})["record"])
+            except personal.PersonalError as error:
+                pending.append(title)
+                warnings.append(str(error))
+        return {"success":True,"product":record,"reused":reused,"file_id":saved["id"],"launches":launches,
+                "pending_checklist":pending,"warnings":warnings,"partial":bool(pending),"publishes":False}
+
+
 def _preview(raw, page):
     if pdfium is None:
         raise RuntimeError("PDF page-image preview needs pypdfium2 in the application runtime; open the generated PDF in a compatible reader")
@@ -401,6 +543,8 @@ def _signed_preview(body):
 
 
 def create(body):
+    if isinstance(body,dict) and body.get("action") in ("handoff-review","handoff"):
+        return _handoff(body)
     if isinstance(body, dict) and body.get("action") == "preview":
         return _signed_preview(body)
     _object(body, {"action", "document"}, "Request")
@@ -426,6 +570,7 @@ def create(body):
               "fields": layout.fields, "fillable": doc["fillable"], "hyperlinks": True, "artifacts": artifacts}
     if action == "render":
         result.update(_artifact(pdf, stem + ".pdf", "application/pdf"))
+        result["handoff_receipt"] = _handoff_receipt(doc,result)
         result["preview_signature"] = hmac.new(_PREVIEW_KEY, pdf, hashlib.sha256).hexdigest()
         result["preview"] = _preview(pdf, 1) if pdfium is not None else None
         return result
@@ -438,6 +583,7 @@ def create(body):
         for name, raw in members.items():
             archive.writestr(name, raw)
     result.update(_artifact(output.getvalue(), stem + ".zip", "application/zip"))
+    result["handoff_receipt"] = _handoff_receipt(doc,result)
     result["members"] = list(members)
     return result
 
@@ -486,7 +632,7 @@ def handle_request(handler):
         _reply(handler, create(body))
     except (ValueError, TypeError, RecursionError) as exc:
         message = "Request nesting is too deep" if isinstance(exc, RecursionError) else str(exc)
-        _reply(handler, {"success": False, "error": message}, 400)
+        _reply(handler, {"success": False, "error": message}, getattr(exc,"status",400))
     except RuntimeError as exc:
         _reply(handler, {"success": False, "error": str(exc)}, 503)
     return True
