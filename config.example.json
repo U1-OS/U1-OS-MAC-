@@ -1,0 +1,11 @@
+{
+  "system": {
+    "host": "127.0.0.1",
+    "port": 8788,
+    "setup_mode": true,
+    "native_notifications": false,
+    "refresh_interval_sec": 5
+  },
+  "integrations": {},
+  "sections_enabled": {}
+}

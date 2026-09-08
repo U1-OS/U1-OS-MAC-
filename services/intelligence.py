@@ -33,14 +33,6 @@ class IntelligenceService(BaseService):
             "temp_f": None,
             "status_text": "SENSOR UNPAIRED: CONNECT SENSOR"
         }
-        self.data = {
-            "weather": dict(self.weather_cache),
-            "news": list(self.news_cache),
-            "telemetry": self._get_system_telemetry(),
-            "pool": dict(self.pool_cache),
-            "hardware": self._get_hardware_telemetry()
-        }
-        self.last_updated = time.time()
 
     def _fetch_weather(self):
         now = time.time()

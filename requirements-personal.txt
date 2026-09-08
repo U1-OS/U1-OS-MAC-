@@ -1,0 +1,8 @@
+# Versions present in the validated local Personal OS runtime.
+-r requirements-prism.txt
+reportlab==4.4.9
+pypdf==6.10.0
+cryptography==48.0.1
+Pillow==12.3.0
+imageio-ffmpeg==0.6.0
+pypdfium2==5.13.0

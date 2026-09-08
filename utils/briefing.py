@@ -11,7 +11,7 @@ import json
 import time
 import urllib.request
 
-def fetch_state(host="127.0.0.1", port=8787) -> dict:
+def fetch_state(host="127.0.0.1", port=8788) -> dict:
     """Retrieves full system state snapshot from local feeder."""
     url = f"http://{host}:{port}/api/state"
     try:
@@ -21,7 +21,7 @@ def fetch_state(host="127.0.0.1", port=8787) -> dict:
     except Exception as e:
         return {"error": str(e), "system": {}, "services": {}}
 
-def generate_briefing(output_dir="exports", host="127.0.0.1", port=8787) -> dict:
+def generate_briefing(output_dir="exports", host="127.0.0.1", port=8788) -> dict:
     """
     Generates Markdown and printable standalone HTML executive dossier reports.
     """
@@ -82,7 +82,7 @@ def generate_briefing(output_dir="exports", host="127.0.0.1", port=8787) -> dict
     md_content = f"""# COMMAND CENTER // EXECUTIVE BUSINESS DOSSIER
 **Generated**: {now_str}  
 **Classification**: EXECUTIVE STRICT CONFIDENTIAL // LOCALHOST ONLY  
-**Host Binding**: {sys_info.get('host', '127.0.0.1')}:{sys_info.get('port', 8787)}  
+**Host Binding**: {sys_info.get('host', '127.0.0.1')}:{sys_info.get('port', 8788)}  
 
 ---
 
@@ -357,7 +357,7 @@ def generate_briefing(output_dir="exports", host="127.0.0.1", port=8787) -> dict
       <div class="meta-box">
         <div>DATE: {now_str}</div>
         <div>CLASSIFICATION: STRICT CONFIDENTIAL</div>
-        <div>HOST: {sys_info.get('host', '127.0.0.1')}:{sys_info.get('port', 8787)}</div>
+        <div>HOST: {sys_info.get('host', '127.0.0.1')}:{sys_info.get('port', 8788)}</div>
       </div>
     </div>
 
@@ -455,7 +455,7 @@ def generate_briefing(output_dir="exports", host="127.0.0.1", port=8787) -> dict
         }
     }
 
-def synthesize_briefing_speech_text(state=None, host="127.0.0.1", port=8787) -> str:
+def synthesize_briefing_speech_text(state=None, host="127.0.0.1", port=8788) -> str:
     """Creates a clean, authoritative executive speech transcript."""
     if not state:
         state = fetch_state(host, port)
@@ -488,7 +488,7 @@ def synthesize_briefing_speech_text(state=None, host="127.0.0.1", port=8787) -> 
     )
     return speech
 
-def speak_briefing(text=None, voice="Samantha", export_audio=False, output_dir="exports", host="127.0.0.1", port=8787) -> dict:
+def speak_briefing(text=None, voice="Samantha", export_audio=False, output_dir="exports", host="127.0.0.1", port=8788) -> dict:
     """Executes macOS /usr/bin/say speech synthesis."""
     import subprocess
     if not text:

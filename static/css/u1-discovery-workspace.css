@@ -1,0 +1,25 @@
+.u1-discovery { --discovery-cyan: #75e6f4; --discovery-ink: #0b1930; color: var(--text, #eaf5ff); max-width: 1440px; margin: auto; padding: clamp(16px, 3vw, 36px); }
+.u1-discovery-heading { padding: 24px; border: 1px solid #75e6f42b; border-radius: 20px; background: radial-gradient(ellipse at top right, #1f657052, transparent 60%), linear-gradient(120deg, #102540, #0b1930); }
+.u1-discovery h1 { margin: 8px 0; font-size: clamp(1.7rem, 4vw, 2.8rem); line-height: 1.1; letter-spacing: -.035em; }
+.u1-discovery p { line-height: 1.55; }
+.u1-discovery-eyebrow { color: var(--discovery-cyan); font-size: .76rem; letter-spacing: .11em; font-weight: 700; text-transform: uppercase; }
+.u1-discovery-tools { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; margin: 24px 0 16px; }
+.u1-discovery-tools label { display: grid; gap: 8px; flex: 1 1 220px; font-size: .85rem; font-weight: 600; }
+.u1-discovery :is(input, select, button) { box-sizing: border-box; max-width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid #75e6f455; border-radius: 10px; background: var(--discovery-ink); color: inherit; font: inherit; }
+.u1-discovery input, .u1-discovery select { width: 100%; min-width: 0; }
+.u1-discovery button { color: var(--discovery-ink); background: var(--discovery-cyan); font-weight: 700; cursor: pointer; }
+.u1-discovery button:disabled { cursor: progress; opacity: .6; }
+.u1-discovery :is(a, input, select, button):focus-visible { outline: 3px solid var(--discovery-cyan); outline-offset: 4px; }
+.u1-discovery-status { font-weight: 700; color: var(--discovery-cyan); }
+.u1-discovery[data-freshness="stale"] .u1-discovery-status, .u1-discovery[data-freshness="unavailable"] .u1-discovery-status { color: #f4c780; }
+.u1-discovery-meta { font-size: .82rem; color: #b5c9dc; margin-bottom: 20px; }
+.u1-discovery-meta p { margin: 6px 0; }
+.u1-discovery a { color: var(--discovery-cyan); text-underline-offset: 4px; overflow-wrap: anywhere; }
+.u1-discovery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.u1-discovery-card { min-width: 0; border: 1px solid #75e6f42b; border-radius: 16px; padding: 22px; background: linear-gradient(150deg, #122743, #0c1b30); }
+.u1-discovery-card h2 { font-size: 1.12rem; line-height: 1.45; margin: 12px 0; }
+.u1-discovery-card h2 a { color: inherit; }
+.u1-discovery-card > :is(p:not(.u1-discovery-eyebrow), span) { color: #b5c9dc; font-size: .8rem; }
+.u1-discovery-notice { padding: 16px 0; font-size: .8rem; color: #b5c9dc; }
+@media (max-width: 600px) { .u1-discovery-tools { display: grid; grid-template-columns: minmax(0, 1fr); } .u1-discovery-heading { padding: 20px; } }
+@media (forced-colors: active) { .u1-discovery :is(a, input, select, button):focus-visible { outline-color: Highlight; } .u1-discovery-card { border-color: CanvasText; } }

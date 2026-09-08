@@ -1,255 +1,186 @@
 <div align="center">
 
-```
-██╗   ██╗ ██╗     ██████╗ ███████╗
-██║   ██║ ██║    ██╔═══██╗██╔════╝
-██║   ██║ ██║    ██║   ██║███████╗
-██║   ██║ ██║    ██║   ██║╚════██║
-╚██████╔╝ ██║    ╚██████╔╝███████║
- ╚═════╝  ╚═╝     ╚═════╝ ╚══════╝
-```
+<img src="docs/personal-cover.svg" alt="U1 OS: your day, your ideas, your next chapter" width="100%">
 
-# U1 OS — Autonomous Business Operating System
+# A little more organised. A lot more possible.
 
-**A futuristic, self-contained macOS command center.**  
-AI trading bots · Crypto desk · OSINT engine · Cyber terminal · Executive dossier — all running locally at `127.0.0.1:8787`.
+**Your personal workspace for life, creative work and building a living.**
 
-[![Release](https://img.shields.io/badge/release-v2.5.0%20Sovereign%20Launch-ff0055?style=flat-square&logo=apple)](https://github.com/U1-OS/U1-OS-MAC-/releases/tag/v2.5.0)
-[![Tests](https://img.shields.io/badge/tests-392%2F392%20passing-10b981?style=flat-square&logo=checkmarx)](https://github.com/U1-OS/U1-OS-MAC-)
-[![Subsystems](https://img.shields.io/badge/subsystems-38%20active-00f0ff?style=flat-square)](https://github.com/U1-OS/U1-OS-MAC-)
-[![PQC](https://img.shields.io/badge/crypto-NIST%20FIPS%20203%2F204%20PQC-a855f7?style=flat-square)](WHITEPAPER.md)
-[![Zero-Pip](https://img.shields.io/badge/dependencies-zero%20pip%20packages-00ff88?style=flat-square)](WHITEPAPER.md)
-[![Python](https://img.shields.io/badge/python-3.9%2B%20stdlib-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![License](https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square)](LICENSE)
-[![Localhost](https://img.shields.io/badge/binding-127.0.0.1%3A8787-e9b44c?style=flat-square)](http://127.0.0.1:8787)
+[Explore the workspaces](#one-place-for-the-things-that-matter) · [Start on your Mac](#start-on-your-mac) · [Operational status](docs/OPERATIONAL-UPGRADE.md) · [Review the replacement](docs/REPLACEMENT-REVIEW.md)
 
-[🌐 Live Site](https://u1-os.github.io/U1-OS-MAC-) · [📑 Technical Whitepaper](WHITEPAPER.md) · [📦 Homebrew Tap](#installation) · [⚡ Quick Start](#quick-start)
+**LOCAL-FIRST** · **MAC WORKSPACE** · **PROPOSED REPLACEMENT BUILD**
 
 </div>
 
 ---
 
-## What is U1 OS?
+## One place for the things that matter
 
-U1 OS is a **fully autonomous, localhost-bound business operating system and sovereign command matrix** built for macOS on Apple Silicon. It unifies 38 mission-critical enterprise and cryptographic subsystems — spanning autonomous AI swarms, algorithmic trading, duplex voice C2, multi-node P2P cluster sync, BCI neural focus HUD, and NIST FIPS 203/204 Post-Quantum Cryptography — running 100% locally with zero external pip packages.
+U1 OS brings your day, projects, creative tools and business workflows into one
+cohesive interface. Start with what needs your attention, make something useful,
+and keep the next step in view.
 
-### 🖱️ Download & Run (no terminal)
+The native shell is the user-facing entry point. This build is proposed through
+a **replacement pull request**, not a reconciliation of every feature on `main`.
+Opening the PR does not change `main`; replacement requires explicit review and
+merge approval. Migration of all existing `main` functionality has **not** been
+proven. Read the [replacement review guide](docs/REPLACEMENT-REVIEW.md) before accepting it.
 
-Build the double-clickable app once, then launch U1 OS like any other Mac application — it boots the local server for you and opens the command centre:
+| **Live your day** | **Make something yours** | **Build your living** |
+| :--- | :--- | :--- |
+| Tasks, appointments and a daily brief | Planners, course workbooks and original covers | Products, offers and client work |
+| Personal priorities and household records | Editable content, real PDFs and product bundles | Launch planning and actual-entry bookkeeping |
+| Wellbeing notes and your own media | Source-aware asset organisation | Clearly separate estimates, records and market research |
 
-```bash
-./build_launcher_app.sh          # produces "U1 OS.app" beside the repo
-```
+## A look inside
 
-Drag **U1 OS.app** into `/Applications` and double-click it. No Xcode, no Swift, no `pip`. It needs only the Python 3 that ships with the Xcode Command Line Tools — and offers to install those for you if they're missing. The bundle carries a sealed copy of the app, so it still runs if the checkout is moved or deleted, while preferring a live checkout when one is present so `git pull` takes effect without rebuilding.
+### Home: your day in view
 
-Logs land in `~/Library/Logs/U1-OS.log`.
+![U1 OS operational Home, captured in the browser on 2026-09-08 at 1440 by 1000 pixels](docs/previews/operational-home-20260908.png)
 
-### ⚡ 1-Line Sovereign Install
-```bash
-curl -fsSL https://raw.githubusercontent.com/U1-OS/U1-OS-MAC-/main/install.sh | bash
-```
+### Discovery: headlines with clear sources
 
-### 🍺 Homebrew Tap Install
-```bash
-brew install U1-OS/tap/command-center
-command-center start
-# → Opens http://127.0.0.1:8787 & launches CommandCenter.app
-```
+![U1 OS operational Discovery, captured in the browser on 2026-09-08 at 1440 by 1000 pixels](docs/previews/operational-discovery-20260908.png)
 
----
+These actual **1440 x 1000** browser captures were recaptured and accepted on
+**2026-09-08** after the layout and mobile-label fixes. They do not establish live
+OAuth/account access, media or file playback, or native Mac-app visual acceptance.
 
-## Features
+<details>
+<summary>Earlier development screenshots</summary>
 
-### 💹 Crypto Desk
-| Module | Description |
-|--------|-------------|
-| **Photon DEX Screener** | Live on-chain token feed — 5m/1h/24h PnL, liquidity depth, volume |
-| **Twitter / X Alpha Radar** | Real-time memecoin alpha with social velocity scoring |
-| **Copy Trading Engine** | Mirror whale wallets by Twitter/X username — 85%+ win rate filter |
-| **AI Trading Bot** | Alpha Sniper · Whale Shadow · Mean Reversion — autonomous execution |
-| **Quantitative Backtester** | 100-epoch Monte Carlo · Win Rate · Sharpe Ratio · Max Drawdown |
-| **Price Alert Watchdog** | Multi-token price sentinels with threshold notifications |
+These earlier application captures show the design direction. They are not
+evidence of the latest operational additions or connected accounts.
 
-### 🕵️ OSINT Intelligence
-- Authoritative DNS matrix & WHOIS inspector
-- HaveIBeenPwned breach auditor
-- Brand & asset mention crawler
-- SSL/TLS certificate sentinel
-- Localhost port security audit
-- Network gateway diagnostics
+### Home: a clearer starting point
 
-### 🤖 AI Workbench
-- GPT-4o & Claude Sonnet integration
-- Offline Ollama LLM (zero internet)
-- Executive business dossier generator
-- AI content & copy engine
+![U1 OS Home](docs/screenshots/personal-home.png)
 
-### 🔐 Security Suite
-- PBKDF2-CTR encrypted credential vault
-- Emergency lockdown killswitch (one-click freeze)
-- macOS process watchdog
-- SQLite immutable audit ledger
-- HMAC-SHA256 tamper detection
+### Digital Studio: from an idea to a tangible product
 
-### 🖥️ macOS Native
-- Desktop push notifications
-- LaunchAgent auto-start daemon
-- Menu bar status extra
-- Voice audio briefing (`/usr/bin/say`)
-- Hardware telemetry HUD (CPU/RAM/disk/thermal)
+![U1 OS Digital Studio](docs/screenshots/personal-studio.png)
 
-### 🎛️ Sensory Layer
-| Layer | Description |
-|-------|-------------|
-| **Tactile Audio Synth** | 18 synthesized interface voices (click · nav · execute · trade · cash · fault · boot) generated live by the Web Audio API — **zero binary audio assets** |
-| **Notification Centre** | Bell + unread badge in the top bezel, persistent signal history, mark-read / clear, `Cmd+Shift+N` |
-| **Toast Stack** | Up to 5 stacked toasts, severity auto-inferred from the message, colour-coded with a countdown life bar |
-| **Desktop Bridge** | Native macOS notifications via permission negotiation, mirrored from every live SSE event |
-| **Motion Engine** | Click ripples, staggered panel seat, cinematic section transitions, count-up numerals, green/red value flash, cold-boot scanline sweep |
-| **Accessibility** | Full `prefers-reduced-motion` compliance · master volume + mute, persisted across reloads |
+### Income: work with a clear next step
 
-### ⚡ Cyber Terminal
-```
-⚡ [U1-OS ~]$ bot status
-⚡ [U1-OS ~]$ swap BUY BONK 0.5
-⚡ [U1-OS ~]$ alpha
-⚡ [U1-OS ~]$ lockdown engage
-⚡ [U1-OS ~]$ ledger tail 20
-```
-Press `` ` `` anywhere to open. Tab completion · command history · CRT scanline aesthetics.
+![U1 OS Income workspace](docs/screenshots/personal-income.png)
 
----
+### Media and research, without leaving your OS
 
-## Quick Start
+![U1 OS Media workspace](docs/screenshots/personal-media.png)
 
-**Requirements:** macOS 12+, Python 3.11+
+</details>
 
-```bash
-# 1. Clone
-git clone https://github.com/U1-OS/U1-OS-MAC-.git
-cd U1-OS-MAC-
+## Designed around useful workflows
 
-# 2. Start
-./command-center start
+**[Start my day](docs/DAILY-FLOW.md).** Review your saved priorities, open tasks
+and local calendar in a guided daily flow. Keep your own priority order and open
+the existing review and editing tools when needed. The overview does not create
+appointments, infer email, sync an account or automatically rank your work.
 
-# 3. Open
-open http://127.0.0.1:8787
-```
+**[Digital Studio](docs/STUDIO-PRO.md).** Edit your own lessons, quizzes and
+workbook content; review the actual PDF; export a PDF or ZIP with original local
+cover artwork. After a successful save to managed Files, explicitly review its
+handoff into a personal product record and optional launch checklist. Real file
+IDs and versions stay linked; repeat submissions avoid duplicate records. Nothing
+is automatically published.
 
-### CLI Commands
+**[Income](docs/PERSONAL-WORKFLOWS.md).** Keep products, offers, clients and launch
+tasks in real local records. Keep operator-entered financial records separate
+from estimates and research. No invented revenue or promise of earnings.
 
-```bash
-./command-center start          # Boot U1 OS
-./command-center stop           # Graceful shutdown
-./command-center restart        # Hot reload
-./command-center status         # Health check
-./command-center test           # Run 106-test verification suite
-./command-center logs           # Live log tail
-./command-center bot status     # AI bot status
-./command-center bot backtest 100  # Run quantitative backtest
-./command-center crypto tokens  # Live DEX token feed
-./command-center lockdown       # Emergency freeze
-```
+**[AI Command](docs/AI-COMMAND.md) and [usage](docs/USAGE-WIDGET.md).** Review
+context and provider before sending a request. The usage widget explicitly
+selects the general Codex bucket, keeping model-specific buckets separate. Missing
+or stale readings are unavailable, not a fabricated zero. Provider subscriptions
+and optional API billing remain separate.
 
----
+**[Media and Source intake](docs/MEDIA-DOWNLOADS.md).** Work with authorised local
+originals. Source intake validates supported post URL formats, records your
+rights confirmations and exports JSON provenance. **Direct media downloading is
+UNAVAILABLE.** URL review does not fetch media or independently establish rights;
+watermark stripping is not supported.
 
-## Architecture
+**[Desktop tools inventory](docs/OSINT-TOOLS.md).** The 2026-09-08 discovery records
+eight repository candidates, five matching Desktop bundles present and two former
+bundles missing. Ponytail is a developer helper, not an eighth working Desktop
+OSINT app. Presence and configured addresses do not prove working services or queries.
 
-```
-Command Center OS (macOS)
-├── Core Server (server.py) -> 127.0.0.1:8787
-├── 11 Subsystem Services:
-│   ├── Intelligence, Finance, Comms, Deploy, AI Workbench,
-│   ├── Studio, Gaming, OSINT, Crypto, Telegram, Settings
-├── Integrations Hub (18 Pre-Installed Services):
-│   ├── Solana, Jupiter v6, DexScreener, Autonomous Trading
-│   ├── Telegram Alpha Bot, GitHub, Stripe, OpenAI, Anthropic
-│   ├── ElevenLabs, Twilio, Google Calendar, Gmail, AWS, etc.
-├── Utilities & Engines:
-│   ├── Pure-Python ed25519 & base58 Solana crypto primitives
-│   ├── Jupiter Aggregator v6 quote & swap transaction builder
-│   ├── Native Headless Chrome Web Crawler & DOM chart inspector
-│   ├── Pure-Python Telegram Bot API client (outbound/inbound)
-└── Living Bezel UI (HTML5 / Vanilla CSS / SSE Stream)
-```
+## Implemented workflows and setup boundaries
 
----
+| Workstream | Current boundary | Guides |
+| --- | --- | --- |
+| Spotify | Implemented but **unactivated**: official PKCE, a Keychain-helper adapter, native view and persistent widget. Your public Client ID, dashboard redirect configuration, consent and explicit first check are required. Automatic checking is off by default; metadata GET requests read cached data only. | [Spotify](docs/SPOTIFY.md) |
+| Account activation | Native setup preflight implemented and fixture-tested; this does not activate accounts or prove live access. **Canva remains unfinished.** | [Account activation](docs/ACCOUNT-ACTIVATION.md) |
+| Tech/gaming and sports news | Implemented headline discovery: official PlayStation/Xbox RSS and Guardian AFL, cricket, boxing and UFC RSS, plus existing news adapters. **Headlines only, not live scores, fixtures or match status.** UFC is a subset, not all MMA coverage. | [Discovery Hub](docs/DISCOVERY-HUB.md) |
+| Mac wrapper | Installed Desktop app ad-hoc checks reported; native visual acceptance pending. | [Mac release](docs/MAC-RELEASE.md) |
 
-## Roadmap
+The Discovery component report records six fixed feeds returning HTTP 200 with
+valid RSS on **2026-09-08**, with a bounded five-minute cache and timestamps. This
+is dated source evidence, not a guarantee of continuous freshness or complete coverage.
+Integration wiring is complete and final post-fix gate **r6 passed**. The
+[dated acceptance report](docs/OPERATIONAL-ACCEPTANCE-20260908.md) records the actual
+gate, browser and installation evidence and their separate boundaries.
+[Connections](docs/CONNECTIONS.md) distinguishes installed software, saved settings,
+authorised account access and successful synchronisation.
 
-- [x] Real Solana wallet & RPC integration (utils/solana.py)
-- [x] Live Jupiter on-chain quote & swap routing (utils/jupiter.py)
-- [x] Telegram bot remote control & alpha broadcast alerts (services/telegram_bot.py)
-- [x] Native headless Chrome browser web crawler & chart DOM inspector (utils/browser_crawler.py)
-- [x] Operator CLI terminal helper (cli.py)
-- [x] All-in-One Integrations Hub & Autonomous Usages Deck
-- [ ] VPS 24/7 cloud deploy
-- [ ] PostgreSQL backend
-- [x] Sensory layer — audio synth, notification centre & motion engine
-- [x] Double-click macOS app launcher (no compiler, boots its own server)
-- [x] Static source-integrity gate in CI (no undefined calls, no orphaned actions)
-- [ ] PWA / iPhone home screen app
-- [ ] AI autonomous agent (GPT-4o acts across all sections)
-- [ ] Multi-wallet PnL dashboard
-U1-OS-MAC-/
-├── command-center          # CLI entrypoint (bash)
-├── server.py               # Flask HTTP + SSE server (127.0.0.1:8787)
-├── services/
-│   ├── crypto.py           # Crypto desk, AI bot, DEX, backtester
-│   ├── finance.py          # Stripe revenue engine
-│   ├── ai_workbench.py     # GPT-4o, Claude, Ollama
-│   ├── osint.py            # DNS, WHOIS, breach, SSL, ports
-│   ├── comms.py            # Email, Twilio SMS
-│   ├── deploy.py           # Deploy automation
-│   ├── gaming.py           # Gaming engine
-│   ├── intelligence.py     # Executive dossier
-│   ├── studio.py           # Faceless video studio
-│   └── settings.py         # Vault, git updater
-├── static/
-│   ├── index.html          # Single-page OS shell
-│   ├── css/style.css       # Neon/cyber design system
-│   ├── css/fx.css          # Motion, toast stack & notification centre
-│   ├── js/fx.js            # Sensory layer: audio synth, notify, motion
-│   └── js/app.js           # Frontend engine
-├── macos_app/
-│   ├── launcher.sh         # Double-click .app bundle executable
-│   └── main.swift          # Native WKWebView shell (boots its own server)
-├── build_launcher_app.sh   # Compiler-free "U1 OS.app" builder
-├── tests/
-│   └── test_full_suite.py  # 106-test master verification suite
-└── docs/
-    └── index.html          # GitHub Pages site
-```
+## Start on your Mac
+
+This is a local development application. The installed Desktop app has undergone
+ad-hoc checks; native visual acceptance remains pending. It is not a notarised,
+independently self-contained consumer installer.
+
+1. Review the [replacement boundary](docs/REPLACEMENT-REVIEW.md) and the source notes in [Build status](docs/BUILD-STATUS.md).
+2. Follow the [Mac setup and release guide](docs/MAC-RELEASE.md) for the supported launcher and runtime steps.
+3. Start the local service and open `http://127.0.0.1:8788/`.
+4. Set up only the integrations you need, then review their permissions and connection status.
+5. Configure Safety Centre yourself before relying on the application access lock.
+
+The personal-workspace dependencies are listed in `requirements-personal.txt`.
+Desktop signing, notarisation and external-provider setup are tracked separately
+from the local source build.
+
+## Your work. Your control.
+
+- **Local-first is not encrypted-by-default.** Local databases, browser drafts and ordinary exports can contain private information.
+- **The safety lock protects U1 OS access.** It is not FileVault, a system firewall, a hardware dead-man device or a guarantee that exchange orders stop.
+- **Lock, pause and cancellation are distinct.** Managed-job controls apply only to the jobs that implement them.
+- **Backups have explicit coverage.** Encrypted copies and separate-folder restore drills do not encrypt the live database or delete existing plaintext backups.
+- **Publishing requires intent.** Creating a draft or a product does not post it publicly, make a purchase or execute a trade.
+- **Secrets stay out of source uploads.** Runtime data, credentials, personal exports and session material are not GitHub release content.
+
+[Safety setup](docs/SAFETY-LOCK.md) · [Private backups](docs/PRIVATE-BACKUPS.md) · [Connections](docs/CONNECTIONS.md)
+
+## Honest progress, visible evidence
+
+The [operational upgrade report](docs/OPERATIONAL-UPGRADE.md) distinguishes ready
+local workflows, setup-dependent work, unavailable features and pending acceptance.
+Final post-fix operational gate **r6 passed at `2026-09-08T10:08:00Z`**:
+**516 tests**, comprising **414 Python tests across 25 modules** and **102 Node
+tests across eight suites**, plus **69 syntax checks**, with **zero failures,
+errors, skips or missing items**. The
+[dated acceptance report](docs/OPERATIONAL-ACCEPTANCE-20260908.md) records the actual
+gate, accepted browser captures and installation boundaries. Earlier release-gate
+and CI results, including r5, remain dated historical evidence rather than being
+relabelled as r6. The opt-in FFmpeg gate was **NOT RUN**; F's separately reported
+real tests are distinct evidence, not an additional part of the 516-test total.
+
+Component reports on 2026-09-08 include **15 isolated usage tests** for the Codex
+bucket fix and the latest **40 safety tests**. These are separate component results, not a
+current whole-build test total or a production security audit. Dated Spotify,
+activation and Discovery component results are recorded in the
+[operational evidence table](docs/OPERATIONAL-UPGRADE.md#dated-evidence-not-a-new-combined-gate);
+mocked checks do not establish live Spotify activation. The
+[60-item build tracker](docs/BUILD-STATUS.md) and detailed validation records remain
+available; no all-`main` feature migration claim is made.
+
+[Validation evidence](docs/PERSONAL-RELEASE-VALIDATION.md) · [Architecture](docs/U1-OS-ARCHITECTURE.md) · [Design system](docs/U1-OS-DESIGN-SYSTEM.md) · [Earlier technical README](docs/README-ARCHIVE-20260908.md)
 
 ---
-
-## Test Suite
-
-```bash
-./command-center test
-
-# TOTAL TESTS PASSED:   392 / 392
-# [PASS] ALL SUBSYSTEMS 100% OPERATIONAL
-```
-
-35 verified modules across: Finance · Comms · Deploy · AI · Studio · Gaming · OSINT · Settings · macOS · SSE · Vault · Ollama · Dossier · Menu Bar · Hardware · Webhooks · Scheduler · Voice · SSL · Ports · Network · Watchdog · Ledger · Lockdown · Photon DEX · Twitter Alpha · Copy Trading · Price Alerts · AI Bot · Backtester · Cyber Terminal · Telegram Bot · Telegram Integration Diagnostics · Native Chrome Headless Scraper
-
----
-
-## Security
-
-- **Localhost only.** Strictly bound to `127.0.0.1:8787`. Zero external exposure.
-- **Encrypted vault.** PBKDF2-CTR with HMAC-SHA256 tamper detection.
-- **Audit ledger.** Every action written to an immutable SQLite log.
-- **Emergency killswitch.** One command freezes all outbound mutations.
-
----
-
-## License
-
-MIT © U1-OS · [u1-os.github.io/U1-OS-MAC-](https://u1-os.github.io/U1-OS-MAC-)
 
 <div align="center">
-<sub>Built for speed. Built for autonomy. Built for macOS.</sub>
+
+**U1 OS**
+
+*Build today. Make room for a brighter tomorrow.*
+
 </div>

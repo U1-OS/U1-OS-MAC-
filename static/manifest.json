@@ -1,13 +1,11 @@
 {
-  "name": "Command Center OS",
-  "short_name": "U1-OS",
-  "description": "macOS Business & Crypto Operating System with Living Interface",
+  "name": "U1 OS",
+  "short_name": "U1 OS",
+  "description": "Your world. Amplified. A personal AI workspace for macOS.",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#08090B",
-  "theme_color": "#08090B",
+  "background_color": "#020611",
+  "theme_color": "#020611",
   "icons": [
     {
       "src": "/favicon.svg",
@@ -15,6 +13,5 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ],
-  "categories": ["business", "finance", "utilities"]
+  ]
 }

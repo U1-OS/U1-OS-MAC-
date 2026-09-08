@@ -6,7 +6,6 @@ import threading
 import urllib.request
 import urllib.parse
 from services.base import BaseService
-from utils import face_shield
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXPORTS_DIR = os.path.join(BASE_DIR, "exports")
@@ -135,8 +134,6 @@ class StudioService(BaseService):
         ]
         self.broll_library = list(CURATED_BROLL_LIBRARY)
         self.sample_scripts = list(SAMPLE_SCRIPTS)
-        self.social_queue = []
-        self.published_social_posts = []
         self._worker_running = True
         self._start_queue_worker()
 
@@ -395,160 +392,5 @@ class StudioService(BaseService):
                 self.render_queue = [j for j in self.render_queue if j["status"] != "COMPLETED"]
             self.poll()
             return {"success": True, "message": "Cleared completed render jobs"}
-
-        elif action == "compile_daily_broadcast":
-            import subprocess
-            from utils import briefing
-
-            dossier = briefing.generate_briefing()
-            dossier_text = payload.get("text")
-            if not dossier_text:
-                summ = dossier.get("summary") if isinstance(dossier, dict) else None
-                if isinstance(summ, dict):
-                    dossier_text = summ.get("text") or "Executive Daily Briefing: All systems operational. Telemetry nominal."
-                elif isinstance(summ, str):
-                    dossier_text = summ
-                else:
-                    dossier_text = "Executive Daily Briefing: All systems operational. Telemetry nominal."
-            if not isinstance(dossier_text, str):
-                dossier_text = str(dossier_text)
-            clean_text = dossier_text.replace("\n", " ").replace("#", "").strip()[:400]
-
-            date_str = time.strftime("%Y%m%d_%H%M%S")
-            audio_filename = f"broadcast_{date_str}.aiff"
-            audio_path = os.path.join(EXPORTS_DIR, audio_filename)
-
-            # Execute real macOS say to compile audio file
-            try:
-                subprocess.run(["/usr/bin/say", "-v", "Daniel", "-o", audio_path, clean_text], check=True, timeout=15)
-                has_audio = os.path.exists(audio_path)
-            except Exception as e:
-                has_audio = False
-
-            broadcast_meta = {
-                "id": f"bcast-{int(time.time())}",
-                "timestamp": time.time(),
-                "title": f"Daily Executive Broadcast // {time.strftime('%Y-%m-%d')}",
-                "audio_path": audio_path if has_audio else None,
-                "audio_file": audio_filename if has_audio else None,
-                "dossier_file": dossier.get("markdown_file"),
-                "duration_sec": max(10, len(clean_text.split()) // 3),
-                "status": "PRODUCED",
-                "summary": clean_text[:140] + "..."
-            }
-
-            self.add_event("broadcast_compiled", f"Executive Daily Broadcast synthesized: {audio_filename}")
-            feeder = getattr(self, "feeder", None)
-            if feeder and hasattr(feeder, "services") and "telegram" in feeder.services:
-                try:
-                    feeder.services["telegram"].broadcast_alert(
-                        f"🎙 <b>EXECUTIVE DAILY BROADCAST</b>\n📅 <b>Date:</b> {time.strftime('%Y-%m-%d')}\n⏱ <b>Duration:</b> {broadcast_meta['duration_sec']}s\n📝 <b>Brief:</b> {broadcast_meta['summary']}"
-                    )
-                except Exception:
-                    pass
-
-            return {"success": True, "broadcast": broadcast_meta}
-
-        # --- Autonomous Social Media Growth & X/Twitter Auto-Poster Engine ---
-        elif action == "generate_social_content":
-            topic = payload.get("topic", "Solana Institutional Alpha & Momentum").strip()
-            platform = payload.get("platform", "x").lower()
-            
-            thread_tweets = [
-                f"⚡ [ALPHA DIGEST] {topic} // Executive Briefing\n\nHigh-frequency on-chain liquidity velocity is indicating key accumulation patterns across institutional Solana desks. Here is the operational breakdown 🧵👇",
-                "1/ Cross-chain net-worth matrices confirm capital rotation into Layer-1 high-throughput runners. Private mempool bundling (MEV protection) is mitigating up to 1.8% sandwich slippage on size swaps.",
-                "2/ Treasury governance: Multi-wallet tracking now encompasses cold vaults + active desks simultaneously with automated anti-rug safety scoring on all bonding curve graduations.",
-                f"3/ Autonomous execution continues 24/7 across U1 OS. Stay sovereign.\n\n#Solana #DeFi #CryptoAlpha #TradingDesk #Solopreneur #{time.strftime('%b%Y')}"
-            ]
-            
-            post_data = {
-                "id": f"post-{int(time.time()*1000)}",
-                "topic": topic,
-                "platform": platform,
-                "channel": platform,
-                "thread_tweets": thread_tweets,
-                "tweet_count": len(thread_tweets),
-                "body": "\n\n".join(thread_tweets),
-                "tags": ["#Solana", "#DeFi", "#CryptoAlpha", "#U1OS"],
-                "virality_score": 94,
-                "created_at": time.time(),
-                "status": "DRAFT",
-                "suggested_tags": ["#Solana", "#DeFi", "#CryptoAlpha"]
-            }
-            return {"success": True, "post": post_data}
-
-        elif action == "queue_social_post":
-            post = payload.get("post")
-            if not post:
-                # Construct from direct content/payload fields
-                post = {
-                    "id": payload.get("id") or f"post-{int(time.time()*1000)}",
-                    "topic": payload.get("topic", "U1 OS Alpha"),
-                    "platform": payload.get("channel", payload.get("platform", "x_twitter")),
-                    "channel": payload.get("channel", payload.get("platform", "x_twitter")),
-                    "body": payload.get("content", payload.get("body", "Sovereign compute active.")),
-                    "tags": payload.get("tags", ["#AI", "#SovereignOS"]),
-                    "virality_score": payload.get("virality_score", 90),
-                    "created_at": time.time()
-                }
-            post["status"] = "QUEUED"
-            post["queued_at"] = time.time()
-            self.social_queue.append(post)
-            self.add_event("social_post_queued", f"Queued {post.get('platform', 'X').upper()} post: '{post.get('topic', 'Alpha Thread')[:30]}...'")
-            return {"success": True, "queue_length": len(self.social_queue), "post": post, "item": post}
-
-        elif action == "publish_social_post":
-            post_id = payload.get("post_id")
-            post = None
-            if post_id:
-                for idx, p in enumerate(self.social_queue):
-                    if p.get("id") == post_id:
-                        post = self.social_queue.pop(idx)
-                        break
-            if not post:
-                post = payload.get("post") or {
-                    "id": f"post-{int(time.time())}",
-                    "topic": payload.get("topic", "U1 OS Operational Alpha"),
-                    "thread_tweets": [payload.get("text", "⚡ U1 OS Sovereign Compute Active // Telemetry Nominal.")]
-                }
-
-            post["status"] = "PUBLISHED"
-            post["published_at"] = time.time()
-            post["tweet_id"] = f"1833{int(time.time())}994"
-            post["permalink"] = f"https://x.com/U1_OS/status/{post['tweet_id']}"
-            self.published_social_posts.insert(0, post)
-
-            self.add_event("social_post_published", f"Dispatched X/Twitter thread: '{post.get('topic', '')[:35]}'")
-            return {
-                "success": True,
-                "post": post,
-                "tweet_id": post["tweet_id"],
-                "permalink": post["permalink"],
-                "message": f"Successfully published to {post.get('platform', 'X').upper()}"
-            }
-
-        elif action == "get_social_queue":
-            return {
-                "success": True,
-                "queue": list(self.social_queue),
-                "published": list(self.published_social_posts),
-                "queue_count": len(self.social_queue),
-                "published_count": len(self.published_social_posts)
-            }
-
-        elif action == "anonymize_video_faces":
-            input_path = payload.get("input_path")
-            method = payload.get("method", "pixelate")
-            intensity = int(payload.get("intensity", 16))
-            res = face_shield.anonymize_faces(input_path=input_path, method=method, intensity=intensity)
-            self.add_event("face_shield_anonymized", f"Anonymized {res.get('faces_detected')} faces using {method} on Metal NPU")
-            return res
-
-        elif action == "audit_deepfake_authenticity":
-            media_path = payload.get("media_path") or payload.get("media_filename")
-            res = face_shield.audit_deepfake_authenticity(media_path=media_path)
-            res["analysis"] = dict(res)
-            self.add_event("deepfake_audit_completed", f"Audited {res.get('media_target')}: {res.get('verdict')} ({res.get('authenticity_score')}% authentic)")
-            return res
 
         return super().dispatch_action(action, payload)
