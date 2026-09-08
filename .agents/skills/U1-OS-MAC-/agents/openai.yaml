@@ -1,0 +1,6 @@
+interface:
+  display_name: "U1 OS MAC"
+  short_description: "Repo-specific patterns and workflows for U1-OS-MAC-"
+  default_prompt: "Use the U1-OS-MAC- repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
