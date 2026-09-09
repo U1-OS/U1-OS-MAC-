@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Command Center — macOS Business Operating System Local Feeder
-Binds strictly to 127.0.0.1:8787
+Binds strictly to 127.0.0.1 on the port set in config.json (default 8788)
 Feeds shared state across all services to the living slab UI
 """
 
@@ -12,6 +12,10 @@ import time
 import queue
 import threading
 import mimetypes
+import traceback
+import hashlib
+from pathlib import Path
+from urllib.parse import unquote, urlsplit
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
@@ -21,7 +25,12 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from utils import macos
+from utils import metrics
+from utils import integrations_hub
+from utils import workspace_hub
 from utils.scheduler import AutomationScheduler
+from services.updater import UpdaterService
+from utils import improvement_agent
 from services.intelligence import IntelligenceService
 from services.finance import FinanceService
 from services.comms import CommsService
@@ -32,11 +41,40 @@ from services.gaming import GamingService
 from services.osint import OSINTService
 from services.crypto import CryptoService
 from services.settings import SettingsService
-from services.telegram_bot import TelegramService
-from utils import telegram
 
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+
+def public_health_identity(root):
+    """Nonsecret installation identity, not an authentication credential."""
+    canonical = str(Path(root).resolve())
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def resolve_static_file(request_path, static_directory):
+    """Decode once and confine the canonical target to the static directory."""
+    if any(ord(character) < 32 or ord(character) == 127 for character in request_path):
+        raise ValueError("Invalid static path")
+    parsed = urlsplit(request_path)
+    if parsed.scheme or parsed.netloc:
+        raise ValueError("An origin-relative static path is required")
+    path = unquote(parsed.path, encoding="utf-8", errors="strict")
+    if not path.startswith("/") or "\\" in path or any(ord(character) < 32 or ord(character) == 127 for character in path):
+        raise ValueError("Invalid static path")
+    if path in ("/", "/index.html"):
+        relative = "u1os.html"
+    elif path in ("/classic", "/classic.html"):
+        relative = "index.html"
+    else:
+        relative = path.lstrip("/")
+        if relative.startswith("static/"):
+            relative = relative[len("static/"):]
+    root = Path(static_directory).resolve()
+    candidate = (root / relative).resolve()
+    if candidate == root or root not in candidate.parents:
+        raise ValueError("Static path is outside the asset root")
+    return str(candidate)
 
 class SSEEventBroker:
     """Thread-safe publish/subscribe broker for real-time Server-Sent Events."""
@@ -73,6 +111,13 @@ class SSEEventBroker:
                     self.subscribers.remove(d)
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    def handle_error(self, request, client_address):
+        """Keep client disconnects out of the log; report everything else."""
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (ConnectionResetError, BrokenPipeError, TimeoutError)):
+            return
+        super().handle_error(request, client_address)
+
     daemon_threads = True
 
 class CommandCenterFeeder:
@@ -96,10 +141,21 @@ class CommandCenterFeeder:
         self.services["gaming"] = GamingService(self.config)
         self.services["osint"] = OSINTService(self.config)
         self.services["crypto"] = CryptoService(self.config)
-        self.services["telegram"] = TelegramService(self.config)
         self.services["settings"] = SettingsService(self.config, self.config_path, self.services)
-        for svc in self.services.values():
-            svc.feeder = self
+        self.services["settings"].feeder = self
+
+        # Updater: owns version, git state, dependency restore, app rebuild
+        # and restart, and surfaces the always-on improvement agent.
+        self.services["updater"] = UpdaterService(self.config, feeder=self)
+        self.services["updater"].feeder = self
+        self.services["updater"].agent = improvement_agent
+
+        # The improvement agent shipped in utils/ but was imported by
+        # nothing, so it never ran. Start it here and let it keep watch.
+        try:
+            improvement_agent.start(workspace_hub.tools_status)
+        except Exception as exc:
+            print(f"[WARN] Improvement agent did not start: {type(exc).__name__}: {exc}")
 
         # Initialize Automation Scheduler
         self.scheduler = AutomationScheduler(feeder=self)
@@ -173,36 +229,6 @@ class CommandCenterFeeder:
             title = f"COMMAND CENTER // {service_name.upper()}"
             macos.notify(title, summary, sound="Hero")
 
-        # Real-time Telegram broadcast for crypto & security events
-        if "telegram" in self.services and self.services["telegram"].configured:
-            try:
-                tg_svc = self.services["telegram"]
-                if evt_type in ["photon_swap_executed", "trade_executed"]:
-                    payload = event.get("payload", {})
-                    msg = telegram.format_trade_alert(
-                        token_symbol=payload.get("symbol", "SOL"),
-                        action=payload.get("side", "BUY"),
-                        amount_sol=payload.get("amount_sol", 0.5),
-                        price_usd=payload.get("price_usd", 0.0),
-                        tokens_qty=payload.get("tokens_received", 0.0),
-                        tx_hash=payload.get("tx_hash")
-                    )
-                    tg_svc.broadcast_alert(msg)
-                elif evt_type == "crypto_alert_triggered":
-                    alt = event.get("payload", {}).get("alert", {})
-                    msg = telegram.format_price_alert(
-                        alt.get("symbol", "TOKEN"),
-                        alt.get("current_price", 0),
-                        alt.get("condition", "ABOVE"),
-                        alt.get("target_price", 0)
-                    )
-                    tg_svc.broadcast_alert(msg)
-                elif evt_type in ["lockdown_engaged", "lockdown_disengaged"]:
-                    msg = telegram.format_lockdown_notice(evt_type == "lockdown_engaged")
-                    tg_svc.broadcast_alert(msg)
-            except Exception:
-                pass
-
     def broadcast_action(self, service_name, action, result):
         self.sse_broker.publish("action_dispatched", {
             "service": service_name,
@@ -210,14 +236,33 @@ class CommandCenterFeeder:
             "result": result
         })
 
+    DEFAULT_CONFIG = {"system": {"host": "127.0.0.1", "port": 8788}}
+
     def load_config(self):
+        # config.json is deliberately not tracked in git, so a fresh clone
+        # arrives without one. Seed it from config.example.json instead of
+        # silently falling back to a different port than every other part
+        # of the app reads from that file.
+        if not os.path.exists(self.config_path):
+            example = os.path.join(os.path.dirname(self.config_path), "config.example.json")
+            if os.path.exists(example):
+                try:
+                    with open(example, "r", encoding="utf-8") as src:
+                        seeded = json.load(src)
+                    with open(self.config_path, "w", encoding="utf-8") as dst:
+                        json.dump(seeded, dst, indent=2)
+                    print("[SETUP] Created config.json from config.example.json")
+                    return seeded
+                except Exception as e:
+                    print(f"[WARN] Could not seed config.json from the example: {e}")
+
         if os.path.exists(self.config_path):
             try:
                 with open(self.config_path, "r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 print(f"[WARN] Error reading config.json: {e}")
-        return {"system": {"host": "127.0.0.1", "port": 8787}}
+        return json.loads(json.dumps(self.DEFAULT_CONFIG))
 
     def save_config(self, new_config):
         with self.lock:
@@ -246,7 +291,7 @@ class CommandCenterFeeder:
             "system": {
                 "server_time": time.time(),
                 "host": self.config.get("system", {}).get("host", "127.0.0.1"),
-                "port": self.config.get("system", {}).get("port", 8787),
+                "port": self.config.get("system", {}).get("port", 8788),
                 "os": "macOS",
                 "version": "1.0.0"
             },
@@ -277,15 +322,63 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
         # Quiet standard output for clean operations
         pass
 
+    def self_origin(self):
+        """This server's own origin, taken from config rather than a
+        hardcoded port — the two had drifted apart (config says 8788,
+        the CORS header still claimed 8787)."""
+        port = 8788
+        try:
+            port = int(feeder.config.get("system", {}).get("port", port))
+        except Exception:
+            pass
+        return f"http://127.0.0.1:{port}"
+
+    def send_response_only(self, code, message=None):
+        # Both send_response() and send_error() funnel through here, so this
+        # is the one place that sees every status code the server returns.
+        self._u1_status = code
+        super().send_response_only(code, message)
+
+    def handle_one_request(self):
+        """A browser closing a tab, aborting a fetch or dropping an SSE
+        stream is normal traffic, not a fault. Previously each one printed
+        a full traceback and buried real errors in the log.
+
+        This is also where every request is timed for the measurement floor.
+        """
+        self._u1_status = None
+        self._u1_started = time.monotonic()
+        try:
+            super().handle_one_request()
+        except (ConnectionResetError, BrokenPipeError, TimeoutError):
+            self.close_connection = True
+        except Exception as exc:
+            metrics.record_exception(type(exc).__name__, "http.handle_one_request", str(exc))
+            raise
+        finally:
+            try:
+                if getattr(self, "path", None):
+                    metrics.record_request(
+                        self.path,
+                        getattr(self, "command", "?") or "?",
+                        self._u1_status if self._u1_status is not None else 0,
+                        (time.monotonic() - self._u1_started) * 1000.0,
+                    )
+            except Exception:
+                pass
+
     def send_json(self, data, status_code=200):
         body = json.dumps(data, indent=2).encode("utf-8")
-        self.send_response(status_code)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8787")
-        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(status_code)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Access-Control-Allow-Origin", self.self_origin())
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionResetError, BrokenPipeError):
+            self.close_connection = True
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -295,7 +388,49 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        from utils.u1_safety import gate_request
+        if not gate_request(self):
+            return
+        if self.path.split("?", 1)[0] == "/healthz":
+            if self.command != "GET":
+                self.send_error(405, "Health identity supports GET only")
+                return
+            if not self.integration_request_allowed():
+                self.send_json({"success": False, "error": "Local same-origin request required"}, 403)
+                return
+            from utils.u1_safety import manager
+            self.send_json({"service": "u1-os", "protocol": 1,
+                            "installation_id": public_health_identity(BASE_DIR),
+                            "locked": bool(manager().blocked())})
+            return
+        from utils import u1_native_routes
+        if u1_native_routes.handle_request(self):
+            return
+        from utils.u1_life_studio import handle_request
+        if handle_request(self):
+            return
         path = self.path.split("?")[0]
+
+        if path.startswith("/api/workspace/"):
+            if not self.integration_request_allowed():
+                self.send_json({"success": False, "error": "Local same-origin request required"}, 403)
+                return
+            from urllib.parse import parse_qs, urlsplit
+            try:
+                result = workspace_hub.handle_get(path.removeprefix("/api/workspace/"), parse_qs(urlsplit(self.path).query))
+                self.send_json(result)
+            except ValueError as exc:
+                self.send_json({"success": False, "error": str(exc)}, 400)
+            except Exception:
+                self.send_json({"success": False, "error": "This provider is temporarily unavailable"}, 503)
+            return
+
+        if path == "/api/integrations":
+            if not self.integration_request_allowed():
+                self.send_json({"success": False, "error": "Local same-origin request required"}, 403)
+                return
+            self.send_json(integrations_hub.catalog(feeder.config, BASE_DIR))
+            return
 
         if path == "/api/state":
             state = feeder.get_full_state()
@@ -354,11 +489,13 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
             self.send_header("Cache-Control", "no-cache, no-transform")
             self.send_header("Connection", "keep-alive")
-            self.send_header("Access-Control-Allow-Origin", "http://127.0.0.1:8787")
+            self.send_header("Access-Control-Allow-Origin", self.self_origin())
             self.send_header("X-Accel-Buffering", "no")
             self.end_headers()
 
             q = feeder.sse_broker.subscribe()
+            sse_opened_at = time.monotonic()
+            metrics.sse_opened()
             try:
                 # Send initial handshake frame
                 handshake = f"data: {json.dumps({'type': 'connected', 'timestamp': time.time(), 'message': 'Command Center SSE Stream Active'})}\n\n"
@@ -379,6 +516,7 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
                 pass
             finally:
                 feeder.sse_broker.unsubscribe(q)
+                metrics.sse_closed(time.monotonic() - sse_opened_at)
             return
 
         if path == "/api/config":
@@ -394,28 +532,13 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             self.send_json(cfg)
             return
 
-        if path == "/api/telegram/tma-config":
-            bot_token = feeder.config.get("integrations", {}).get("telegram", {}).get("bot_token", "")
-            bot_id = bot_token.split(":")[0] if ":" in bot_token else "u1_os_bot"
-            self.send_json({
-                "success": True,
-                "tma_enabled": True,
-                "tma_url": "http://127.0.0.1:8787/tma",
-                "bot_id": bot_id,
-                "short_name": "u1_c2"
-            })
+        # Keep assets and the canonical unlock shell reachable, never siblings
+        # of static or a symlink target outside it, including while locked.
+        try:
+            file_path = resolve_static_file(self.path, STATIC_DIR)
+        except (ValueError, OSError, RuntimeError):
+            self.send_error(403, "Static path is not allowed")
             return
-
-        # Serve frontend files
-        if path == "/" or path == "/index.html":
-            file_path = os.path.join(STATIC_DIR, "index.html")
-        elif path == "/tma":
-            file_path = os.path.join(STATIC_DIR, "tma.html")
-        else:
-            rel_path = path.lstrip("/")
-            if rel_path.startswith("static/"):
-                rel_path = rel_path[len("static/"):]
-            file_path = os.path.join(STATIC_DIR, rel_path)
 
         if os.path.exists(file_path) and os.path.isfile(file_path):
             mime_type, _ = mimetypes.guess_type(file_path)
@@ -427,9 +550,6 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", mime_type)
                 self.send_header("Content-Length", str(len(content)))
-                if path == "/sw.js":
-                    self.send_header("Service-Worker-Allowed", "/")
-                    self.send_header("Cache-Control", "no-cache")
                 self.end_headers()
                 self.wfile.write(content)
                 return
@@ -442,8 +562,47 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
     def do_HEAD(self):
         self.do_GET()
 
+    def integration_request_allowed(self):
+        port = feeder.config.get("system", {}).get("port", 8788)
+        allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+        host = self.headers.get("Host", "")
+        origin = self.headers.get("Origin")
+        return (host in allowed_hosts and self.headers.get("Sec-Fetch-Site") != "cross-site"
+                and (not origin or origin == f"http://{host}"))
+
     def do_POST(self):
+        from utils.u1_safety import gate_request
+        if not gate_request(self):
+            return
+        if self.path.split("?", 1)[0] == "/healthz":
+            self.send_error(405, "Health identity supports GET only")
+            return
+        from utils import u1_native_routes
+        if u1_native_routes.handle_request(self):
+            return
+        from utils.u1_life_studio import handle_request
+        if handle_request(self):
+            return
         path = self.path.split("?")[0]
+        if path.startswith("/api/workspace/"):
+            import secrets
+            if not self.integration_request_allowed() or not secrets.compare_digest(self.headers.get("X-U1-CSRF", ""), integrations_hub.CSRF_TOKEN):
+                self.send_json({"success": False, "error": "Reload the page before running an action"}, 403)
+                return
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                if not 0 < length <= 65536:
+                    raise ValueError("Invalid request size")
+                request = json.loads(self.rfile.read(length))
+                if not isinstance(request, dict):
+                    raise ValueError("Expected a JSON object")
+                if getattr(feeder.services.get("settings"), "lockdown_active", False):
+                    self.send_json({"success": False, "error": "Workspace actions are paused by lockdown"}, 403)
+                    return
+                self.send_json(workspace_hub.handle_post(path.removeprefix("/api/workspace/"), request))
+            except (ValueError, TypeError) as exc:
+                self.send_json({"success": False, "error": str(exc)}, 400)
+            return
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length)
 
@@ -451,6 +610,44 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             payload = json.loads(body.decode("utf-8")) if body else {}
         except Exception:
             self.send_json({"success": False, "error": "Invalid JSON"}, 400)
+            return
+
+        if path == "/api/integrations":
+            import secrets
+            supplied = self.headers.get("X-U1-CSRF", "")
+            if not self.integration_request_allowed() or not secrets.compare_digest(supplied, integrations_hub.CSRF_TOKEN):
+                self.send_json({"success": False, "error": "Reload the integrations page before saving"}, 403)
+                return
+            try:
+                with feeder.lock:
+                    updated = integrations_hub.updated_config(feeder.config, payload)
+                    integrations_hub.persist(updated, feeder.config_path)
+                    feeder.config = updated
+                    for service in feeder.services.values():
+                        service.config = updated
+                self.send_json({"success": True, "message": "Settings saved; account access not verified"})
+            except ValueError as exc:
+                self.send_json({"success": False, "error": str(exc)}, 400)
+            except OSError:
+                self.send_json({"success": False, "error": "Could not save local configuration"}, 500)
+            return
+
+        if path == "/api/telemetry/client":
+            # The browser reports its own exceptions here so frontend faults
+            # are measured too. Same-origin only, and nothing is echoed back.
+            if not self.integration_request_allowed():
+                self.send_json({"success": False, "error": "Local same-origin request required"}, 403)
+                return
+            try:
+                metrics.record_exception(
+                    str(payload.get("kind", "Error"))[:80],
+                    str(payload.get("where", "frontend"))[:120],
+                    str(payload.get("message", ""))[:300],
+                    origin="frontend",
+                )
+                self.send_json({"success": True, "recorded": True})
+            except Exception as exc:
+                self.send_json({"success": False, "error": type(exc).__name__, "message": str(exc)}, 500)
             return
 
         # Check if Emergency Lockdown is active
@@ -469,64 +666,7 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
             source = path[len("/api/webhooks/"):].strip("/") or "generic"
             headers_dict = dict(self.headers)
             entry = feeder.record_webhook(source, payload, headers_dict)
-            chatops_out = None
-            if source in ["discord", "slack"] and isinstance(payload, dict) and payload.get("command") and "comms" in feeder.services:
-                chatops_out = feeder.services["comms"].dispatch_action("execute_chatops_command", {
-                    "command": payload.get("command"),
-                    "platform": source,
-                    "user": payload.get("user", f"{source.title()}User")
-                })
-            self.send_json({
-                "success": True,
-                "message": f"Webhook received from {source}",
-                "entry": entry,
-                "chatops": chatops_out
-            })
-            return
-
-        if path == "/api/auth/webauthn-challenge":
-            settings_svc = feeder.services.get("settings")
-            if settings_svc:
-                res = settings_svc.dispatch_action("generate_biometric_challenge", payload)
-                self.send_json(res)
-            else:
-                self.send_json({"success": False, "error": "Settings service unavailable"}, 500)
-            return
-
-        if path == "/api/auth/webauthn-verify":
-            settings_svc = feeder.services.get("settings")
-            if settings_svc:
-                res = settings_svc.dispatch_action("verify_biometric_response", payload)
-                self.send_json(res)
-            else:
-                self.send_json({"success": False, "error": "Settings service unavailable"}, 500)
-            return
-
-        if path == "/api/auth/yubikey-challenge":
-            settings_svc = feeder.services.get("settings")
-            if settings_svc:
-                res = settings_svc.dispatch_action("generate_yubikey_challenge", payload)
-                self.send_json(res)
-            else:
-                self.send_json({"success": False, "error": "Settings service unavailable"}, 500)
-            return
-
-        if path == "/api/auth/yubikey-verify":
-            settings_svc = feeder.services.get("settings")
-            if settings_svc:
-                res = settings_svc.dispatch_action("verify_yubikey_response", payload)
-                self.send_json(res)
-            else:
-                self.send_json({"success": False, "error": "Settings service unavailable"}, 500)
-            return
-
-        if path == "/api/voice/process":
-            ai_svc = feeder.services.get("ai_workbench")
-            if ai_svc:
-                res = ai_svc.dispatch_action("process_voice_command", payload)
-                self.send_json(res)
-            else:
-                self.send_json({"success": False, "error": "AI Workbench service unavailable"}, 500)
+            self.send_json({"success": True, "message": f"Webhook received from {source}", "entry": entry})
             return
 
         if path == "/api/action":
@@ -552,7 +692,23 @@ class CommandCenterHandler(SimpleHTTPRequestHandler):
                 return
 
             svc = feeder.services[service_name]
-            result = svc.dispatch_action(action, action_payload)
+            # An exception escaping a service used to kill the request
+            # thread mid-response, so the browser saw the connection drop
+            # with no status at all. Always answer with JSON instead.
+            try:
+                result = svc.dispatch_action(action, action_payload)
+            except Exception as exc:
+                metrics.record_exception(type(exc).__name__,
+                                         f"{service_name}.{action}", str(exc))
+                traceback.print_exc()
+                self.send_json({
+                    "success": False,
+                    "error": type(exc).__name__,
+                    "message": f"Action '{action}' failed on {service_name}: {exc}",
+                    "service": service_name,
+                    "action": action
+                }, 500)
+                return
             feeder.broadcast_action(service_name, action, result)
             self.send_json(result)
             return
@@ -579,13 +735,21 @@ def run_server():
     feeder.start_background_loop()
 
     host = "127.0.0.1"  # Bound to 127.0.0.1 only
-    port = feeder.config.get("system", {}).get("port", 8787)
+    port = feeder.config.get("system", {}).get("port", 8788)
 
     server = ThreadedHTTPServer((host, port), CommandCenterHandler)
+
+    # Measurement floor: restore what was measured before, note how long
+    # this process took to become ready, and begin resource sampling.
+    metrics.load()
+    startup_ms = metrics.mark_ready()
+    metrics.start_sampler(60)
+
     print(f"============================================================")
     print(f" COMMAND CENTER // macOS Business Operating System")
     print(f" Server active on: http://{host}:{port}")
     print(f" Binding: 127.0.0.1 only (External network access blocked)")
+    print(f" Ready in: {startup_ms} ms")
     print(f"============================================================")
 
     try:

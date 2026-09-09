@@ -9,9 +9,10 @@ import os
 import sys
 import json
 import time
+import math
 import urllib.request
 
-def fetch_state(host="127.0.0.1", port=8787) -> dict:
+def fetch_state(host="127.0.0.1", port=8788) -> dict:
     """Retrieves full system state snapshot from local feeder."""
     url = f"http://{host}:{port}/api/state"
     try:
@@ -21,7 +22,7 @@ def fetch_state(host="127.0.0.1", port=8787) -> dict:
     except Exception as e:
         return {"error": str(e), "system": {}, "services": {}}
 
-def generate_briefing(output_dir="exports", host="127.0.0.1", port=8787) -> dict:
+def generate_briefing(output_dir="exports", host="127.0.0.1", port=8788) -> dict:
     """
     Generates Markdown and printable standalone HTML executive dossier reports.
     """
@@ -82,7 +83,7 @@ def generate_briefing(output_dir="exports", host="127.0.0.1", port=8787) -> dict
     md_content = f"""# COMMAND CENTER // EXECUTIVE BUSINESS DOSSIER
 **Generated**: {now_str}  
 **Classification**: EXECUTIVE STRICT CONFIDENTIAL // LOCALHOST ONLY  
-**Host Binding**: {sys_info.get('host', '127.0.0.1')}:{sys_info.get('port', 8787)}  
+**Host Binding**: {sys_info.get('host', '127.0.0.1')}:{sys_info.get('port', 8788)}  
 
 ---
 
@@ -357,7 +358,7 @@ def generate_briefing(output_dir="exports", host="127.0.0.1", port=8787) -> dict
       <div class="meta-box">
         <div>DATE: {now_str}</div>
         <div>CLASSIFICATION: STRICT CONFIDENTIAL</div>
-        <div>HOST: {sys_info.get('host', '127.0.0.1')}:{sys_info.get('port', 8787)}</div>
+        <div>HOST: {sys_info.get('host', '127.0.0.1')}:{sys_info.get('port', 8788)}</div>
       </div>
     </div>
 
@@ -455,40 +456,59 @@ def generate_briefing(output_dir="exports", host="127.0.0.1", port=8787) -> dict
         }
     }
 
-def synthesize_briefing_speech_text(state=None, host="127.0.0.1", port=8787) -> str:
-    """Creates a clean, authoritative executive speech transcript."""
-    if not state:
+def synthesize_briefing_speech_text(state=None, host="127.0.0.1", port=8788) -> str:
+    """Narrate supplied records without inventing missing provider observations."""
+    if state is None:
         state = fetch_state(host, port)
-    services = state.get("services", {})
+    services = state.get("services", {}) if isinstance(state, dict) else {}
+    if not isinstance(services, dict):
+        services = {}
 
-    fin = services.get("finance", {}).get("data", {})
-    trade = fin.get("trade_panel", {})
-    portfolio = trade.get("portfolio_value_usd", 0.0)
-    bills = fin.get("bills", [])
-    unpaid = len([b for b in bills if "PAID" not in b.get("status", "")])
+    def record(value):
+        return value if isinstance(value, dict) else {}
 
-    comms = services.get("comms", {}).get("data", {})
-    inbox = comms.get("gmail", {}).get("inbox", [])
-    unread = len([m for m in inbox if m.get("unread")])
+    def data(name):
+        service = record(services.get(name))
+        if service.get("configured") is False or service.get("stale") or service.get("success") is False:
+            return {}
+        return record(service.get("data"))
 
-    intel = services.get("intelligence", {}).get("data", {})
-    weather = intel.get("weather", {})
-    temp = weather.get("temp_c", 20)
-    condition = weather.get("condition", "Clear")
-    hw = intel.get("hardware", {})
-    batt = hw.get("battery", {}).get("status_label", "AC Mode")
+    def number(value):
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
-    speech = (
-        f"Good day. Here is your Command Center executive briefing. "
-        f"The local weather is {temp} degrees Celsius and {condition}. "
-        f"Hardware status is nominal, with battery at {batt}. "
-        f"Market portfolio stands at {int(portfolio):,} dollars. "
-        f"You have {unpaid} active bills awaiting settlement, and {unread} priority messages in communications. "
-        f"All 9 background services are online and synchronized."
-    )
-    return speech
+    intel = data("intelligence")
+    weather = record(intel.get("weather"))
+    fetched, temperature = weather.get("fetched_at"), weather.get("temp_c")
+    age = time.time() - fetched if number(fetched) else None
+    source = weather.get("source")
+    if (weather.get("success") is True and not weather.get("stale") and number(temperature)
+            and age is not None and -30 <= age <= 300 and isinstance(source, str) and source):
+        place = weather.get("city")
+        location = " for " + place[:100] if isinstance(place, str) and place else ""
+        weather_text = f"Weather snapshot{location}, received from {source[:100]}: {temperature:g} degrees Celsius."
+        condition = weather.get("condition")
+        if isinstance(condition, str) and condition:
+            weather_text += " Reported condition: " + condition[:120] + "."
+        observed = weather.get("observed_at")
+        weather_text += " Provider observation time: " + (observed[:80] if isinstance(observed, str) and observed else "not supplied") + "."
+    else:
+        weather_text = "Weather unavailable or stale. No current conditions are inferred."
 
-def speak_briefing(text=None, voice="Samantha", export_audio=False, output_dir="exports", host="127.0.0.1", port=8787) -> dict:
+    finance = data("finance")
+    portfolio = record(finance.get("trade_panel")).get("portfolio_value_usd")
+    portfolio_text = f"Reported portfolio value: {portfolio:,.0f} US dollars." if number(portfolio) else "Portfolio value unavailable."
+    bills = finance.get("bills")
+    bills_text = (f"Reported unpaid bills: {sum(1 for bill in bills if isinstance(bill, dict) and 'PAID' not in str(bill.get('status', '')))}."
+                  if isinstance(bills, list) else "Bill status unavailable.")
+    inbox = record(data("comms").get("gmail")).get("inbox")
+    inbox_text = (f"Reported unread messages: {sum(1 for message in inbox if isinstance(message, dict) and message.get('unread'))}."
+                  if isinstance(inbox, list) else "Message status unavailable.")
+    service_text = (f"The supplied snapshot contains {len(services)} service records; current connectivity is not inferred."
+                    if services else "Service status unavailable.")
+    return " ".join(["Good day. Here is your source-limited briefing.", weather_text,
+                     portfolio_text, bills_text, inbox_text, service_text])
+
+def speak_briefing(text=None, voice="Samantha", export_audio=False, output_dir="exports", host="127.0.0.1", port=8788) -> dict:
     """Executes macOS /usr/bin/say speech synthesis."""
     import subprocess
     if not text:
@@ -526,4 +546,3 @@ if __name__ == "__main__":
     else:
         res = generate_briefing()
         print(json.dumps(res, indent=2))
-

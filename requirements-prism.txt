@@ -1,0 +1,2 @@
+# Optional local CPU, memory and network telemetry for the PRISM dashboard.
+psutil>=6.0,<8.0

@@ -2,8 +2,6 @@ import time
 import urllib.request
 import json
 from services.base import BaseService
-from utils import options_greeks
-from utils import crypto_tax
 
 class FinanceService(BaseService):
     def __init__(self, config):
@@ -38,15 +36,6 @@ class FinanceService(BaseService):
             }
         ]
         self.bills = [
-            {
-                "id": "bill-1",
-                "vendor": "AWS Cloud Computing",
-                "amount": "$420.50",
-                "due": "Sep 12",
-                "category": "INFRASTRUCTURE",
-                "status": "DUE SOON",
-                "auto_pay": True
-            },
             {
                 "id": "bill-101",
                 "vendor": "Google Cloud Infrastructure",
@@ -85,28 +74,6 @@ class FinanceService(BaseService):
                 "status": "IN TRANSIT"
             }
         ]
-        portfolio_val = sum([p["current_price"] * p["units"] for p in self.positions])
-        total_unrealized_pl = sum([p["unrealized_pl"] for p in self.positions])
-        self.data = {
-            "stripe": {
-                "configured": False,
-                "currency": "USD",
-                "revenue_today": 0.0,
-                "revenue_month": 0.0,
-                "sparkline_7d": [],
-                "connect_notice": "Requires STRIPE_SECRET_KEY in config.json or Settings"
-            },
-            "bills": list(self.bills),
-            "upcoming_payouts": list(self.upcoming_payouts),
-            "trade_panel": {
-                "market_quotes": dict(self.market_cache),
-                "active_positions": list(self.positions),
-                "portfolio_value_usd": round(portfolio_val, 2),
-                "total_unrealized_pl_usd": round(total_unrealized_pl, 2),
-                "status": "LIVE MARKET FEED ONLINE"
-            }
-        }
-        self.last_updated = time.time()
 
     def _fetch_market_quotes(self):
         now = time.time()
@@ -256,12 +223,11 @@ class FinanceService(BaseService):
                         return {"success": False, "error": f"No open position in {ticker} to sell"}
 
             with self.lock:
-                panel = self.data.setdefault("trade_panel", {})
-                panel["active_positions"] = list(self.positions)
+                self.data["trade_panel"]["active_positions"] = list(self.positions)
                 portfolio_val = sum([p["current_price"] * p["units"] for p in self.positions])
                 total_unrealized_pl = sum([p["unrealized_pl"] for p in self.positions])
-                panel["portfolio_value_usd"] = round(portfolio_val, 2)
-                panel["total_unrealized_pl_usd"] = round(total_unrealized_pl, 2)
+                self.data["trade_panel"]["portfolio_value_usd"] = round(portfolio_val, 2)
+                self.data["trade_panel"]["total_unrealized_pl_usd"] = round(total_unrealized_pl, 2)
                 self.last_updated = time.time()
 
             self.add_event("trade_executed", f"Order executed: {order_action} {units} {ticker} @ ${curr_price:,.2f}")
@@ -282,34 +248,5 @@ class FinanceService(BaseService):
                     self.add_event("bill_settled", f"Bill settled: {bill['vendor']} ({bill['amount']})")
 
             return {"success": True, "message": "Bill marked as paid"}
-
-        # 5. Options Volatility Surface & Gamma Scalper
-        elif action == "get_options_surface":
-            surface = options_greeks.get_options_surface()
-            return {"success": True, "surface": surface, "contracts": surface.get("surface", [])}
-
-        elif action == "calculate_greeks":
-            spot = float(payload.get("spot", 64200.0))
-            strike = float(payload.get("strike", 65000.0))
-            t = float(payload.get("time_to_expiry_years", 0.082))
-            opt_type = payload.get("option_type", "CALL")
-            greeks = options_greeks.calculate_black_scholes_greeks(spot, strike, t, option_type=opt_type)
-            return {"success": True, "greeks": greeks, **greeks}
-
-        elif action == "execute_gamma_hedge":
-            delta = float(payload.get("portfolio_delta", 1.45))
-            asset = payload.get("underlying_asset", "BTC")
-            res = options_greeks.execute_gamma_hedge(delta, asset)
-            self.add_event("gamma_hedge_executed", f"Gamma Scalping Rebalance: {res.get('action')} {res.get('hedge_contracts')} {asset} (Post-Hedge Delta: 0.0)")
-            return res
-
-        # 6. Crypto Tax & FIFO Cost-Basis Ledger
-        elif action == "generate_tax_report":
-            method = payload.get("accounting_method", "FIFO")
-            rep = crypto_tax.generate_tax_report(method)
-            return rep
-
-        elif action == "export_irs_8949_csv":
-            return crypto_tax.export_irs_8949_csv()
 
         return super().dispatch_action(action, payload)

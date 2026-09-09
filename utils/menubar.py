@@ -10,7 +10,31 @@ import sys
 import json
 import urllib.request
 
-def get_state(host="127.0.0.1", port=8787) -> dict:
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def configured_port(default=8788):
+    """The port the OS actually binds, from config.json.
+
+    Every menu-bar link used to hardcode 8787 while the server had moved
+    to 8788, so each one opened a dead URL.
+    """
+    override = os.environ.get("U1_OS_PORT")
+    if override and override.isdigit():
+        return int(override)
+    try:
+        with open(os.path.join(ROOT, "config.json"), encoding="utf-8") as handle:
+            return int(json.load(handle).get("system", {}).get("port", default))
+    except Exception:
+        return default
+
+
+PORT = configured_port()
+BASE = f"http://127.0.0.1:{PORT}"
+
+def get_state(host="127.0.0.1", port=None) -> dict:
+    port = PORT if port is None else port
     url = f"http://{host}:{port}/api/state"
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "CCMenuBar/1.0"})
@@ -48,7 +72,7 @@ def render_menubar():
 
     # Dropdown Header
     print(f"COMMAND CENTER // macOS Business OS | font=Archivo Expanded size=13 color=#E9B44C")
-    print(f"Feeder Status: ONLINE (127.0.0.1:8787) | color=#E9B44C")
+    print(f"Feeder Status: ONLINE (127.0.0.1:{PORT}) | color=#E9B44C")
     print(f"System Load: 1m: {load} | color=#8A92A6")
     print("---")
 
@@ -56,22 +80,22 @@ def render_menubar():
     btc_price = fin.get("market_quotes", {}).get("BTC", {}).get("price", 0)
     eth_price = fin.get("market_quotes", {}).get("ETH", {}).get("price", 0)
     print(f"Market Trade Desk | font=Archivo Expanded size=11 color=#E9B44C")
-    print(f"--BTC: ${btc_price:,.2f} | href=http://127.0.0.1:8787#finance")
-    print(f"--ETH: ${eth_price:,.2f} | href=http://127.0.0.1:8787#finance")
-    print(f"--Portfolio: ${port_val:,.2f} USD | href=http://127.0.0.1:8787#finance")
+    print(f"--BTC: ${btc_price:,.2f} | href={BASE}#finance")
+    print(f"--ETH: ${eth_price:,.2f} | href={BASE}#finance")
+    print(f"--Portfolio: ${port_val:,.2f} USD | href={BASE}#finance")
     print("---")
 
     # Navigation Shortcuts
     print("Navigation Panels | font=Archivo Expanded size=11 color=#E9B44C")
-    print("Open Dashboard (Home) | href=http://127.0.0.1:8787")
-    print("Open Comms (Gmail & Twilio) | href=http://127.0.0.1:8787#comms")
-    print("Open Finance (Stripe & Trade) | href=http://127.0.0.1:8787#finance")
-    print("Open Studio (Video Pipeline) | href=http://127.0.0.1:8787#studio")
-    print("Open AI Workbench (Claude & GPT) | href=http://127.0.0.1:8787#ai")
-    print("Open Deploy & Terminal | href=http://127.0.0.1:8787#deploy")
-    print("Open Gaming (120Hz Playtest) | href=http://127.0.0.1:8787#gaming")
-    print("Open OSINT (DNS & WHOIS) | href=http://127.0.0.1:8787#osint")
-    print("Open Settings & Vault | href=http://127.0.0.1:8787#settings")
+    print(f"Open Dashboard (Home) | href={BASE}")
+    print(f"Open Comms (Gmail & Twilio) | href={BASE}#comms")
+    print(f"Open Finance (Stripe & Trade) | href={BASE}#finance")
+    print(f"Open Studio (Video Pipeline) | href={BASE}#studio")
+    print(f"Open AI Workbench (Claude & GPT) | href={BASE}#ai")
+    print(f"Open Deploy & Terminal | href={BASE}#deploy")
+    print(f"Open Gaming (120Hz Playtest) | href={BASE}#gaming")
+    print(f"Open OSINT (DNS & WHOIS) | href={BASE}#osint")
+    print(f"Open Settings & Vault | href={BASE}#settings")
     print("---")
 
     # System Actions

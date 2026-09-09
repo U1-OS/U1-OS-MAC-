@@ -8,13 +8,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800;900&family=Archivo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="/css/fx.css">
+  <link rel="stylesheet" href="/css/u1-next.css">
+  <link rel="stylesheet" href="/css/aurora-workspace.css">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="U1 OS">
-  <link rel="apple-touch-icon" href="/favicon.svg">
   <meta name="theme-color" content="#08090B">
 </head>
 <body class="booting">
@@ -32,9 +31,9 @@
           <span class="brand-divider">/</span>
           <span class="brand-os" style="color: var(--neon-cyan);">OS</span>
         </div>
-        <div class="sys-heartbeat" title="Local Feeder: 127.0.0.1:8787">
+        <div class="sys-heartbeat" title="Local Feeder: 127.0.0.1:8788">
           <span class="pulse-dot"></span>
-          <span class="heartbeat-label">FEEDER 8787</span>
+          <span class="heartbeat-label">LOCAL WORKSPACE</span>
         </div>
         <div class="sys-heartbeat" id="bezelSseWrap" title="Real-Time Event Stream (Server-Sent Events)">
           <span class="pulse-dot active" id="ssePulseDot"></span>
@@ -47,7 +46,7 @@
         <div class="ticker-badge">LIVE INTEL</div>
         <div class="ticker-viewport" id="tickerViewport">
           <div class="ticker-content" id="tickerContent">
-            <span class="ticker-item"><span class="t-source">[SYSTEM]</span> U1 OS feeder listening on 127.0.0.1:8787</span>
+            <span class="ticker-item"><span class="t-source">[SYSTEM]</span> U1 OS feeder listening on 127.0.0.1:8788</span>
             <span class="ticker-item"><span class="t-source">[INTEL]</span> Syncing real-time global telemetry feeds...</span>
           </div>
         </div>
@@ -116,24 +115,6 @@
           <span>TERMINAL</span>
         </button>
 
-        <!-- Voice Command HUD ("Hey U1") Trigger -->
-        <button class="bezel-widget btn-palette-trigger mono" id="voiceHudButton" title="Voice Command HUD (Hey U1)" onclick="CommandCenter.toggleVoiceHUD()" style="padding:0 10px; font-size:10.5px; font-weight:700; color:#00F0FF; display:inline-flex; align-items:center; gap:5px;">
-          <span>🎙️</span>
-          <span>VOICE HUD</span>
-        </button>
-
-        <!-- Telegram Mini App Link -->
-        <a href="/tma" target="_blank" class="bezel-widget btn-palette-trigger mono" title="Open Telegram Mini App GUI Mirror" style="padding:0 10px; font-size:10.5px; font-weight:700; color:#2AABEE; display:inline-flex; align-items:center; gap:5px; text-decoration:none;">
-          <span>📱</span>
-          <span>TMA</span>
-        </a>
-
-        <!-- 3D Cyberpunk Holographic Command Room Trigger -->
-        <button class="bezel-widget btn-palette-trigger mono" id="btnHologramView" title="3D Cyberpunk Holographic Command Room" style="padding:0 10px; font-size:10.5px; font-weight:700; color:#00ffcc; display:inline-flex; align-items:center; gap:5px;">
-          <span>🌐</span>
-          <span>3D HOLOGRAM</span>
-        </button>
-
         <!-- Tactile Audio Feedback Toggle -->
         <button class="bezel-widget btn-audio-toggle" id="btnToggleAudio" title="Toggle Tactile Audio Feedback" onclick="CommandCenter.toggleAudioFeedback()">
           <svg class="w-icon" id="audioIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -167,6 +148,8 @@
             </span>
             <span class="nav-label">Home</span>
           </button>
+
+          <a href="/integrations.html" style="display:flex;align-items:center;gap:12px;padding:14px 18px;color:var(--gold);text-decoration:none" title="Accounts and integrations"><span aria-hidden="true">+</span><span class="nav-label">Integrations</span></a>
 
           <button class="nav-item" data-section="comms" id="nav-comms">
             <span class="nav-icon">
@@ -255,19 +238,6 @@
             <span class="nav-label">OSINT</span>
           </button>
 
-          <button class="nav-item" data-section="integrations" id="nav-integrations">
-            <span class="nav-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <circle cx="18" cy="5" r="3"/>
-                <circle cx="6" cy="12" r="3"/>
-                <circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-              </svg>
-            </span>
-            <span class="nav-label">Integrations</span>
-          </button>
-
           <button class="nav-item" data-section="settings" id="nav-settings">
             <span class="nav-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -276,6 +246,18 @@
               </svg>
             </span>
             <span class="nav-label">Settings</span>
+          </button>
+
+          <button class="nav-item" data-section="updater" id="nav-updater">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21 2v6h-6"/>
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+                <path d="M3 22v-6h6"/>
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+              </svg>
+            </span>
+            <span class="nav-label">Updater</span>
           </button>
         </nav>
 
@@ -579,48 +561,6 @@
               <span class="footer-meta mono">TRUNK: 127.0.0.1 PROXY</span>
             </footer>
           </article>
-
-          <!-- Widget 6: Discord & Slack C2 Operations Room [Span 12] -->
-          <article class="slab-panel span-12" id="commsC2Panel" data-service="comms">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple);">CHATOPS // 06 &bull; DISCORD &amp; SLACK</span>
-                <h2 class="slab-title">COMMAND &amp; CONTROL (C2) OPERATIONS ROOM &bull; INBOUND WEBHOOK DESK</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="c2WebhookStatusBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:3px 10px; font-size:11px;">CHATOPS GATEWAY ONLINE</span>
-                <button class="btn btn-sm btn-secondary mono" onclick="CommandCenter.testChatOpsCommand('/u1 status')">TEST /u1 status</button>
-              </div>
-            </header>
-            <div class="slab-body" id="commsC2Container"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">INBOUND ENDPOINTS: /api/webhooks/discord &bull; /api/webhooks/slack</span>
-              <span class="footer-meta mono">SUPPORTED: /u1 status &bull; /u1 swap &bull; /u1 briefing &bull; /u1 lockdown</span>
-            </footer>
-          </article>
-
-          <!-- Widget 7: Decentralized Nostr Sovereign P2P Encrypted Mesh C2 [Span 12] -->
-          <article class="slab-panel span-12" id="commsNostrPanel" data-service="comms">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">NOSTR // 07 &bull; DECENTRALIZED P2P MESH</span>
-                <h2 class="slab-title">SOVEREIGN ENCRYPTED C2 &bull; PUBLIC NOSTR RELAY CLUSTER &bull; NIP-04 DM</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="nostrRelayBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:3px 10px; font-size:11px;">RELAYS: 5 CONNECTED</span>
-                <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.sendNostrPing()">SEND P2P PING</button>
-              </div>
-            </header>
-            <div class="slab-body" id="commsNostrContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: NIP-01 / NIP-04 &bull; ZERO PORT-FORWARDING NEEDED</span>
-              <span class="footer-meta mono" id="nostrNpubLabel">NPUB: INITIALIZING...</span>
-            </footer>
-          </article>
         </section>
 
         <!-- ======================================================== -->
@@ -683,48 +623,6 @@
             <footer class="slab-footer">
               <span class="footer-meta mono">MARKET TELEMETRY: COINGECKO // PUBLIC ORACLES</span>
               <span class="footer-meta mono">ORDER DISPATCH GATED BY EXPLICIT CONFIRMATION</span>
-            </footer>
-          </article>
-
-          <!-- Widget 4: Options Volatility Surface & Gamma Scalper [Span 6] -->
-          <article class="slab-panel span-6" id="financeOptionsPanel" data-service="finance">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">DERIVATIVES // 04 &bull; BLACK-SCHOLES</span>
-                <h2 class="slab-title">OPTIONS VOLATILITY SURFACE &amp; GAMMA SCALPER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="optionsBadge" style="background:rgba(255,179,0,0.1); color:var(--gold); border:1px solid rgba(255,179,0,0.3); padding:3px 10px; font-size:11px;">DELTA: +1.45</span>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.refreshOptionsSurface()">VOL SURFACE</button>
-              </div>
-            </header>
-            <div class="slab-body" id="financeOptionsContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">GREEKS ENGINE: &Delta; &bull; &Gamma; &bull; &Theta; &bull; &nu;</span>
-              <button class="btn btn-xs btn-gold mono" onclick="CommandCenter.executeGammaHedge()">GAMMA REBALANCE</button>
-            </footer>
-          </article>
-
-          <!-- Widget 5: Crypto Tax & FIFO Cost-Basis Ledger [Span 6] -->
-          <article class="slab-panel span-6" id="financeTaxPanel" data-service="finance">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-emerald);">TAX // 05 &bull; IRS FORM 8949</span>
-                <h2 class="slab-title">FIFO CAPITAL GAINS &amp; TAX ACCOUNTING LEDGER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="taxBadge" style="background:rgba(16,185,129,0.1); color:var(--neon-emerald); border:1px solid rgba(16,185,129,0.3); padding:3px 10px; font-size:11px;">TAX YEAR: 2026</span>
-                <button class="btn btn-sm btn-emerald mono" onclick="CommandCenter.generateTaxReport()">TAX REPORT</button>
-              </div>
-            </header>
-            <div class="slab-body" id="financeTaxContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">MULTI-CHAIN LOT MATCHING &bull; FIFO / HIFO</span>
-              <button class="btn btn-xs btn-emerald mono" onclick="CommandCenter.exportTax8949()">EXPORT 8949 CSV</button>
             </footer>
           </article>
         </section>
@@ -862,215 +760,7 @@
             <div class="slab-body" id="cryptoBotContainer"></div>
             <footer class="slab-footer">
               <span class="footer-meta mono">STRATEGIES: ALPHA SNIPER (SOCIAL VELOCITY) &bull; WHALE SHADOW &bull; MEAN REVERSION</span>
-            </footer>
-          </article>
-
-          <!-- Widget 8: Telegram Alpha Bot Station & Remote Control [Span 6] -->
-          <article class="slab-panel span-6" id="cryptoTelegramPanel" data-service="telegram">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">TELEGRAM // 08 &bull; REMOTE STATION</span>
-                <h2 class="slab-title">ALPHA BOT &bull; BIDIRECTIONAL STREAM</h2>
-              </div>
-              <div class="status-indicator">
-                <span class="status-dot" id="tgStationDot" style="background:var(--neon-cyan);"></span>
-                <span class="status-text mono" id="tgStationStatus">STANDBY</span>
-              </div>
-            </header>
-            <div class="slab-body" id="cryptoTelegramContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: OFFICIAL TELEGRAM BOT HTTP API (DIRECT)</span>
-              <span class="footer-meta mono" id="tgLastOffset">UPDATES: LIVE POLLING</span>
-            </footer>
-          </article>
-
-          <!-- Widget 9: Native Headless Chrome Web Inspector [Span 6] -->
-          <article class="slab-panel span-6" id="cryptoBrowserPanel" data-service="crypto">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-magenta);">BROWSER // 09 &bull; FULL JS DOM</span>
-                <h2 class="slab-title">HEADLESS CHROME &bull; DEX CRAWLER</h2>
-              </div>
-              <span class="status-dot active" style="background:var(--neon-magenta);"></span>
-            </header>
-            <div class="slab-body" id="cryptoBrowserContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">ENGINE: GOOGLE CHROME HEADLESS 152 (MACOS NATIVE)</span>
-              <span class="footer-meta mono" id="chromeCrawlerLatency">LATENCY: READY</span>
-            </footer>
-          </article>
-
-          <!-- Widget 10: Multi-Wallet Solana Treasury & Cold Storage Tracker [Span 12] -->
-          <article class="slab-panel span-12" id="cryptoMultiWalletPanel" data-service="crypto">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">SOLANA // 10 &bull; TREASURY DESK</span>
-                <h2 class="slab-title">MULTI-WALLET SOLANA AGGREGATOR &bull; COLD STORAGE VAULT</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="multiWalletTotalBadge" style="background:rgba(212,175,55,0.12); color:var(--gold); border:1px solid rgba(212,175,55,0.3); padding:3px 10px; font-size:11px;">-- SOL TOTAL</span>
-                <button class="btn btn-sm btn-secondary mono" onclick="CommandCenter.syncMultiWallets()">SYNC ALL RPC</button>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.openAddWalletModal()">+ TRACK WALLET</button>
-              </div>
-            </header>
-            <div class="slab-body" id="cryptoMultiWalletContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">RPC PROTOCOL: DIRECT SOLANA JSON-RPC (MAINNET-BETA) &bull; REAL ON-CHAIN ACCOUNT FETCH</span>
-              <span class="footer-meta mono" id="multiWalletCountMeta">3 WALLETS TRACKED</span>
-            </footer>
-          </article>
-
-          <!-- Widget 11: Pump.fun & Raydium Launchpad Sniper Desk [Span 12] -->
-          <article class="slab-panel span-12" id="cryptoLaunchpadPanel" data-service="crypto">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-emerald);">LAUNCHPAD // 11 &bull; PUMP.FUN &amp; RAYDIUM</span>
-                <h2 class="slab-title">TOKEN LAUNCHPAD SNIPER DESK &bull; ANTI-RUG CONTRACT AUDITOR</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="sniperActiveBadge" style="background:rgba(0,255,163,0.1); color:var(--neon-emerald); border:1px solid rgba(0,255,163,0.3); padding:3px 10px; font-size:11px;">AUTO-SNIPER: STANDBY</span>
-                <button class="btn btn-sm btn-secondary mono" onclick="CommandCenter.toggleAutoSniper()" id="btnToggleAutoSniper">ENGAGE AUTO-SNIPER</button>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.refreshLaunchpadPools()">REFRESH POOLS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="cryptoLaunchpadContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">BONDING CURVES &bull; REAL-TIME DEV HOLDING AUDIT &bull; INSTANT JITO TIP ROUTING</span>
-              <span class="footer-meta mono" id="launchpadLastAudit">SECURITY ENGINE: STRICT</span>
-            </footer>
-          </article>
-
-          <!-- Widget 12: Multi-Chain EVM & Bitcoin Desk [Span 12] -->
-          <article class="slab-panel span-12" id="cryptoMultiChainPanel" data-service="crypto">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">MULTI-CHAIN // 12 &bull; EVM &amp; BITCOIN DESK</span>
-                <h2 class="slab-title">CROSS-CHAIN TREASURY MATRIX &bull; ETHEREUM &bull; BASE &bull; ARBITRUM &bull; BTC</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="gasTrackerBadge" style="background:rgba(255,179,0,0.1); color:var(--gold); border:1px solid rgba(255,179,0,0.3); padding:3px 10px; font-size:11px;">GAS: ETH -- GWEI | BASE -- GWEI</span>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.refreshMultiChainPortfolio()">SYNC MULTI-CHAIN</button>
-              </div>
-            </header>
-            <div class="slab-body" id="cryptoMultiChainContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">CROSS-CHAIN RPC &bull; UNISWAP / AERODROME ROUTER &bull; MEMPOOL FEE MONITOR</span>
-              <span class="footer-meta mono" id="multichainTotalUsd">TOTAL CROSS-CHAIN: $0.00</span>
-            </footer>
-          </article>
-
-          <!-- Widget 13: Sub-Second Solana MEV & Jito Bundle Router [Span 12] -->
-          <article class="slab-panel span-12" id="cryptoJitoPanel" data-service="crypto">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">MEV // 13 &bull; JITO BLOCK ENGINE</span>
-                <h2 class="slab-title">SUB-SECOND SOLANA MEV ROUTER &bull; ZERO-SLIPPAGE PRIVATE MEMPOOL</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="jitoFloorBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:3px 10px; font-size:11px;">TIP FLOOR: 25,000 LAMPORTS</span>
-                <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.sendSimulatedJitoBundle()">TRANSMIT MEV BUNDLE</button>
-              </div>
-            </header>
-            <div class="slab-body" id="cryptoJitoContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTECTION: FRONT-RUNNING &amp; SANDWICH IMMUNE &bull; ATOMIC EXECUTION</span>
-              <span class="footer-meta mono" id="jitoLatencyMeta">BLOCK ENGINE: 14MS TOKYO / FRANKFURT</span>
-            </footer>
-          </article>
-
-          <!-- Widget 14: Autonomous Polymarket & Kalshi Prediction Market Arbitrageur [Span 12] -->
-          <article class="slab-panel span-12" id="cryptoPredictionPanel" data-service="crypto">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">PREDICTION // 14 &bull; POLYMARKET &amp; KALSHI</span>
-                <h2 class="slab-title">AUTONOMOUS PREDICTION MARKET ARBITRAGEUR &bull; KELLY CRITERION SIZING</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="predArbBadge" style="background:rgba(255,179,0,0.1); color:var(--gold); border:1px solid rgba(255,179,0,0.3); padding:3px 10px; font-size:11px;">ARBITRAGE: +3.09% SPREAD ACTIVE</span>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.scanPredictionArb()">SCAN MARKETS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="cryptoPredictionContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">CLOB REAL-TIME ORDERBOOKS &bull; STATISTICAL EXPECTED VALUE &bull; NEGATIVE RISK</span>
-              <span class="footer-meta mono" id="predActiveMeta">ACTIVE MARKETS: 4 TRACKED</span>
-            </footer>
-          </article>
-
-          <!-- Widget 15: Cross-DEX Flash-Loan Triangular Arbitrage Engine [Span 6] -->
-          <article class="slab-panel span-6" id="cryptoFlashArbPanel" data-service="crypto">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--cyan);">FLASH // 15 &bull; ATOMIC ARBITRAGE</span>
-                <h2 class="slab-title">CROSS-DEX FLASH-LOAN TRIANGULAR ARBITRAGE</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="flashArbBadge" style="background:rgba(0,255,242,0.1); color:var(--cyan); border:1px solid rgba(0,255,242,0.3); padding:3px 10px; font-size:11px;">ROUTES: 3 CYCLES</span>
-                <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.scanFlashArb()">SCAN ROUTES</button>
-              </div>
-            </header>
-            <div class="slab-body" id="cryptoFlashArbContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">ZERO CAPITAL OUTLAY &bull; 0.05% FLASH FEE &bull; JITO MEV PRIVATE BUNDLES</span>
-              <button class="btn btn-xs btn-cyan mono" onclick="CommandCenter.executeFlashArb()">EXECUTE ATOMIC CYCLE</button>
-            </footer>
-          </article>
-
-          <!-- Widget 16: Perpetual DEX Delta-Neutral Funding Harvester [Span 6] -->
-          <article class="slab-panel span-6" id="cryptoFundingPanel" data-service="crypto">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">FUNDING // 16 &bull; DELTA-NEUTRAL HARVEST</span>
-                <h2 class="slab-title">PERPETUAL FUNDING RATE CASHFLOW HARVESTER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="fundingBadge" style="background:rgba(255,179,0,0.1); color:var(--gold); border:1px solid rgba(255,179,0,0.3); padding:3px 10px; font-size:11px;">MAX APR: +49.2%</span>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.scanFundingArb()">REFRESH APRs</button>
-              </div>
-            </header>
-            <div class="slab-body" id="cryptoFundingContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">1:1 SPOT LONG + PERP SHORT &bull; ZERO DIRECTIONAL RISK</span>
-              <button class="btn btn-xs btn-gold mono" onclick="CommandCenter.executeFundingHedge()">DEPLOY $10K HEDGE</button>
-            </footer>
-          </article>
-
-          <!-- Widget 17: Smart Money Whale Copy-Trading & Shadow Mirror [Span 12] -->
-          <article class="slab-panel span-12" id="cryptoWhaleMirrorPanel" data-service="crypto">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--purple);">ALPHA // 17 &bull; SMART MONEY COPY-TRADING</span>
-                <h2 class="slab-title">WHALE COPY-TRADING &amp; SHADOW WALLET MIRROR</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="whaleBadge" style="background:rgba(168,85,247,0.1); color:var(--purple); border:1px solid rgba(168,85,247,0.3); padding:3px 10px; font-size:11px;">ACTIVE WHALES: 3 TRACKED</span>
-                <button class="btn btn-sm btn-purple mono" onclick="CommandCenter.refreshWhales()">SYNC WHALES</button>
-              </div>
-            </header>
-            <div class="slab-body" id="cryptoWhaleContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROPORTIONAL CAPITAL ALLOCATION &bull; SUB-SECOND SAME-BLOCK MIRROR</span>
-              <button class="btn btn-xs btn-purple mono" onclick="CommandCenter.executeShadowTrade()">MIRROR ALPHA TRADE</button>
+              <span class="footer-meta mono">EXECUTION: ACCOUNT SETUP DEFERRED</span>
             </footer>
           </article>
         </section>
@@ -1147,69 +837,6 @@
             <div class="slab-body" id="studioBrollContainer"></div>
             <footer class="slab-footer">
               <span class="footer-meta mono">COMMERCIAL USE LICENSE-CLEAR &bull; ZERO COPYRIGHT CLAIMS</span>
-            </footer>
-          </article>
-
-          <!-- Widget 5: Autonomous Daily Video & Audio Briefing Broadcast [Span 12] -->
-          <article class="slab-panel span-12" id="studioBroadcastPanel" data-service="studio">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">BROADCAST // 05 &bull; AUTONOMOUS MEDIA</span>
-                <h2 class="slab-title">DAILY VIDEO &amp; AUDIO BRIEFING BROADCAST &bull; MULTI-PLATFORM SYNDICATION</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="broadcastStatusBadge" style="background:rgba(212,175,55,0.1); color:var(--gold); border:1px solid rgba(212,175,55,0.3); padding:3px 10px; font-size:11px;">SYNTHESIZER READY</span>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.compileDailyBroadcast()" id="btnCompileBroadcast">COMPILE TODAY'S BROADCAST</button>
-              </div>
-            </header>
-            <div class="slab-body" id="studioBroadcastContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">VOICE SYNTHESIS: MACOS NATIVE DANIEL &bull; ENGINE: FFMPEG &bull; DELIVERY: TELEGRAM ALPHA</span>
-              <span class="footer-meta mono" id="broadcastScheduleMeta">SCHEDULER: 08:00 DAILY CRON</span>
-            </footer>
-          </article>
-
-          <!-- Widget 6: Autonomous Social Media Growth & Auto-Poster [Span 12] -->
-          <article class="slab-panel span-12" id="studioSocialPanel" data-service="studio">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-magenta);">GROWTH // 06 &bull; CONTENT MATRIX</span>
-                <h2 class="slab-title">AUTONOMOUS SOCIAL MEDIA GROWTH ENGINE &bull; X/TWITTER ALPHA AUTO-POSTER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="socialQueueBadge" style="background:rgba(255,0,85,0.1); color:var(--neon-magenta); border:1px solid rgba(255,0,85,0.3); padding:3px 10px; font-size:11px;">QUEUE: 0 PENDING</span>
-                <button class="btn btn-sm btn-magenta mono" onclick="CommandCenter.generateSocialThread()">GENERATE ALPHA THREAD</button>
-              </div>
-            </header>
-            <div class="slab-body" id="studioSocialContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">AUTOMATION: 30-MIN CRON DISPATCH &bull; VIRALITY MATRIX CALIBRATION</span>
-              <span class="footer-meta mono" id="socialPubMeta">CHANNELS: X / TWITTER &bull; TELEGRAM &bull; NOSTR</span>
-            </footer>
-          </article>
-
-          <!-- Widget 7: Apple Silicon Metal CoreML Face Anonymizer & Deepfake Shield [Span 12] -->
-          <article class="slab-panel span-12" id="studioDeepfakePanel" data-service="studio">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">SHIELD // 07 &bull; BIOMETRIC PRIVACY</span>
-                <h2 class="slab-title">APPLE SILICON METAL FACE ANONYMIZER &bull; ON-DEVICE DEEPFAKE SENTINEL</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="deepfakeStatusBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:3px 10px; font-size:11px;">AUTHENTICITY: 97.4% HUMAN</span>
-                <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.triggerFaceAnonymization()">ANONYMIZE FACES</button>
-              </div>
-            </header>
-            <div class="slab-body" id="studioDeepfakeContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">METAL VISION NPU &bull; ZERO CLOUD EXPOSURE &bull; PIXELATION / GAUSSIAN BLUR</span>
-              <span class="footer-meta mono" id="shieldLatencyMeta">INFERENCE: 18MS ON APPLE SILICON</span>
             </footer>
           </article>
         </section>
@@ -1317,185 +944,6 @@
               <span class="footer-meta mono">REAL-TIME COST ACCRUAL PER CALL</span>
             </footer>
           </article>
-
-          <!-- Widget 6: Multi-Tool Autonomous Copilot & Subsystem Orchestrator [Span 12] -->
-          <article class="slab-panel span-12" id="aiCopilotPanel" data-service="ai_workbench">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-magenta);">COPILOT // 06 &bull; MULTI-TOOL AGENT</span>
-                <h2 class="slab-title">AUTONOMOUS SUBSYSTEM ORCHESTRATOR &bull; NATURAL LANGUAGE DESK</h2>
-              </div>
-              <div class="status-indicator">
-                <span class="status-dot active" style="background:var(--neon-magenta);"></span>
-                <span class="status-text mono" id="aiCopilotStatus">ORCHESTRATOR ONLINE</span>
-              </div>
-            </header>
-            <div class="slab-body" id="aiCopilotContainer">
-              <div style="display:flex; flex-direction:column; gap:14px;">
-                <div style="display:flex; gap:10px; align-items:center;">
-                  <input type="text" id="aiAgentPromptInput" class="mono" style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-subtle); color:var(--text-main); padding:10px 14px; border-radius:4px; font-size:13px;" placeholder="Execute directive: 'swap 0.1 SOL to BONK', 'multi wallet', 'crawl dexscreener', 'telegram send Alert', 'dns apple.com', 'lockdown'..." onkeydown="if(event.key==='Enter') CommandCenter.executeAgentAction()">
-                  <select id="aiAgentProviderSelect" class="mono" style="background:rgba(0,0,0,0.5); border:1px solid var(--border-subtle); color:var(--text-main); padding:9px 12px; border-radius:4px; font-size:12px;">
-                    <option value="auto">Auto Orchestrator</option>
-                    <option value="claude">Claude 3.5 Sonnet</option>
-                    <option value="openai">OpenAI GPT-4o</option>
-                  </select>
-                  <button class="btn btn-magenta mono" onclick="CommandCenter.executeAgentAction()" id="btnExecuteAgentAction">DISPATCH DIRECTIVE</button>
-                </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('get multi wallet portfolio and solana balances')">💼 Multi-Wallet Balances</button>
-                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('swap 0.05 SOL to BONK')">⚡ Swap SOL -> BONK</button>
-                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('crawl https://dexscreener.com/solana/bonk')">🕷 Chrome Crawl DEX</button>
-                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('telegram send U1 OS Automated Heartbeat Active')">📡 Telegram Broadcast</button>
-                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('dns apple.com')">🌐 OSINT DNS Audit</button>
-                  <button class="mini-btn mono" onclick="CommandCenter.setAgentPrompt('generate briefing dossier')">📑 Compile Dossier</button>
-                </div>
-                <div id="aiAgentOutputArea" class="mono" style="display:none; background:#040507; border:1px solid var(--border-subtle); border-radius:4px; padding:12px; font-size:12px; max-height:260px; overflow-y:auto; white-space:pre-wrap;"></div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">NATURAL LANGUAGE ENGINE: MULTI-TOOL ROUTER &bull; DIRECT OS EXECUTION &bull; ZERO MOCK</span>
-              <span class="footer-meta mono" id="aiAgentLastAction">LAST ACTION: READY</span>
-            </footer>
-          </article>
-
-          <!-- Widget 7: Local Neural Engine & Apple Silicon MLX Desk [Span 12] -->
-          <article class="slab-panel span-12" id="aiLocalNeuralPanel" data-service="ai_workbench">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">OFFLINE AI // 07 &bull; LOCAL NEURAL ENGINE</span>
-                <h2 class="slab-title">APPLE SILICON MLX &amp; OLLAMA DESK &bull; ZERO-CLOUD EMBEDDINGS</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="localNeuralStatusBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:3px 10px; font-size:11px;">HARDWARE ACCEL ACTIVE</span>
-                <button class="btn btn-sm btn-secondary mono" onclick="CommandCenter.checkLocalNeuralStatus()">PROBE HARDWARE</button>
-              </div>
-            </header>
-            <div class="slab-body" id="aiLocalNeuralContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">ZERO NETWORK EGRESS &bull; FULL AIR-GAP REASONING &bull; LOCAL REPO CONTEXT</span>
-              <span class="footer-meta mono" id="localNeuralLatency">INFERENCE: STANDBY</span>
-            </footer>
-          </article>
-
-          <!-- Widget 8: Multi-Agent Swarm Arena & Deliberation Matrix [Span 12] -->
-          <article class="slab-panel span-12" id="aiSwarmPanel" data-service="ai_workbench">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple);">SWARM // 08 &bull; AGENT ARENA</span>
-                <h2 class="slab-title">MULTI-AGENT SWARM COUNCIL &bull; COLLABORATIVE DELIBERATION MATRIX</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="swarmConsensusBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:3px 10px; font-size:11px;">COUNCIL: 4 SPECIALIZED AGENTS</span>
-                <button class="btn btn-sm btn-purple mono" onclick="CommandCenter.deliberateSwarmProposal()">CONVENE COUNCIL</button>
-              </div>
-            </header>
-            <div class="slab-body" id="aiSwarmContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PERSONAS: RISK OFFICER &bull; QUANT STRATEGIST &bull; SECURITY ARCHITECT &bull; CHIEF OF STAFF</span>
-              <span class="footer-meta mono" id="swarmStatusMeta">VOTING ENGINE: UNANIMOUS CONSENSUS RULE</span>
-            </footer>
-          </article>
-
-          <!-- Widget 9: Multi-Agent Debate & Self-Refining Code Synthesizer [Span 6] -->
-          <article class="slab-panel span-6" id="aiCodeDebaterPanel" data-service="ai_workbench">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-emerald);">SYNTHESIS // 09 &bull; DUAL-AGENT</span>
-                <h2 class="slab-title">MULTI-AGENT DEBATE &amp; CODE SYNTHESIZER</h2>
-              </div>
-              <div class="slab-actions">
-                <button class="btn btn-sm btn-emerald mono" onclick="CommandCenter.debateCode()">DEBATE CODE</button>
-              </div>
-            </header>
-            <div class="slab-body" id="aiCodeDebaterContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">GENERATOR VS. ADVERSARIAL RED-TEAM &bull; AST PASS GUARANTEE</span>
-            </footer>
-          </article>
-
-          <!-- Widget 10: Local Multimodal Vision Screen Copilot [Span 6] -->
-          <article class="slab-panel span-6" id="aiVisionCopilotPanel" data-service="ai_workbench">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--cyan);">VISION // 10 &bull; COREML METAL NPU</span>
-                <h2 class="slab-title">LOCAL MULTIMODAL SCREEN COPILOT</h2>
-              </div>
-              <div class="slab-actions">
-                <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.inspectScreen()">INSPECT VIEWPORT</button>
-              </div>
-            </header>
-            <div class="slab-body" id="aiVisionCopilotContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">100% OFFLINE ON-DEVICE INFERENCE &bull; ZERO CLOUD LEAKAGE</span>
-            </footer>
-          </article>
-
-          <!-- Widget 11: Autonomous ArXiv Research Intelligence Summarizer [Span 6] -->
-          <article class="slab-panel span-6" id="aiArxivPanel" data-service="ai_workbench">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">PRE-PRINT // 11 &bull; ALPHA DISTILLATION</span>
-                <h2 class="slab-title">ARXIV RESEARCH INTELLIGENCE RADAR</h2>
-              </div>
-              <div class="slab-actions">
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.scanArxiv()">SCAN PAPERS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="aiArxivContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">CATEGORIES: cs.DC &bull; cs.CR &bull; cs.LG &bull; q-fin.ST</span>
-            </footer>
-          </article>
-
-          <!-- Widget 12: Agentic Memory Graph & Vector Retrieval [Span 6] -->
-          <article class="slab-panel span-6" id="aiMemoryGraphPanel" data-service="ai_workbench">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple);">MEMORY // 12 &bull; VECTOR GRAPH</span>
-                <h2 class="slab-title">AGENTIC MEMORY GRAPH &amp; VECTOR RETRIEVAL</h2>
-              </div>
-              <div class="slab-actions">
-                <button class="btn btn-sm btn-purple mono" onclick="CommandCenter.queryMemory()">QUERY GRAPH</button>
-              </div>
-            </header>
-            <div class="slab-body" id="aiMemoryContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">COSINE SIMILARITY &bull; DENSE SEMANTIC EMBEDDINGS</span>
-            </footer>
-          </article>
-
-          <!-- Widget 13: Customer Support & Ticket Resolution Swarm [Span 12] -->
-          <article class="slab-panel span-12" id="aiSupportTicketPanel" data-service="ai_workbench">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">SUPPORT // 13 &bull; TICKET SWARM</span>
-                <h2 class="slab-title">AUTONOMOUS CUSTOMER SUPPORT &amp; RESOLUTION SWARM</h2>
-              </div>
-              <div class="slab-actions">
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.refreshTickets()">REFRESH TICKETS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="aiTicketContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">AI TRIAGE ENGINE &bull; 1-CLICK RESOLUTION DISPATCH</span>
-            </footer>
-          </article>
         </section>
 
         <!-- ======================================================== -->
@@ -1563,27 +1011,6 @@
             <footer class="slab-footer">
               <span class="footer-meta mono">DARWIN ZSH / BASH RUNTIME</span>
               <span class="footer-meta mono">EXECUTION SAFETY: CONFIRM BEFORE RUN</span>
-            </footer>
-          </article>
-
-          <!-- Widget 4: Autonomous AI Code Self-Healing & Hotpatch Copilot [Span 12] -->
-          <article class="slab-panel span-12" id="deploySelfHealingPanel" data-service="deploy">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:#10b981;">HEALING // 04 &bull; CONTINUOUS COPILOT</span>
-                <h2 class="slab-title">AUTONOMOUS AI CODE SELF-HEALING &bull; AST HOTPATCH COPILOT &bull; AUTO-ROLLBACK</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="selfHealingStatusBadge" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:3px 10px; font-size:11px;">AST STATUS: 100/100 HEALTHY</span>
-                <button class="btn btn-sm btn-emerald mono" onclick="CommandCenter.diagnoseCodebaseHealth()">DIAGNOSE HEALTH</button>
-              </div>
-            </header>
-            <div class="slab-body" id="deploySelfHealingContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">SAFETY: ATOMIC PRE-VALIDATION &bull; ZERO BREAKAGE ROLLBACK GUARANTEE</span>
-              <span class="footer-meta mono" id="healingScannedMeta">PYTHON AST PARSER: STDLIB 3.12</span>
             </footer>
           </article>
         </section>
@@ -1783,159 +1210,10 @@
               <span class="footer-meta mono">NATIVE LSOF TCP LISTEN &bull; WAN EXPOSURE SENTINEL</span>
             </footer>
           </article>
-
-          <!-- Widget 7: Autonomous Threat Intel & Dark Web Leak Watchdog [Span 12] -->
-          <article class="slab-panel span-12" id="networkThreatIntelPanel" data-service="osint">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-crimson);">THREAT INTEL // 07 &bull; LEAK SENTINEL</span>
-                <h2 class="slab-title">AUTONOMOUS THREAT INTELLIGENCE &bull; SECRET LEAK &amp; SSL WATCHDOG</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="threatPostureBadge" style="background:rgba(0,230,118,0.1); color:var(--neon-emerald); border:1px solid rgba(0,230,118,0.3); padding:3px 10px; font-size:11px;">POSTURE: 100/100 SECURE</span>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.runThreatScan()">RUN THREAT AUDIT</button>
-              </div>
-            </header>
-            <div class="slab-body" id="networkThreatIntelContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PORT 443 TLS EXPIRIES &bull; REPO SECRET LEAK AUDIT &bull; CRITICAL SIREN DISPATCH</span>
-              <span class="footer-meta mono" id="threatScanLastRun">WATCHDOG: CONTINUOUS SCHEDULER ACTIVE</span>
-            </footer>
-          </article>
-
-          <!-- Widget 8: Autonomous Competitor OSINT Pricing & Changelog Radar [Span 12] -->
-          <article class="slab-panel span-12" id="osintCompetitorPanel" data-service="osint">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">COMPETITOR // 08 &bull; PRICING RADAR</span>
-                <h2 class="slab-title">AUTONOMOUS COMPETITOR OSINT RADAR &bull; PRICING SHIFTS &bull; CHANGELOG SCRAPER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <span class="badge mono" id="competitorRadarBadge" style="background:rgba(255,179,0,0.1); color:var(--gold); border:1px solid rgba(255,179,0,0.3); padding:3px 10px; font-size:11px;">RADAR: 3 TARGETS MONITORED</span>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.scanCompetitorRadar()">SCAN COMPETITORS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="osintCompetitorContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">TRACKING: CURSOR &bull; LINEAR &bull; REPLIT &bull; DELTA DETECTION</span>
-              <span class="footer-meta mono" id="competitorJobMeta">SCHEDULER: HOURLY RADAR (JOB #13)</span>
-            </footer>
-          </article>
         </section>
 
         <!-- ======================================================== -->
-        <!-- SECTION 9: INTEGRATIONS & AUTONOMOUS USAGES HUB -->
-        <!-- ======================================================== -->
-        <section class="section-grid" id="section-integrations" data-section-name="Integrations">
-          <!-- Widget 1: Autonomous AI Trading & Browser Usages Master Deck [Span 12] -->
-          <article class="slab-panel span-12" id="integrationsAutonomousDeck">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-magenta);">AI AGENT // REAL EXECUTION CONTROLS</span>
-                <h2 class="slab-title">AUTONOMOUS CRYPTO TRADING &amp; BROWSER USAGES ENGINE</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:10px;">
-                <span class="status-dot" id="autoTradingDot" style="background:var(--neon-green); box-shadow:0 0 8px var(--neon-green);"></span>
-                <span class="status-text mono" id="autoTradingStatusText" style="color:var(--neon-green); font-weight:700;">ACTIVE // LIVE MODE READY</span>
-              </div>
-            </header>
-            <div class="slab-body" style="padding: 16px;">
-              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px;">
-                <!-- Master Autonomous Mode Toggle -->
-                <div class="cyber-stat-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:14px;">
-                  <div class="mono" style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">TRADING MODE &amp; REAL BUYING</div>
-                  <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <span id="autoModeLabel" class="mono" style="font-size:14px; font-weight:700; color:var(--gold);">REAL AUTONOMOUS</span>
-                    <button class="btn btn-sm mono" id="toggleAutoTradingModeBtn" onclick="CommandCenter.toggleAutoTradingMode()" style="border:1px solid var(--gold); color:var(--gold);">SWITCH TO PAPER</button>
-                  </div>
-                  <div class="mono" style="font-size:10px; color:var(--text-muted); margin-top:8px;">
-                    When enabled, the AI agent executes live on-chain swaps via Jupiter v6 and Solana RPC without simulation.
-                  </div>
-                </div>
-
-                <!-- Full Browser Execution Usage Toggle -->
-                <div class="cyber-stat-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:14px;">
-                  <div class="mono" style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">FULL BROWSER USAGE &amp; NAVIGATION</div>
-                  <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <span id="autoBrowserLabel" class="mono" style="font-size:14px; font-weight:700; color:var(--neon-cyan);">ENABLED (ACTIVE)</span>
-                    <button class="btn btn-sm mono" id="toggleAutoBrowserBtn" onclick="CommandCenter.toggleAutoBrowserUsage()" style="border:1px solid var(--neon-cyan); color:var(--neon-cyan);">DISABLE</button>
-                  </div>
-                  <div class="mono" style="font-size:10px; color:var(--text-muted); margin-top:8px;">
-                    Authorizes the AI agent to launch headless browser sessions to inspect charts, DEX pools, and Twitter alpha feeds autonomously.
-                  </div>
-                </div>
-
-                <!-- Safety Rails: Max Allocation & Limits -->
-                <div class="cyber-stat-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:14px;">
-                  <div class="mono" style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">AUTONOMOUS CAPITAL RAILS</div>
-                  <div style="display:flex; gap:12px; align-items:center;">
-                    <div style="flex:1;">
-                      <label class="mono" style="font-size:9.5px; color:var(--text-muted);">MAX / SWAP (SOL)</label>
-                      <input type="number" step="0.05" id="autoBuyMaxSolInput" value="0.2" class="mono form-input" style="width:100%; padding:4px 8px; font-size:12px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); color:var(--text-main); border-radius:4px;">
-                    </div>
-                    <div style="flex:1;">
-                      <label class="mono" style="font-size:9.5px; color:var(--text-muted);">DAILY CAP (SOL)</label>
-                      <input type="number" step="0.5" id="autoDailySpendSolInput" value="2.0" class="mono form-input" style="width:100%; padding:4px 8px; font-size:12px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); color:var(--text-main); border-radius:4px;">
-                    </div>
-                  </div>
-                  <div style="margin-top:8px; text-align:right;">
-                    <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.saveAutonomousTradingConfig()" style="font-size:10px; padding:3px 10px;">APPLY PARAMS</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Terminal Strip for Autonomous Live Feed -->
-              <div style="background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:10px 14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                  <span class="mono" style="font-size:10.5px; color:var(--gold); font-weight:700;">⚡ AUTONOMOUS AGENT REASONING &amp; EXECUTION STREAM</span>
-                  <span class="mono" style="font-size:9.5px; color:var(--text-muted);" id="autoBotStreamCount">10 RECENT SIGNALS</span>
-                </div>
-                <div id="autoBotStreamLogs" class="mono" style="font-size:11px; max-height:85px; overflow-y:auto; color:var(--text-muted); line-height:1.6;">
-                  <div style="color:var(--neon-green);">[ACTIVE] Autonomous engine connected to Solana Mainnet &amp; Jupiter Aggregator v6.</div>
-                  <div style="color:var(--text-main);">[MONITOR] Scanning Twitter alpha and DexScreener liquidity pools for breakout tokens...</div>
-                </div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">ZERO-SIMULATION ARCHITECTURE &bull; ED25519 ON-CHAIN SIGNING &bull; REAL-TIME DEX ROUTING</span>
-            </footer>
-          </article>
-
-          <!-- Widget 2: Pre-Installed Accounts & Integrations Catalog [Span 12] -->
-          <article class="slab-panel span-12" id="integrationsCatalogPanel">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono">SYSTEM INTEGRATIONS // 02</span>
-                <h2 class="slab-title">ALL ACCOUNTS &amp; INTEGRATIONS (PRE-INSTALLED)</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; align-items:center; gap:8px;">
-                <button class="mini-btn mono active" id="filterIntAll" onclick="CommandCenter.filterIntegrations('all')">ALL</button>
-                <button class="mini-btn mono" id="filterIntWallets" onclick="CommandCenter.filterIntegrations('Wallets & Chains')">WALLETS</button>
-                <button class="mini-btn mono" id="filterIntDex" onclick="CommandCenter.filterIntegrations('DEX & Routing')">DEX</button>
-                <button class="mini-btn mono" id="filterIntAi" onclick="CommandCenter.filterIntegrations('Autonomous AI')">AI</button>
-                <button class="mini-btn mono" id="filterIntSocial" onclick="CommandCenter.filterIntegrations('Social & Alpha')">SOCIAL</button>
-                <button class="mini-btn mono" id="filterIntCloud" onclick="CommandCenter.filterIntegrations('Business & DevOps')">DEVOPS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="integrationsGridContainer" style="padding:16px;">
-              <!-- Dynamic Integration Cards inserted here -->
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PLUG-AND-PLAY MESH &bull; ALL SUBSYSTEMS INSTALLED &bull; ZERO SIMULATION</span>
-            </footer>
-          </article>
-        </section>
-
-        <!-- ======================================================== -->
-        <!-- SECTION 10: SETTINGS -->
+        <!-- SECTION 9: SETTINGS -->
         <!-- ======================================================== -->
         <section class="section-grid" id="section-settings" data-section-name="Settings">
           <!-- Widget 1: Integration Credential Vault -->
@@ -2097,1028 +1375,103 @@
             </header>
             <div class="slab-body" id="settingsLedgerContainer"></div>
           </article>
-
-          <!-- Widget 11: Decentralized IPFS & Arweave Permanent Cold Storage Vault [Span 12] -->
-          <article class="slab-panel span-12" id="settingsIpfsPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">DECENTRALIZED // 11 &bull; PERMAWEB VAULT</span>
-                <h2 class="slab-title">DECENTRALIZED IPFS &amp; ARWEAVE COLD STORAGE &bull; IMMUTABLE SNAPSHOTS</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:8px; align-items:center;">
-                <span class="badge mono" id="ipfsStatusBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:3px 10px; font-size:11px;">IPFS: CIDv1 READY</span>
-                <button class="btn btn-sm btn-cyan mono" onclick="CommandCenter.pinVaultToIpfs()">PIN TO IPFS</button>
-                <button class="btn btn-sm btn-gold mono" onclick="CommandCenter.archiveVaultToArweave()">ARCHIVE ARWEAVE</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsIpfsContainer"></div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: IPFS CIDv1 MULTIHASH &bull; ARWEAVE PERMAWEB BLOCKCHAIN &bull; SOVEREIGN CENSORSHIP RESISTANT</span>
-              <span class="footer-meta mono" id="ipfsLastPinMeta">GATEWAY: IPFS.IO &bull; ARWEAVE.NET</span>
-            </footer>
-          </article>
-
-          <!-- Widget 12: Zero-Knowledge Proof Solvency & Credential Vault [Span 6] -->
-          <article class="slab-panel span-6" id="settingsZkVaultPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple, #bf5af2);">CRYPTOGRAPHY // 12 &bull; ZERO-KNOWLEDGE</span>
-                <h2 class="slab-title">ZK-PROOF SOLVENCY &amp; CREDENTIAL VAULT</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="zkProofCountBadge" style="background:rgba(191,90,242,0.1); color:#bf5af2; border:1px solid rgba(191,90,242,0.3); padding:2px 8px; font-size:10px;">0 PROOFS</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generateZkSolvencyProof()">GENERATE PROOF</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsZkVaultContainer" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ALGORITHM</div>
-                  <div class="mono" style="color:var(--gold); font-weight:600;">Fiat-Shamir Sigma (SHA-256)</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">PROVEN THRESHOLD</div>
-                  <div class="mono" id="zkProvenThreshold" style="color:var(--neon-green); font-weight:600;">&ge; $5,000.00 USDC</div>
-                </div>
-              </div>
-              <div id="zkProofList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Zero-knowledge cryptographic commitments armed and verified.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: PEDERSEN COMMITMENTS &bull; FIAT-SHAMIR &bull; ZERO BALANCE DISCLOSURE</span>
-            </footer>
-          </article>
-
-          <!-- Widget 13: Automated Red-Team Defensive Vulnerability Scanner [Span 6] -->
-          <article class="slab-panel span-6" id="settingsRedteamPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-red, #ff453a);">CYBER DEFENSE // 13 &bull; RED-TEAM AUDIT</span>
-                <h2 class="slab-title">DEFENSIVE VULNERABILITY &amp; PORT SCANNER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="redteamScoreBadge" style="background:rgba(50,215,75,0.1); color:var(--neon-green); border:1px solid rgba(50,215,75,0.3); padding:2px 8px; font-size:10px;">HARDENING: 92%</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.runRedteamScan()">RUN SCAN</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsRedteamContainer" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">POSTURE RATING</div>
-                  <div class="mono" id="redteamRating" style="color:var(--neon-green); font-weight:600;">SOVEREIGN_A+</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">OPEN LOCAL PORTS</div>
-                  <div class="mono" id="redteamOpenPorts" style="color:var(--gold); font-weight:600;">1 LISTENER (8787)</div>
-                </div>
-              </div>
-              <div id="redteamFindingsList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Loopback socket scanner ready.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">AUDIT: NON-BLOCKING TCP SOCKETS &bull; HTTP SECURITY HEADERS &bull; POSIX CHMOD</span>
-            </footer>
-          </article>
-
-          <!-- Widget 14: Decentralized VPN & WireGuard Sovereign Mesh [Span 6] -->
-          <article class="slab-panel span-6" id="settingsWireguardPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">P2P NETWORK // 14 &bull; MESH TUNNEL</span>
-                <h2 class="slab-title">WIREGUARD SOVEREIGN MESH NODE</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="wgStatusBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:2px 8px; font-size:10px;">IFACE: WG0</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generateWireguardPeer()">ADD PEER</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsWireguardContainer" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">VIP ADDRESS</div>
-                  <div class="mono" id="wgVipAddress" style="color:var(--neon-cyan); font-weight:600;">10.42.0.1/24</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">AVG MESH RTT</div>
-                  <div class="mono" id="wgAvgRtt" style="color:var(--gold); font-weight:600;">53.9 ms</div>
-                </div>
-              </div>
-              <div id="wgPeersList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Encrypted P2P WireGuard mesh active.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">CRYPTO: CURVE25519 &bull; CHACHA20-POLY1305 &bull; STRICT KEEPALIVE 25s</span>
-            </footer>
-          </article>
-
-          <!-- Widget 15: Tor Onion Hidden Service Gateway [Span 6] -->
-          <article class="slab-panel span-6" id="settingsTorGatewayPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple, #bf5af2);">DARKNET // 15 &bull; ONION ROUTER</span>
-                <h2 class="slab-title">TOR V3 HIDDEN SERVICE GATEWAY</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="torStatusBadge" style="background:rgba(191,90,242,0.1); color:#bf5af2; border:1px solid rgba(191,90,242,0.3); padding:2px 8px; font-size:10px;">V3 ONION</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.rotateTorOnion()">ROTATE ADDRESS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsTorGatewayContainer" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ONION HOST</div>
-                  <div class="mono" id="torOnionHost" style="color:var(--neon-green); font-size:9px; word-break:break-all;">u1commandcenter...onion</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">CIRCUIT HOPS</div>
-                  <div class="mono" id="torCircuitHops" style="color:var(--gold); font-weight:600;">3 RELAYS (IS &bull; CH &bull; NO)</div>
-                </div>
-              </div>
-              <div id="torCircuitsList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Tor onion hidden service routed.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: ED25519-V3 &bull; ZERO-LEAK DNS RESOLUTION &bull; ENCLAVE DARKNET MIRROR</span>
-            </footer>
-          </article>
-
-          <!-- Widget 16: Canary Token & Honeypot Intrusion Trap Sentinel [Span 12] -->
-          <article class="slab-panel span-12" id="settingsCanaryPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-red, #ff453a);">TRIPWIRE // 16 &bull; HONEYPOT SENTINEL</span>
-                <h2 class="slab-title">CANARY TOKEN &amp; HONEYPOT INTRUSION TRAP SENTINEL</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="canaryAlertCountBadge" style="background:rgba(50,215,75,0.1); color:var(--neon-green); border:1px solid rgba(50,215,75,0.3); padding:2px 8px; font-size:10px;">PERIMETER SECURE</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.deployCanaryToken()">DEPLOY TRAP</button>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.checkCanaryHoneyfiles()">AUDIT HONEYFILES</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsCanaryContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:10px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ACTIVE TRAPS</div>
-                  <div class="mono" id="canaryActiveTokensCount" style="color:var(--neon-cyan); font-weight:600;">3 ARMED</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">INTRUSION ALERTS</div>
-                  <div class="mono" id="canaryIntrusionAlertsCount" style="color:var(--neon-green); font-weight:600;">0 BREACHES</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">DECOY HONEYFILES</div>
-                  <div class="mono" id="canaryDecoyFilesStatus" style="color:var(--gold); font-weight:600;">UNTOUCHED (SHA-256)</div>
-                </div>
-              </div>
-              <div id="canaryTokensList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Canary tokens active across repository, databases, and decoy credentials.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">TACTIC: DECEPTION TECHNOLOGY &bull; AUTOMATED LEAK ISOLATION &bull; IMMEDIATE REVOCATION</span>
-            </footer>
-          </article>
-
-          <!-- Widget 17: Whisper CoreML Real-Time Audio Transcription [Span 6] -->
-          <article class="slab-panel span-6" id="settingsWhisperPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple, #bf5af2);">COREML AUDIO // 17 &bull; NPU SPEECH ENGINE</span>
-                <h2 class="slab-title">WHISPER ON-DEVICE TRANSCRIBER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="whisperModelBadge" style="background:rgba(191,90,242,0.1); color:#bf5af2; border:1px solid rgba(191,90,242,0.3); padding:2px 8px; font-size:10px;">WHISPER-BASE.COREML</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.transcribeAudioSpeech()">TRANSCRIBE MIC</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsWhisperContainer" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ACCELERATION</div>
-                  <div class="mono" style="color:var(--gold); font-weight:600;">Apple Silicon Metal NPU</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">SAMPLE RATE</div>
-                  <div class="mono" id="whisperSampleRate" style="color:var(--neon-green); font-weight:600;">16,000 Hz (PCM)</div>
-                </div>
-              </div>
-              <div id="whisperOutputLog" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">CoreML Whisper daemon primed. Zero audio frames leak to cloud.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">BACKEND: ANE / METAL RUNTIME &bull; DIARIZATION ENABLED &bull; TIMECODED SEGMENTS</span>
-            </footer>
-          </article>
-
-          <!-- Widget 18: Native macOS QuickLook Preview Generator [Span 6] -->
-          <article class="slab-panel span-6" id="settingsQuicklookPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">MACOS NATIVE // 18 &bull; QUICKLOOK GENERATOR</span>
-                <h2 class="slab-title">.CCVAULT ARCHIVE QUICKLOOK CARD</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="quicklookStatusBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:2px 8px; font-size:10px;">QLMANAGE READY</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generateQuicklookPreview()">GENERATE PREVIEW</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsQuicklookContainer" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">CIPHER SUITE</div>
-                  <div class="mono" id="quicklookCipher" style="color:var(--neon-cyan); font-size:10px; font-weight:600;">ChaCha20-Poly1305</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">INTEGRITY</div>
-                  <div class="mono" id="quicklookIntegrity" style="color:var(--neon-green); font-weight:600;">AUTHENTIC_SEALED</div>
-                </div>
-              </div>
-              <div id="quicklookCardContainer" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Click Generate Preview to inspect .ccvault header and render vector seal.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">FORMAT: HIGH-DPI SVG THUMBNAIL &bull; EXPORTS/QUICKLOOK_PREVIEW.HTML</span>
-            </footer>
-          </article>
-
-          <!-- Widget 19: Sovereign Matrix Homeserver Node & E2EE Bridge [Span 6] -->
-          <article class="slab-panel span-6" id="settingsMatrixPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-emerald, #10b981);">FEDERATED C2 // 19 &bull; MATRIX E2EE</span>
-                <h2 class="slab-title">LOCAL MATRIX HOMESERVER NODE</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="matrixStatusBadge" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:2px 8px; font-size:10px;">@ROOT:U1.LOCAL</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.sendMatrixMessage()">POST MSG</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsMatrixContainer" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">HOMESERVER</div>
-                  <div class="mono" id="matrixHomeserver" style="color:var(--neon-emerald); font-weight:600;">http://127.0.0.1:8008</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ENCRYPTION</div>
-                  <div class="mono" style="color:var(--gold); font-weight:600;">Olm/Megolm Ratchet</div>
-                </div>
-              </div>
-              <div id="matrixRoomsList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Matrix E2EE federated room active.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">SPEC: MATRIX CS-API V3 &bull; DEVICE CROSS-SIGNING &bull; ZERO THIRD-PARTY CLOUD</span>
-            </footer>
-          </article>
-
-          <!-- Widget 20: BLE Local Enclave Mesh & AirDrop Bridge [Span 6] -->
-          <article class="slab-panel span-6" id="settingsBlePanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">RADIO MESH // 20 &bull; BLE &amp; AIRDROP</span>
-                <h2 class="slab-title">BLUETOOTH LE &amp; AIRDROP DISCOVERY</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="bleStatusBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:2px 8px; font-size:10px;">BLE 5.3 ACTIVE</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.scanBlePeers()">SCAN PEERS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsBleContainer" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">BEACON UUID</div>
-                  <div class="mono" id="bleBeaconUuid" style="color:var(--gold); font-size:9px;">0000U10S-0000-1000...</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">AIRDROP AWDL</div>
-                  <div class="mono" id="bleAwdlStatus" style="color:var(--neon-cyan); font-weight:600;">ARMED (48.5 Mbps)</div>
-                </div>
-              </div>
-              <div id="blePeersList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Scanning for nearby sovereign hardware nodes.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: COREBLUETOOTH PROXIMITY &bull; APPLE WIRELESS DIRECT LINK (AWDL)</span>
-            </footer>
-          </article>
-
-          <!-- Widget 21: Hardware Security Key (YubiKey/FIDO2) Assertion [Span 6] -->
-          <article class="slab-panel span-6" id="settingsFido2Panel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">HARDWARE TOKEN // 21 &bull; FIDO2 / WEBAUTHN</span>
-                <h2 class="slab-title">YUBIKEY WEBAUTHN ASSERTION GATE</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="fido2EnrolledBadge" style="background:rgba(233,180,76,0.1); color:var(--gold); border:1px solid rgba(233,180,76,0.3); padding:2px 8px; font-size:10px;">1 DONGLE ENROLLED</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.triggerFido2Assertion()">TOUCH ASSERTION</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsFido2Container" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">USER PRESENCE</div>
-                  <div class="mono" id="fido2Presence" style="color:var(--neon-green); font-weight:600;">UP=1 ENFORCED</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">PRIMARY DONGLE</div>
-                  <div class="mono" id="fido2PrimaryDongle" style="color:var(--gold); font-size:10px; font-weight:600;">YubiKey 5C NFC</div>
-                </div>
-              </div>
-              <div id="fido2AuditList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Physical touch interlock primed for critical operations.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">STANDARD: W3C WEBAUTHN LEVEL 3 &bull; FIDO2 CTAP2 &bull; SECP256R1 ATTESTATION</span>
-            </footer>
-          </article>
-
-          <!-- Widget 22: Autonomous Off-Grid Radio Mesh (LoRa / Meshtastic) [Span 6] -->
-          <article class="slab-panel span-6" id="settingsLoraPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple, #bf5af2);">OFF-GRID RF // 22 &bull; LORA 915MHZ</span>
-                <h2 class="slab-title">LORA MESHTASTIC RADIO GATEWAY</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="loraFreqBadge" style="background:rgba(191,90,242,0.1); color:#bf5af2; border:1px solid rgba(191,90,242,0.3); padding:2px 8px; font-size:10px;">915.0 MHZ (US)</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.sendLoraPacket()">BROADCAST RF</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsLoraContainer" style="padding:12px; font-size:11px;">
-              <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">CHANNEL / PSK</div>
-                  <div class="mono" id="loraChannel" style="color:var(--gold); font-weight:600;">SovereignC2 (AES-256)</div>
-                </div>
-                <div style="flex:1; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ACTIVE RF NODES</div>
-                  <div class="mono" id="loraActiveNodes" style="color:var(--neon-green); font-weight:600;">2 REPEATERS</div>
-                </div>
-              </div>
-              <div id="loraPacketLog" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">LoRa radio modem listening on 915MHz. Zero internet connection required.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">MODULATION: LORA SX1262 &bull; SPREADING FACTOR 11 &bull; 250 KHZ BANDWIDTH</span>
-            </footer>
-          </article>
-
-          <!-- Widget 23: Decentralized Sovereign DNS & Web3 Domain Gateway [Span 12] -->
-          <article class="slab-panel span-12" id="settingsSovereignDnsPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">NAME SERVICE // 23 &bull; DECENTRALIZED DNS</span>
-                <h2 class="slab-title">SOVEREIGN DNS &amp; WEB3 DOMAIN RESOLVER (.ETH &bull; .CRYPTO)</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="dnsCacheBadge" style="background:rgba(0,255,204,0.1); color:var(--neon-cyan); border:1px solid rgba(0,255,204,0.3); padding:2px 8px; font-size:10px;">CACHE HIT: 90.5%</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.resolveWeb3Domain()">RESOLVE DOMAIN</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsSovereignDnsContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:10px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">RESOLVED QUERIES</div>
-                  <div class="mono" id="dnsQueriesCount" style="color:var(--neon-cyan); font-weight:600;">42 RESOLVED</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">PRIVACY DoH ROUTE</div>
-                  <div class="mono" style="color:var(--gold); font-weight:600;">Cloudflare + Quad9 DNSSEC</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">SUPPORTED NAMESPACES</div>
-                  <div class="mono" style="color:var(--neon-green); font-weight:600;">.eth, .crypto, .x, .dao</div>
-                </div>
-              </div>
-              <div id="dnsDomainsList" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:16px;">Decentralized DNS resolver primed for ENS and Unstoppable Domains.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: ENS SMART CONTRACTS &bull; UNSTOPPABLE DOMAINS CNS/UNS &bull; ZERO ISP TELEMETRY</span>
-            </footer>
-          </article>
-
-          <!-- Widget 24: Stripe & LemonSqueezy SaaS MRR Analytics & Churn Cohort Engine [Span 12] -->
-          <article class="slab-panel span-12" id="settingsSaasMrrPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-green);">GROWTH // 24 &bull; SAAS REVENUE MATRIX</span>
-                <h2 class="slab-title">STRIPE &amp; LEMONSQUEEZY MRR ANALYTICS &bull; CHURN COHORT ENGINE</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="saasMrrBadge" style="background:rgba(0,255,136,0.1); color:var(--neon-green); border:1px solid rgba(0,255,136,0.3); padding:2px 8px; font-size:10px;">MRR: $28,600.00</span>
-                <span class="badge mono" id="saasNrrBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:2px 8px; font-size:10px;">NRR: 103.6%</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.calculateSaasMetrics()">UPDATE MRR</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsSaasMrrContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:10px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ANNUAL RUN RATE (ARR)</div>
-                  <div class="mono" id="saasArrVal" style="color:var(--neon-green); font-weight:600; font-size:13px;">$343,200.00</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">NET RETENTION (NRR)</div>
-                  <div class="mono" id="saasNrrVal" style="color:var(--neon-cyan); font-weight:600; font-size:13px;">103.6%</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">LTV / CAC RATIO</div>
-                  <div class="mono" id="saasLtvCacVal" style="color:var(--gold); font-weight:600; font-size:13px;">8.25x</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">QUICK RATIO</div>
-                  <div class="mono" id="saasQuickRatioVal" style="color:var(--neon-purple); font-weight:600; font-size:13px;">4.27 (ELITE)</div>
-                </div>
-              </div>
-              <div id="saasCohortsGrid" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:12px;">Real-time Stripe/LemonSqueezy webhook stream connected. Retention cohort grid calculated.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">INGESTION: WEBHOOKS &bull; HMAC-SHA256 SIGNED &bull; ZERO LATENCY MRR DECOMPOSITION</span>
-            </footer>
-          </article>
-
-          <!-- Widget 25: Cold Email Campaign Outbound Automator with Deliverability Scorer [Span 6] -->
-          <article class="slab-panel span-6" id="settingsOutboundPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">OUTBOUND // 25 &bull; PIPELINE ENCLAVE</span>
-                <h2 class="slab-title">COLD OUTBOUND AUTOMATOR &amp; SPF/DKIM SCORER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="outboundDeliverabilityBadge" style="background:rgba(255,190,0,0.1); color:var(--gold); border:1px solid rgba(255,190,0,0.3); padding:2px 8px; font-size:10px;">DELIVERABILITY: 96%</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.dispatchOutboundCampaign()">SEND TEST</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsOutboundContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">LEADS CONTACTED</div>
-                  <div class="mono" id="outboundLeadsCount" style="color:var(--neon-cyan); font-weight:600;">148 DISPATCHED</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">REPLY RATE</div>
-                  <div class="mono" id="outboundReplyRate" style="color:var(--neon-green); font-weight:600;">18.4% REPLY RATE</div>
-                </div>
-              </div>
-              <div id="outboundCampaignLog" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">Spintax parser primed. Anti-spam throttle active at 45s intervals.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">COMPLIANCE: CAN-SPAM COMPLIANT &bull; MX/SPF/DKIM/DMARC PRE-AUDITED</span>
-            </footer>
-          </article>
-
-          <!-- Widget 26: SEO Keyword Rank Tracker & Google Search Console [Span 6] -->
-          <article class="slab-panel span-6" id="settingsSeoPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">ORGANIC // 26 &bull; SEARCH RADAR</span>
-                <h2 class="slab-title">SEO KEYWORD RANK TRACKER &amp; GOOGLE CONSOLE</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="seoRankBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:2px 8px; font-size:10px;">TOP 10: 4 KEYWORDS</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.refreshSeoRankings()">REFRESH RANKS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsSeoContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">AVG RANK POSITION</div>
-                  <div class="mono" id="seoAvgRank" style="color:var(--neon-green); font-weight:600;">#4.2 AVERAGE</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">ESTIMATED CLICKS</div>
-                  <div class="mono" id="seoEstClicks" style="color:var(--neon-cyan); font-weight:600;">1,420 / MO</div>
-                </div>
-              </div>
-              <div id="seoKeywordsList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">Tracking target keywords: sovereign os, self-hosted command center, privacy matrix.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">ALGORITHM: SERP API HARVESTER &bull; CORE WEB VITALS ON-DEVICE AUDITOR</span>
-            </footer>
-          </article>
-
-          <!-- Widget 27: Upwork & Freelance High-Ticket Job Feed Scraper [Span 6] -->
-          <article class="slab-panel span-6" id="settingsGigRadarPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple);">SOLOPRENEUR // 27 &bull; HIGH-TICKET RADAR</span>
-                <h2 class="slab-title">FREELANCE HIGH-TICKET GIG FEED &amp; AI BIDDER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="gigRadarBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:2px 8px; font-size:10px;">4 HIGH-TICKET GIGS</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.scanFreelanceGigs()">SCAN GIGS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsGigRadarContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">OPPORTUNITY PIPELINE</div>
-                  <div class="mono" id="gigPipelineVal" style="color:var(--neon-green); font-weight:600;">$53,500 TOTAL VALUE</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">AVG WIN PROBABILITY</div>
-                  <div class="mono" id="gigWinProbVal" style="color:var(--gold); font-weight:600;">88.5% WIN RATING</div>
-                </div>
-              </div>
-              <div id="gigFeedList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">Scraping RSS feeds: Upwork, Freelancer, Gun.io ($5k - $50k+ contracts).</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">AI SYNTHESIS: 1-CLICK BID PROPOSAL &bull; REPO PORTFOLIO INJECTION</span>
-            </footer>
-          </article>
-
-          <!-- Widget 28: Automated Pitch Deck Generator & Venture Investor Matchmaker [Span 6] -->
-          <article class="slab-panel span-6" id="settingsPitchDeckPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-green);">VENTURE // 28 &bull; CAPITAL SYNDICATE</span>
-                <h2 class="slab-title">PITCH DECK GENERATOR &amp; VENTURE MATCHMAKER</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="deckStatusBadge" style="background:rgba(0,255,136,0.1); color:var(--neon-green); border:1px solid rgba(0,255,136,0.3); padding:2px 8px; font-size:10px;">10 SLIDES READY</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generatePitchDeck()">BUILD DECK</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsPitchDeckContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">TARGET FUNDING ROUND</div>
-                  <div class="mono" id="deckAskVal" style="color:var(--neon-cyan); font-weight:600;">$5,000,000 SERIES A</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">MATCHED TIER-1 FUNDS</div>
-                  <div class="mono" id="deckMatchedFunds" style="color:var(--gold); font-weight:600;">Founders Fund &bull; Lux &bull; a16z</div>
-                </div>
-              </div>
-              <div id="pitchDeckSlidesPreview" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">Interactive slide deck exported to HTML bundle ready for partner pitch meetings.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">DECK ENGINE: 10 INSTITUTIONAL SLIDES &bull; EXPORT: exports/pitch_deck.html</span>
-            </footer>
-          </article>
-
-          <!-- Widget 29: WebGL 3D Spatial Globe / Orbit Command Deck [Span 6] -->
-          <article class="slab-panel span-6" id="settingsSpatialGlobePanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">ORBIT // 29 &bull; SPATIAL COMMAND</span>
-                <h2 class="slab-title">WEBGL 3D SPATIAL GLOBE &amp; ORBIT TELEMETRY</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="spatialGlobeBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:2px 8px; font-size:10px;">6 ASSETS TRACKED</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.renderSpatialGlobe()">PROJECT GLOBE</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsSpatialGlobeContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">SPATIAL CARTESIAN</div>
-                  <div class="mono" id="spatialCoordsVal" style="color:var(--neon-green); font-weight:600;">R: 6371km | 3D VECTORS</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">ORBITAL SATELLITES</div>
-                  <div class="mono" id="spatialSatellitesVal" style="color:var(--neon-purple); font-weight:600;">2 CONSTELLATIONS</div>
-                </div>
-              </div>
-              <div id="spatialGlobeMarkersList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">Spherical-to-Cartesian 3D coordinate projection matrix active. Threat vectors mapped.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">GEOMETRY: HAVERSINE GREAT-CIRCLE &bull; CARTESIAN X/Y/Z PROJECTION &bull; REAL-TIME</span>
-            </footer>
-          </article>
-
-          <!-- Widget 30: Apple Vision Pro (visionOS) Spatial Persona WebXR Bridge [Span 6] -->
-          <article class="slab-panel span-6" id="settingsVisionOsPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple);">VISIONOS // 30 &bull; SPATIAL COMPUTING</span>
-                <h2 class="slab-title">APPLE VISION PRO WEBXR &amp; SPATIAL ENCLAVE</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="visionOsBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:2px 8px; font-size:10px;">WEBXR IMMERSIVE</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.negotiateVisionOsSession()">SPATIAL SYNC</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsVisionOsContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">6DoF TRACKING</div>
-                  <div class="mono" id="visionTrackingVal" style="color:var(--neon-green); font-weight:600;">HAND + EYE GAZE ACTIVE</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">SPATIAL WINDOWS</div>
-                  <div class="mono" id="visionWindowsVal" style="color:var(--neon-cyan); font-weight:600;">3 HUD PANELS ANCHORED</div>
-                </div>
-              </div>
-              <div id="visionOsWindowsList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">visionOS 2.2 WebXR session ready. Spatial persona enclave synchronized.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">IMMERSIVE: 6DoF HEAD TRACKING &bull; SPATIAL AUDIO HRTF &bull; COLOR P3-D65</span>
-            </footer>
-          </article>
-
-          <!-- Widget 31: Full-Duplex Live Voice C2 Conversational Engine [Span 12] -->
-          <article class="slab-panel span-12" id="settingsDuplexVoicePanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-green);">CONVERSATION // 31 &bull; DUPLEX VOICE C2</span>
-                <h2 class="slab-title">FULL-DUPLEX LIVE VOICE C2 &bull; ZERO-LATENCY ACOUSTIC LOOP</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="voiceC2StatusBadge" style="background:rgba(0,255,136,0.1); color:var(--neon-green); border:1px solid rgba(0,255,136,0.3); padding:2px 8px; font-size:10px;">VOICE DUPLEX: ACTIVE</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.triggerVoiceTurn()">SAY COMMAND</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsDuplexVoiceContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:10px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">VOICE ENGINE &amp; LATENCY</div>
-                  <div class="mono" id="voiceLatencyVal" style="color:var(--neon-green); font-weight:600; font-size:12px;">Samantha &bull; 18.4ms Loop</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">ACOUSTIC BARGE-IN</div>
-                  <div class="mono" style="color:var(--neon-cyan); font-weight:600; font-size:12px;">82% Sensitivity Guard</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:10px;">INPUT TRANSCRIBER</div>
-                  <div class="mono" style="color:var(--gold); font-weight:600; font-size:12px;">Apple Metal CoreML Whisper</div>
-                </div>
-              </div>
-              <div id="voiceConversationLog" class="mono" style="font-size:10px; max-height:120px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:12px;">Full-duplex conversational audio pipeline listening. Zero cloud egress.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PIPELINE: PCM 16KHZ &bull; COREML WHISPER NPU &bull; LOCAL REASONING &bull; MACOS SAY SYNTHESIS</span>
-            </footer>
-          </article>
-
-          <!-- Widget 32: Multi-Node Sovereign P2P Cluster Synchronization [Span 6] -->
-          <article class="slab-panel span-6" id="settingsClusterSyncPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">CLUSTER // 32 &bull; MULTI-NODE CONSENSUS</span>
-                <h2 class="slab-title">MULTI-NODE P2P CLUSTER REPLICATION</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="clusterNodesBadge" style="background:rgba(0,240,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.3); padding:2px 8px; font-size:10px;">3 MAC NODES SYNCED</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.syncClusterNodes()">SYNC STATE</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsClusterSyncContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">CLUSTER LEADER</div>
-                  <div class="mono" id="clusterLeaderVal" style="color:var(--gold); font-weight:600;">Mac Studio M2 Ultra</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">CONSENSUS MERKLE ROOT</div>
-                  <div class="mono" id="clusterRootVal" style="color:var(--neon-green); font-weight:600; font-size:10px;">a4f81c9b20e1...</div>
-                </div>
-              </div>
-              <div id="clusterNodesList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">P2P cryptographic replication active across WireGuard mesh &amp; LoRa radio.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: DECENTRALIZED RAFT CONSENSUS &bull; SHA-256 STATE ROOTS &bull; P2P REPLICATION</span>
-            </footer>
-          </article>
-
-          <!-- Widget 33: Cognitive Focus & BCI / EEG Neural Telemetry HUD [Span 6] -->
-          <article class="slab-panel span-6" id="settingsBciPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple);">NEURAL // 33 &bull; BCI FOCUS TELEMETRY</span>
-                <h2 class="slab-title">COGNITIVE FOCUS &amp; BCI NEURAL HUD</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="bciFlowBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:2px 8px; font-size:10px;">FLOW STATE: 91.2%</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.sampleBciNeuralStream()">SAMPLE EEG</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsBciContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">COGNITIVE LOAD INDEX</div>
-                  <div class="mono" id="bciLoadVal" style="color:var(--neon-cyan); font-weight:600;">68.4% (OPTIMAL)</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">CALM MODE SHIELD</div>
-                  <div class="mono" id="bciCalmVal" style="color:var(--neon-green); font-weight:600;">ARMED (14 MUTED)</div>
-                </div>
-              </div>
-              <div id="bciBandsPowerList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">Alpha (28.6 uV²) &bull; Beta (42.1 uV²) &bull; Theta (14.2 uV²) &bull; Gamma (8.4 uV²)</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">BIOSENSING: OPENBCI CYTON 250HZ &bull; FFT SPECTRAL BAND DECOMPOSITION &bull; FLOW SHIELD</span>
-            </footer>
-          </article>
-
-          <!-- Widget 34: Multi-Network Social Distribution Engine [Span 12] -->
-          <article class="slab-panel span-12" id="settingsSocialDistributorPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">DISTRIBUTION // 34 &bull; SOVEREIGN SOCIAL BROADCASTER</span>
-                <h2 class="slab-title">MULTI-NETWORK SOCIAL DISTRIBUTION ENGINE &bull; 5-WAY BROADCAST</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="socialDistributorBadge" style="background:rgba(0,229,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,229,255,0.3); padding:2px 8px; font-size:10px;">CAMPAIGNS: ARMED</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generateSocialBroadcast()">SYNTHESIZE CAMPAIGN</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsSocialContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin-bottom:10px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">X / TWITTER THREAD</div>
-                  <div class="mono" id="socialTwitterCount" style="color:var(--neon-cyan); font-weight:600; font-size:13px; margin-top:4px;">1 Broadcast</div>
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">Multi-tweet thread</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">NOSTR NIP-01 EVENT</div>
-                  <div class="mono" id="socialNostrCount" style="color:var(--gold); font-weight:600; font-size:13px; margin-top:4px;">Kind 1 Signed</div>
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">Schnorr / Bech32</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">FARCASTER CAST</div>
-                  <div class="mono" id="socialFarcasterCount" style="color:var(--neon-purple); font-weight:600; font-size:13px; margin-top:4px;">Cast Channel</div>
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">Decentralized feed</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">LINKEDIN ARTICLE</div>
-                  <div class="mono" id="socialLinkedinCount" style="color:var(--neon-green); font-weight:600; font-size:13px; margin-top:4px;">Exec Long-form</div>
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">Professional network</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">TELEGRAM CHANNEL</div>
-                  <div class="mono" id="socialTelegramCount" style="color:#FF9900; font-weight:600; font-size:13px; margin-top:4px;">Markdown V2</div>
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">Direct broadcast</div>
-                </div>
-              </div>
-              <div id="socialRecentBroadcast" class="mono" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:4px; padding:10px; font-size:10px; max-height:80px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center;">Multi-network syndicated broadcast ready. Click 'SYNTHESIZE CAMPAIGN' to generate synchronized distribution payloads.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: NOSTR NIP-01 &bull; TWITTER/X THREADING &bull; FARCASTER &bull; LINKEDIN &bull; TELEGRAM</span>
-            </footer>
-          </article>
-
-          <!-- Widget 35: Autonomous Repo Sentinel & Auto-PR Synthesizer [Span 6] -->
-          <article class="slab-panel span-6" id="settingsRepoSentinelPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">REPOS // 35 &bull; REPO SENTINEL &amp; AUTO-PR</span>
-                <h2 class="slab-title">AUTONOMOUS REPO SENTINEL &amp; AUTO-PR</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="repoSentinelStatusBadge" style="background:rgba(233,180,76,0.1); color:var(--gold); border:1px solid rgba(233,180,76,0.3); padding:2px 8px; font-size:10px;">AST: 100% CLEAN</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.auditRepoSyntax()">AUDIT AST</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsRepoSentinelContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">FILES AUDITED (AST)</div>
-                  <div class="mono" id="repoFilesAuditedVal" style="color:var(--gold); font-weight:600;">64 / 64 Clean</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">AUTO-PRS SYNTHESIZED</div>
-                  <div class="mono" id="repoPrsSynthesizedVal" style="color:var(--neon-green); font-weight:600;">PR #101 Active</div>
-                </div>
-              </div>
-              <div id="repoSentinelRecentList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">Continuous AST validation active. Zero syntax faults or forbidden pip modules detected.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">INSPECTION: AST ABSTRACT SYNTAX TREE &bull; PY_COMPILE &bull; ZERO-DEPENDENCY ENFORCEMENT</span>
-            </footer>
-          </article>
-
-          <!-- Widget 36: Sovereign Post-Quantum Cryptography (PQC NIST FIPS 203/204) Vault [Span 6] -->
-          <article class="slab-panel span-6" id="settingsPqcVaultPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-green);">QUANTUM // 36 &bull; PQC NIST FIPS 203/204</span>
-                <h2 class="slab-title">POST-QUANTUM CRYPTOGRAPHY (PQC) VAULT</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="pqcVaultStatusBadge" style="background:rgba(0,255,136,0.1); color:var(--neon-green); border:1px solid rgba(0,255,136,0.3); padding:2px 8px; font-size:10px;">LATTICE: ARMED</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.generatePqcKeypair()">GEN ML-KEM</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsPqcContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">ML-KEM-768 KEYPAIR</div>
-                  <div class="mono" id="pqcKemKeyVal" style="color:var(--neon-cyan); font-weight:600; font-size:10px;">Kyber-768 Active</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">ML-DSA-65 SIGNATURE</div>
-                  <div class="mono" id="pqcDsaSigVal" style="color:var(--neon-green); font-weight:600; font-size:10px;">Dilithium-3 Valid</div>
-                </div>
-              </div>
-              <div id="pqcKeysList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">NIST FIPS 203 / FIPS 204 Lattice Cryptography active. Post-quantum shared secrets armed.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">STANDARDS: NIST FIPS 203 (ML-KEM-768) &bull; NIST FIPS 204 (ML-DSA-65) &bull; SHAKE-256</span>
-            </footer>
-          </article>
-
-          <!-- Widget 37: Multi-Model LLM Consensus Mesh [Span 12] -->
-          <article class="slab-panel span-12" id="settingsLlmConsensusPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-purple);">CONSENSUS // 37 &bull; MULTI-MODEL NEURAL MESH</span>
-                <h2 class="slab-title">MULTI-MODEL LLM CONSENSUS MESH &bull; LOCAL WEIGHT VOTING</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="llmConsensusBadge" style="background:rgba(189,0,255,0.1); color:var(--neon-purple); border:1px solid rgba(189,0,255,0.3); padding:2px 8px; font-size:10px;">CONSENSUS: 94.2%</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.evaluateLlmConsensus()">EVALUATE CONSENSUS</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsConsensusContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:10px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">LLAMA-3 70B (METAL NPU)</div>
-                  <div class="mono" id="consensusModel1Val" style="color:var(--neon-cyan); font-weight:600; font-size:12px; margin-top:4px;">Affirmative (95.4%)</div>
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">General Reasoning</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">MISTRAL LARGE (LOCAL)</div>
-                  <div class="mono" id="consensusModel2Val" style="color:var(--gold); font-weight:600; font-size:12px; margin-top:4px;">Affirmative (92.8%)</div>
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">Analytical Logic</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:8px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">DEEPSEEK CODER (GGUF)</div>
-                  <div class="mono" id="consensusModel3Val" style="color:var(--neon-green); font-weight:600; font-size:12px; margin-top:4px;">Affirmative (96.1%)</div>
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">Verification &amp; AST</div>
-                </div>
-              </div>
-              <div id="consensusRecentLog" class="mono" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:4px; padding:10px; font-size:10px; max-height:80px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center;">Multi-model consensus mesh active across 3 on-device neural weights. Click 'EVALUATE CONSENSUS' to test asynchronous quorum.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">VOTING: ASYNCHRONOUS WEIGHTED QUORUM &bull; ZERO CLOUD EGRESS &bull; SEMANTIC CONCORDANCE</span>
-            </footer>
-          </article>
-
-          <!-- Widget 38: Cross-Device Apple Continuity & AirDrop Handoff [Span 6] -->
-          <article class="slab-panel span-6" id="settingsAppleContinuityPanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--neon-cyan);">CONTINUITY // 38 &bull; AIRDROP &amp; HANDOFF</span>
-                <h2 class="slab-title">CROSS-DEVICE CONTINUITY ENCLAVE</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="continuityStatusBadge" style="background:rgba(0,229,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,229,255,0.3); padding:2px 8px; font-size:10px;">3 DEVICES PAIRED</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.initiateAppleHandoff()">HANDOFF</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsContinuityContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">TARGET DEVICE</div>
-                  <div class="mono" id="continuityTargetVal" style="color:var(--neon-cyan); font-weight:600; font-size:10px;">iPhone 16 Pro (TMA)</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">UNIVERSAL CLIPBOARD</div>
-                  <div class="mono" id="continuityClipVal" style="color:var(--neon-green); font-weight:600; font-size:10px;">ENCRYPTED SYNCED</div>
-                </div>
-              </div>
-              <div id="continuityDevicesList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">AWDL &bull; BLE Mesh Beacon &bull; Mac Studio &bull; iPhone 16 Pro &bull; Apple Vision Pro</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">PROTOCOL: APPLE AWDL &bull; BLE ADVERTISEMENT &bull; SHA-256 CHECKSUM HANDOFF</span>
-            </footer>
-          </article>
-
-          <!-- Widget 39: Hardware Secure Enclave (SEP) Key Derivation [Span 6] -->
-          <article class="slab-panel span-6" id="settingsSecureEnclavePanel" data-service="settings">
-            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-            <header class="slab-header">
-              <div class="slab-title-group">
-                <span class="slab-kicker mono" style="color:var(--gold);">HARDWARE // 39 &bull; APPLE SECURE ENCLAVE</span>
-                <h2 class="slab-title">HARDWARE SECURE ENCLAVE (SEP)</h2>
-              </div>
-              <div class="slab-actions" style="display:flex; gap:6px; align-items:center;">
-                <span class="badge mono" id="secureEnclaveStatusBadge" style="background:rgba(233,180,76,0.1); color:var(--gold); border:1px solid rgba(233,180,76,0.3); padding:2px 8px; font-size:10px;">SEP: ARMED</span>
-                <button class="btn btn-sm btn-outline mono" onclick="CommandCenter.deriveEnclaveKey()">DERIVE KEY</button>
-              </div>
-            </header>
-            <div class="slab-body" id="settingsEnclaveContainer" style="padding:12px; font-size:11px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">ENCLAVE HARDWARE</div>
-                  <div class="mono" id="enclaveHwVal" style="color:var(--gold); font-weight:600; font-size:10px;">Apple Silicon M-Series</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:6px;">
-                  <div class="mono" style="color:var(--text-muted); font-size:9px;">TAMPER POSTURE</div>
-                  <div class="mono" id="enclaveTamperVal" style="color:var(--neon-green); font-weight:600; font-size:10px;">HARDWARE INTACT</div>
-                </div>
-              </div>
-              <div id="enclaveKeyringsList" class="mono" style="font-size:10px; max-height:100px; overflow-y:auto;">
-                <div style="color:var(--text-muted); text-align:center; padding:10px;">HKDF-HMAC-SHA256 hardware seed bound to Darwin system UUID and Touch ID.</div>
-              </div>
-            </div>
-            <footer class="slab-footer">
-              <span class="footer-meta mono">SECURITY: APPLE SEP CO-PROCESSOR &bull; SYSTEM UUID HKDF &bull; HARDWARE ENCLAVE</span>
-            </footer>
-          </article>
         </section>
 
+        <section class="section-grid" id="section-updater" data-section-name="Updater">
+          <!-- Widget 0: Measured health -->
+          <article class="slab-panel span-12">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">UPDATER // 00</span>
+                <h2 class="slab-title">MEASURED HEALTH</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="status-dot" id="updaterHealthDot"></span>
+                <span class="mono" id="updaterHealthBadge" style="font-size:10px; color:var(--text-muted);">NOT MEASURED</span>
+              </div>
+            </header>
+            <div class="slab-body" id="updaterHealthContainer"></div>
+          </article>
+
+          <!-- Widget 1: Version, runtime and workspace health -->
+          <article class="slab-panel span-5">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">UPDATER // 01</span>
+                <h2 class="slab-title">VERSION &amp; RUNTIME</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="status-dot active" id="updaterRuntimeDot"></span>
+                <span class="mono" id="updaterVersionBadge" style="font-size:10px; color:var(--gold);">v—</span>
+              </div>
+            </header>
+            <div class="slab-body" id="updaterRuntimeContainer"></div>
+          </article>
+
+          <!-- Widget 2: Update channel -->
+          <article class="slab-panel span-7">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">UPDATER // 02</span>
+                <h2 class="slab-title">UPDATE CHANNEL</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="status-dot" id="updaterGitDot"></span>
+                <span class="mono" id="updaterBranchBadge" style="font-size:10px; color:var(--text-muted);">—</span>
+              </div>
+            </header>
+            <div class="slab-body" id="updaterChannelContainer"></div>
+          </article>
+
+          <!-- Widget 3: Always-on improvement agent -->
+          <article class="slab-panel span-7">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">UPDATER // 03</span>
+                <h2 class="slab-title">IMPROVEMENT AGENT</h2>
+              </div>
+              <div class="slab-actions">
+                <span class="status-dot" id="updaterAgentDot"></span>
+                <span class="mono" id="updaterAgentBadge" style="font-size:10px; color:var(--text-muted);">—</span>
+              </div>
+            </header>
+            <div class="slab-body" id="updaterAgentContainer"></div>
+          </article>
+
+          <!-- Widget 4: Maintenance actions -->
+          <article class="slab-panel span-5">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">UPDATER // 04</span>
+                <h2 class="slab-title">MAINTENANCE</h2>
+              </div>
+            </header>
+            <div class="slab-body" id="updaterMaintenanceContainer"></div>
+          </article>
+
+          <!-- Widget 5: Changelog -->
+          <article class="slab-panel span-12">
+            <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
+            <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
+            <header class="slab-header">
+              <div class="slab-title-group">
+                <span class="slab-kicker mono">UPDATER // 05</span>
+                <h2 class="slab-title">RECENT CHANGES</h2>
+              </div>
+            </header>
+            <div class="slab-body" id="updaterChangelogContainer"></div>
+          </article>
+        </section>
 
       </main>
     </div>
@@ -3197,28 +1550,6 @@
     </div>
   </div>
 
-  <!-- Integration Key & Parameter Config Modal -->
-  <div class="modal-overlay" id="integrationModal" aria-hidden="true" style="display:none;">
-    <div class="modal-card" style="max-width: 580px;">
-      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-      <div class="modal-header">
-        <span class="modal-kicker mono" id="integrationModalKicker" style="color:var(--gold);">INTEGRATION VAULT // REAL ADAPTER</span>
-        <h3 class="modal-title" id="integrationModalTitle">CONFIGURE INTEGRATION</h3>
-      </div>
-      <div class="modal-body" id="integrationModalBody" style="margin: 16px 0;">
-        <!-- Dynamic fields -->
-      </div>
-      <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center;">
-        <button class="btn btn-secondary mono" onclick="CommandCenter.closeIntegrationModal()">CANCEL</button>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-secondary mono" id="integrationModalPingBtn" onclick="CommandCenter.testCurrentIntegration()">TEST CONNECTION</button>
-          <button class="btn btn-gold mono" onclick="CommandCenter.submitIntegrationSave()">SAVE SETTINGS</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Strategy Backtest Simulation Modal -->
   <div class="modal-overlay" id="backtestModal" aria-hidden="true" style="display:none;">
     <div class="modal-card" style="max-width: 680px;">
@@ -3238,181 +1569,19 @@
     </div>
   </div>
 
-  <!-- Add Tracked Solana Wallet Modal -->
-  <div class="modal-overlay" id="addWalletModal" aria-hidden="true" style="display:none;">
-    <div class="modal-card" style="max-width: 520px;">
-      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-      <div class="modal-header">
-        <span class="modal-kicker mono" style="color:var(--gold);">SOLANA DESK // ON-CHAIN TREASURY</span>
-        <h3 class="modal-title">TRACK SOLANA WALLET</h3>
-      </div>
-      <div class="modal-body" style="margin: 16px 0; display:flex; flex-direction:column; gap:12px;">
-        <div>
-          <label class="mono" style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">WALLET LABEL</label>
-          <input type="text" id="newWalletLabel" class="mono" placeholder="e.g. Ledger Cold Vault 02" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border-subtle); color:var(--text-main); padding:8px 12px; border-radius:4px; font-size:13px;">
-        </div>
-        <div>
-          <label class="mono" style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">SOLANA BASE58 PUBLIC KEY</label>
-          <input type="text" id="newWalletAddress" class="mono" placeholder="e.g. 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border-subtle); color:var(--text-main); padding:8px 12px; border-radius:4px; font-size:12px;">
-        </div>
-        <div>
-          <label class="mono" style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">CATEGORY</label>
-          <select id="newWalletCategory" class="mono" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--border-subtle); color:var(--text-main); padding:8px 12px; border-radius:4px; font-size:12px;">
-            <option value="Cold Storage">Cold Storage Vault (Hardware)</option>
-            <option value="Trading">Active Trading Desk</option>
-            <option value="Staking">Liquid Staking / Yield</option>
-            <option value="Whale Shadow">Whale Shadow Tracker</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center;">
-        <button class="btn btn-secondary mono" onclick="CommandCenter.closeAddWalletModal()">CANCEL</button>
-        <button class="btn btn-gold mono" onclick="CommandCenter.submitAddWallet()">ADD &amp; FETCH RPC</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- macOS Touch ID / WebAuthn Biometric Verification Modal -->
-  <div class="modal-overlay" id="biometricModal" aria-hidden="true" style="display:none;">
-    <div class="modal-card" style="max-width: 480px; text-align:center;">
-      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-      <div class="modal-header" style="justify-content:center; text-align:center;">
-        <span class="modal-kicker mono" style="color:var(--neon-cyan);">MACOS HARDWARE SECURITY GATE</span>
-        <h3 class="modal-title" style="margin-top:6px;">TOUCH ID VERIFICATION</h3>
-      </div>
-      <div class="modal-body" style="margin: 20px 0; display:flex; flex-direction:column; align-items:center; gap:16px;">
-        <div style="width:72px; height:72px; border-radius:50%; border:2px solid var(--neon-cyan); display:flex; align-items:center; justify-content:center; background:rgba(0,240,255,0.08); box-shadow:0 0 20px rgba(0,240,255,0.2);">
-          <span style="font-size:32px;">👆</span>
-        </div>
-        <p class="mono" id="biometricPromptText" style="font-size:13px; color:var(--text-main); line-height:1.5;">
-          Touch ID biometric scan required to authorize privileged action.
-        </p>
-        <div class="mono" id="biometricChallengeStatus" style="font-size:11px; color:var(--text-muted);">
-          AWAITING TOUCH ID SENSOR INPUT...
-        </div>
-      </div>
-      <div class="modal-actions" style="justify-content:center; gap:12px;">
-        <button class="btn btn-secondary mono" onclick="CommandCenter.cancelBiometricPrompt()">CANCEL</button>
-        <button class="btn btn-cyan mono" id="btnTriggerTouchID" onclick="CommandCenter.triggerTouchIDAuth()">SCAN TOUCH ID</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Token Security Audit Modal -->
-  <div class="modal-overlay" id="tokenAuditModal" aria-hidden="true" style="display:none;">
-    <div class="modal-card" style="max-width: 620px;">
-      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-      <div class="modal-header">
-        <span class="modal-kicker mono" style="color:var(--neon-emerald);">ON-CHAIN AUDITOR // ANTI-RUG ENGINE</span>
-        <h3 class="modal-title" id="tokenAuditTitle">TOKEN SECURITY AUDIT</h3>
-      </div>
-      <div class="modal-body" id="tokenAuditModalBody" style="margin: 16px 0;"></div>
-      <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center;">
-        <button class="btn btn-secondary mono" onclick="CommandCenter.closeTokenAuditModal()">CLOSE</button>
-        <button class="btn btn-emerald mono" id="btnAuditSnipe" onclick="">SNIPE TOKEN</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Voice Command HUD Overlay Modal ("Hey U1") -->
-  <div class="modal-overlay" id="voiceHudModal" aria-hidden="true" style="display:none;">
-    <div class="modal-card" style="max-width: 500px; text-align:center;">
-      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-      <div class="modal-header" style="justify-content:center; text-align:center;">
-        <span class="modal-kicker mono" style="color:var(--neon-cyan);">VOICE COMMAND HUD &bull; WAKE-WORD LISTENER</span>
-        <h3 class="modal-title" style="margin-top:6px;">"HEY U1" AUDIO INTERACTION</h3>
-      </div>
-      <div class="modal-body" style="margin: 20px 0; display:flex; flex-direction:column; align-items:center; gap:16px;">
-        <div class="voice-soundwave" style="display:flex; align-items:center; justify-content:center; gap:6px; height:50px;">
-          <span class="wave-bar" style="width:5px; height:22px; background:var(--neon-cyan); border-radius:3px;"></span>
-          <span class="wave-bar" style="width:5px; height:42px; background:var(--neon-cyan); border-radius:3px;"></span>
-          <span class="wave-bar" style="width:5px; height:32px; background:var(--neon-cyan); border-radius:3px;"></span>
-          <span class="wave-bar" style="width:5px; height:48px; background:var(--gold); border-radius:3px;"></span>
-          <span class="wave-bar" style="width:5px; height:26px; background:var(--neon-cyan); border-radius:3px;"></span>
-        </div>
-        <p class="mono" id="voiceHudTranscript" style="font-size:14px; color:var(--text-main); line-height:1.5; min-height:42px;">
-          Say "Hey U1, swap 0.1 SOL for BONK" or "Hey U1, generate briefing"...
-        </p>
-        <div class="mono" id="voiceHudStatus" style="font-size:11px; color:var(--neon-cyan);">
-          LISTENING ACTIVE // MIC INPUT STREAMING
-        </div>
-      </div>
-      <div class="modal-actions" style="justify-content:center; gap:12px;">
-        <button class="btn btn-secondary mono" onclick="CommandCenter.closeVoiceHUD()">DISMISS</button>
-        <button class="btn btn-cyan mono" id="btnPushToTalk" onclick="CommandCenter.togglePushToTalk()">PUSH TO TALK</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Physical YubiKey FIDO2 Hardware Key Interlock Modal -->
-  <div class="modal-overlay" id="yubikeyModal" aria-hidden="true" style="display:none;">
-    <div class="modal-card" style="max-width: 480px; text-align:center;">
-      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-      <div class="modal-header" style="justify-content:center; text-align:center;">
-        <span class="modal-kicker mono" style="color:var(--gold);">PHYSICAL HARDWARE INTERLOCK</span>
-        <h3 class="modal-title" style="margin-top:6px;">YUBIKEY FIDO2 VERIFICATION</h3>
-      </div>
-      <div class="modal-body" style="margin: 20px 0; display:flex; flex-direction:column; align-items:center; gap:16px;">
-        <div style="width:72px; height:72px; border-radius:50%; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; background:rgba(255,179,0,0.08); box-shadow:0 0 20px rgba(255,179,0,0.25);">
-          <span style="font-size:32px;">🔑</span>
-        </div>
-        <p class="mono" id="yubikeyPromptText" style="font-size:13px; color:var(--text-main); line-height:1.5;">
-          Insert your YubiKey FIDO2 USB hardware dongle and touch the gold sensor contact.
-        </p>
-        <div class="mono" id="yubikeyChallengeStatus" style="font-size:11px; color:var(--gold);">
-          AWAITING PHYSICAL HARDWARE USER PRESENCE (TOUCH)...
-        </div>
-      </div>
-      <div class="modal-actions" style="justify-content:center; gap:12px;">
-        <button class="btn btn-secondary mono" onclick="CommandCenter.cancelYubikeyPrompt()">CANCEL</button>
-        <button class="btn btn-gold mono" id="btnTriggerYubikey" onclick="CommandCenter.triggerYubikeyAuth()">TOUCH YUBIKEY CONTACT</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3D Cyberpunk Holographic Command Room Modal -->
-  <div class="modal-overlay" id="hologramModal" aria-hidden="true" style="display:none; align-items:center; justify-content:center; z-index:9999;">
-    <div class="modal-card" style="max-width: 960px; width: 92vw; height: 80vh; display:flex; flex-direction:column; background:rgba(7,10,19,0.95); border:1px solid var(--neon-cyan); box-shadow:0 0 35px rgba(0,255,204,0.3); padding:16px;">
-      <div class="corner-tick top-left"></div><div class="corner-tick top-right"></div>
-      <div class="corner-tick bottom-left"></div><div class="corner-tick bottom-right"></div>
-      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,255,204,0.2); padding-bottom:10px;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:20px;">🌐</span>
-          <div>
-            <h3 class="modal-title mono" style="color:var(--neon-cyan); margin:0; font-size:16px;">3D CYBERPUNK HOLOGRAPHIC COMMAND ROOM</h3>
-            <span class="modal-kicker mono" style="font-size:11px; color:var(--text-muted);">Real-Time Planetary Node Mesh &amp; Mempool Topology</span>
-          </div>
-        </div>
-        <button class="btn btn-secondary mono" id="btnCloseHologram" style="padding:4px 12px; font-size:11px;">CLOSE [ESC]</button>
-      </div>
-      <div class="modal-body" style="flex:1; position:relative; overflow:hidden; margin-top:10px; display:flex; align-items:center; justify-content:center; border-radius:6px; background:#070a13;">
-        <canvas id="hologramCanvas" style="width:100%; height:100%; display:block; cursor:grab;"></canvas>
-        <div style="position:absolute; bottom:12px; left:16px; background:rgba(10,14,24,0.75); border:1px solid rgba(0,255,204,0.2); border-radius:4px; padding:8px 12px; pointer-events:none;">
-          <div class="mono" style="font-size:11px; color:#00ffcc;">ORBIT CONTROLS: Click &amp; Drag to Rotate | Scroll to Zoom</div>
-          <div class="mono" style="font-size:10px; color:var(--text-muted);">Live C2 Hubs: Tokyo, New York, Frankfurt, London, Singapore, Sydney</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="/js/fx.js"></script>
-  <script src="/js/three_hologram.js"></script>
   <script src="/js/app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then((reg) => {
-          console.log('[U1-OS PWA] Service Worker registered:', reg.scope);
-        }).catch((err) => {
-          console.warn('[U1-OS PWA] Service Worker failed:', err);
-        });
-      });
-    }
-  </script>
+  <script src="/js/u1-next.js"></script>
+  <script src="/js/workspace-pages.js"></script>
+  <script src="/js/aurora-workspace.js"></script>
+  <link rel="stylesheet" href="/css/live-bar.css">
+  <script src="/js/live-bar.js"></script>
+  <script src="/js/osint-casebook.js"></script>
+  <link rel="stylesheet" href="/css/neon-desktop.css">
+  <script src="/js/neon-desktop.js"></script>
+  <link rel="stylesheet" href="/css/news-markets.css">
+  <script src="/js/news-markets.js"></script>
+  <script src="/js/u1-updater.js"></script>
+<script src="/js/workspace-upgrade.js" defer></script>
+<script type="module" src="/js/prism-os.js"></script>
 </body>
 </html>

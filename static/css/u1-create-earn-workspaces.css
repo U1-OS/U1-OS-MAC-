@@ -1,0 +1,118 @@
+/* Scoped rounded hubs. The parent owns theme, density, radius and glow settings. */
+.u1-create-earn {
+  --ce-bg: var(--u1r-bg, #071323);
+  --ce-surface: var(--u1r-surface, #0d2033);
+  --ce-raised: var(--u1r-raised, #142d44);
+  --ce-text: var(--u1r-text, #e7f2fc);
+  --ce-muted: var(--u1r-muted, #b6cadb);
+  --ce-accent: var(--u1r-accent, #67e8f9);
+  --ce-on-accent: var(--u1r-on-accent, #062132);
+  --ce-edge: var(--u1r-edge, #345065);
+  --ce-tint: var(--u1r-tint, #102d3d);
+  --ce-radius: var(--u1r-radius, 28px);
+  --ce-control: var(--u1r-control, 14px);
+  --ce-gap: var(--u1r-gap, 18px);
+  --ce-pad: var(--u1r-pad, 24px);
+  color: var(--ce-text);
+  background: radial-gradient(ellipse at 94% 0%, var(--ce-tint), transparent 42%), var(--ce-bg);
+  font-family: Manrope, 'Avenir Next', sans-serif;
+  padding: var(--ce-pad);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.u1-create-earn *, .u1-create-earn *::before, .u1-create-earn *::after { box-sizing: border-box; }
+.u1-create-earn [hidden] { display: none !important; }
+.u1-create-earn :is(h1,h2,h3,h4,p,label,legend,summary,dt,dd,strong,small,code,li) { color: var(--ce-text); -webkit-text-fill-color: currentColor; }
+.u1-create-earn :is(h1,h2,h3) { font-family: 'Space Grotesk', 'Avenir Next', sans-serif; letter-spacing: -.035em; margin: 0 0 16px; }
+.u1-create-earn h1 { font-size: clamp(2.6rem, 5.6vw, 5.4rem); line-height: .98; font-weight: 650; }
+.u1-create-earn h1 em { font-style: normal; color: var(--ce-accent); }
+.u1-create-earn h2 { font-size: clamp(1.2rem, 2vw, 1.65rem); }
+.u1-create-earn h3 { font-size: 1.1rem; }
+.u1-create-earn p { line-height: 1.65; margin: 0 0 16px; }
+.u1-create-earn :is(.ce-caption,.ce-hero-tools p,.ce-empty,small,.ce-toolbar p) { color: var(--ce-muted); font-size: .85rem; line-height: 1.6; }
+.u1-create-earn small { display: block; margin-top: 5px; }
+.u1-create-earn code { display: block; font-size: .75rem; overflow-wrap: anywhere; white-space: normal; }
+.u1-create-earn .ce-hero { display: grid; grid-template-columns: minmax(0,1.8fr) minmax(240px,.8fr); gap: calc(var(--ce-gap) * 2); padding: calc(var(--ce-pad) * 1.35); border: 1px solid var(--ce-edge); border-radius: var(--ce-radius); background: linear-gradient(125deg, var(--ce-surface), var(--ce-tint)); box-shadow: var(--u1r-shadow, 0 18px 48px #0002); }
+.u1-create-earn .ce-hero > div { min-width: 0; }
+.u1-create-earn .ce-hero p:not(.ce-eyebrow) { max-width: 60ch; }
+.u1-create-earn .ce-eyebrow { font-size: .68rem; font-weight: 800; letter-spacing: .19em; color: var(--ce-accent); margin-bottom: 25px; }
+.u1-create-earn .ce-hero-tools { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 12px; }
+.u1-create-earn .ce-button { border: 1px solid var(--ce-edge); border-radius: var(--ce-control); background: var(--ce-raised); color: var(--ce-text); -webkit-text-fill-color: currentColor; font: inherit; font-size: .83rem; font-weight: 700; min-height: 44px; padding: 11px 16px; cursor: pointer; white-space: normal; overflow-wrap: anywhere; max-width: 100%; text-align: center; }
+.u1-create-earn .ce-button:hover:not(:disabled) { border-color: var(--ce-accent); }
+.u1-create-earn .ce-primary { background: var(--ce-accent); border-color: var(--ce-accent); color: var(--ce-on-accent); }
+.u1-create-earn button:disabled { opacity: .48; cursor: not-allowed; }
+.u1-create-earn :is(button,input,select,textarea,summary):focus-visible { outline: 3px solid var(--ce-accent); outline-offset: 3px; }
+.u1-create-earn .ce-toolbar { display: flex; gap: 15px; align-items: center; justify-content: space-between; margin: var(--ce-gap) 0; }
+.u1-create-earn .ce-toolbar p { margin: 0; }
+.u1-create-earn .ce-notice:empty { display: none; }
+.u1-create-earn .ce-notice { border-left: 3px solid var(--ce-accent); padding: 12px 16px; background: var(--ce-tint); border-radius: var(--ce-control); }
+.u1-create-earn .ce-notice[data-error=true] { border-left-width: 6px; }
+.u1-create-earn .ce-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: var(--ce-gap); margin: 0 0 var(--ce-gap); }
+.u1-create-earn .ce-metrics > div { padding: var(--ce-pad); border: 1px solid var(--ce-edge); background: var(--ce-surface); border-radius: var(--ce-radius); }
+.u1-create-earn .ce-metrics dt { color: var(--ce-muted); font-size: .75rem; }
+.u1-create-earn .ce-metrics dd { margin: 8px 0 0; font: 600 clamp(1.35rem,3vw,2.6rem)/1 'Space Grotesk',sans-serif; }
+.u1-create-earn .ce-grid { display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); gap: var(--ce-gap); align-items: start; }
+.u1-create-earn .ce-card, .u1-create-earn .ce-composer { min-width: 0; background: var(--ce-surface); border: 1px solid var(--ce-edge); border-radius: var(--ce-radius); padding: var(--ce-pad); box-shadow: var(--u1r-shadow,0 10px 24px #0001); animation: ce-arrive .4s ease both; }
+.u1-create-earn .ce-card:nth-child(2) { animation-delay: .04s; }
+.u1-create-earn .ce-card:nth-child(3) { animation-delay: .08s; }
+.u1-create-earn .ce-main { grid-column: span 7; }
+.u1-create-earn .ce-side { grid-column: span 5; }
+.u1-create-earn .ce-wide { grid-column: 1 / -1; }
+.u1-create-earn .ce-composer { margin-bottom: var(--ce-gap); border-color: var(--ce-accent); }
+.u1-create-earn .ce-flow { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: var(--ce-gap); list-style: none; margin: 0 0 18px; padding: 0; }
+.u1-create-earn .ce-flow li { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.u1-create-earn .ce-flow b { font: 500 1.5rem 'Space Grotesk',sans-serif; color: var(--ce-accent); }
+.u1-create-earn .ce-flow span { color: var(--ce-muted); font-size: .8rem; line-height: 1.6; flex: 1; }
+.u1-create-earn .ce-side .ce-flow { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.u1-create-earn .ce-pipeline { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 12px; margin-bottom: 15px; }
+.u1-create-earn .ce-pipeline section { min-width: 0; padding: 14px; border-radius: var(--ce-control); background: var(--ce-raised); }
+.u1-create-earn .ce-pipeline h3 { display: flex; justify-content: space-between; gap: 8px; font-size: .9rem; }
+.u1-create-earn .ce-pipeline h3 span { color: var(--ce-accent); }
+.u1-create-earn .ce-pipeline button { display: block; width: 100%; margin-top: 8px; text-align: left; background: var(--ce-surface); font-size: .75rem; }
+.u1-create-earn .ce-filters, .u1-create-earn .ce-form-grid { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr); gap: 14px; margin-bottom: 18px; }
+.u1-create-earn label { display: flex; flex-direction: column; gap: 8px; font-size: .8rem; font-weight: 700; min-width: 0; }
+.u1-create-earn :is(input,select,textarea) { font: inherit; font-weight: 400; color: var(--ce-text); background: var(--ce-raised); border: 1px solid var(--ce-edge); border-radius: var(--ce-control); width: 100%; min-width: 0; max-width: 100%; padding: 12px; min-height: 44px; -webkit-text-fill-color: currentColor; }
+.u1-create-earn :is(input,textarea)::placeholder { color: var(--ce-muted); opacity: 1; }
+.u1-create-earn textarea { resize: vertical; }
+.u1-create-earn .ce-form-grid > :is(p,label:has(textarea)) { grid-column: 1 / -1; }
+.u1-create-earn .ce-check { display: flex; flex-direction: row; align-items: flex-start; margin: 20px 0; line-height: 1.6; }
+.u1-create-earn .ce-check input { flex: 0 0 20px; width: 20px; min-height: 20px; accent-color: var(--ce-accent); margin-top: 3px; }
+.u1-create-earn .ce-list { margin: 0; padding: 0; list-style: none; }
+.u1-create-earn .ce-list > li { padding: 15px 0; border-top: 1px solid var(--ce-edge); min-width: 0; }
+.u1-create-earn .ce-list > li:first-child { border-top: 0; padding-top: 0; }
+.u1-create-earn .ce-product { display: flex; width: 100%; gap: 16px; justify-content: space-between; align-items: center; text-align: left; background: transparent; color: var(--ce-text); border: 1px solid transparent; border-radius: var(--ce-control); padding: 12px; cursor: pointer; font: inherit; }
+.u1-create-earn .ce-product > span { min-width: 0; }
+.u1-create-earn .ce-product[aria-pressed=true] { border-color: var(--ce-accent); background: var(--ce-tint); }
+.u1-create-earn .ce-badge { display: inline-block; font-size: .65rem; font-weight: 750; letter-spacing: .045em; border: 1px solid var(--ce-edge); border-radius: 999px; padding: 6px 10px; color: var(--ce-text); background: var(--ce-raised); }
+.u1-create-earn .ce-task { display: flex; gap: 12px; align-items: center; }
+.u1-create-earn .ce-task > div { flex: 1; min-width: 0; }
+.u1-create-earn .ce-task .ce-button { font-size: .72rem; }
+.u1-create-earn .ce-details { display: grid; grid-template-columns: minmax(100px,.6fr) minmax(0,1.4fr); gap: 10px 16px; font-size: .83rem; }
+.u1-create-earn .ce-details dt { color: var(--ce-muted); }
+.u1-create-earn .ce-details dd { margin: 0; min-width: 0; }
+.u1-create-earn .ce-actions, .u1-create-earn .ce-templates { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.u1-create-earn .ce-templates .ce-button { font-size: .75rem; }
+.u1-create-earn .ce-empty { padding: 18px; background: var(--ce-raised); border-radius: var(--ce-control); border: 1px dashed var(--ce-edge); }
+.u1-create-earn details { margin-top: 18px; }
+.u1-create-earn summary { cursor: pointer; font-size: .85rem; padding: 10px 0; }
+.u1-create-earn hr { border: 0; border-top: 1px solid var(--ce-edge); margin: 24px 0; }
+@keyframes ce-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (max-width: 1000px) {
+  .u1-create-earn .ce-main, .u1-create-earn .ce-side { grid-column: 1 / -1; }
+  .u1-create-earn .ce-pipeline { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .u1-create-earn .ce-flow { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 650px) {
+  .u1-create-earn { padding: min(var(--ce-pad),14px); }
+  .u1-create-earn .ce-hero { grid-template-columns: minmax(0,1fr); padding: var(--ce-pad); }
+  .u1-create-earn .ce-hero-tools { align-items: stretch; }
+  .u1-create-earn .ce-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .u1-create-earn .ce-pipeline, .u1-create-earn .ce-filters, .u1-create-earn .ce-form-grid { grid-template-columns: minmax(0,1fr); }
+  .u1-create-earn .ce-toolbar, .u1-create-earn .ce-task { align-items: flex-start; flex-wrap: wrap; }
+  .u1-create-earn .ce-task > div { flex-basis: 100%; }
+  .u1-create-earn .ce-product { gap: 8px; padding: 8px; }
+  .u1-create-earn .ce-product > span:last-child { flex: 0 0 105px; }
+  .u1-create-earn .ce-details { grid-template-columns: minmax(0,1fr); gap: 5px; }
+  .u1-create-earn .ce-details dd { margin-bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .u1-create-earn .ce-card, .u1-create-earn .ce-composer { animation: none; } }

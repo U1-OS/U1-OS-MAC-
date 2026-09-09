@@ -1,0 +1,18 @@
+/* Final shell composition. Application panels use the full main workspace. */
+@media(min-width:1000px){
+ .shell{grid-template-columns:188px minmax(0,1fr) 278px!important}
+ body:not([data-u1-view=home]) .shell{grid-template-columns:188px minmax(0,1fr)!important;grid-template-areas:"brand top" "rail main" "rail dock"!important}
+ body:not([data-u1-view=home]) .shell>aside{display:none!important}
+ .hero{min-height:400px;isolation:isolate}
+ .hero .u1-planet{width:clamp(285px,58%,540px);height:390px;right:-2%;top:0;max-width:100%;opacity:.92}
+ .hero #globe{filter:saturate(.85) brightness(.82) drop-shadow(0 0 20px #3bafff35)}
+ .hero h1{position:relative;z-index:2;max-width:68%;text-shadow:0 3px 24px #020a1ff0;font-size:clamp(30px,3.2vw,52px)}
+ .hero h2{position:relative;z-index:2}
+ .shell>aside{padding-left:12px;padding-right:12px}
+ .shell>aside .card{border-radius:15px;padding:19px 16px}
+ #main{min-width:0}
+}
+@media(min-width:1600px){.shell{grid-template-columns:205px minmax(0,1fr) 320px!important}body:not([data-u1-view=home]) .shell{grid-template-columns:205px minmax(0,1fr)!important}.hero .u1-planet{right:5%;width:560px;height:440px}.hero{min-height:450px}}
+@media(max-width:999px) and (min-width:701px){body:not([data-u1-view=home]) .shell{grid-template-columns:170px minmax(0,1fr)!important;grid-template-areas:"brand top" "rail main" "rail dock"!important}body:not([data-u1-view=home]) .shell>aside{display:none!important}}
+.u1-build-table{width:100%;border-collapse:collapse;font-size:12px}.u1-build-table th,.u1-build-table td{padding:13px 10px;border-bottom:1px solid #6b9abb2d;text-align:left;vertical-align:top;line-height:1.55}.u1-build-table th{color:#86cce5;font-size:10px;text-transform:uppercase;letter-spacing:.12em}.u1-build-table td:first-child{color:#78b8d8;font-variant-numeric:tabular-nums;width:40px}.u1-build-table td:last-child{color:#b6cbd9}.u1-build-table-wrap{overflow:auto}.u1-build-tag{display:inline-block;padding:4px 8px;border:1px solid #669aba40;border-radius:8px;font-size:10px;white-space:nowrap;color:#a8c4d9}.u1-build-tag[data-state=local]{color:#99e7c4;border-color:#55aa8749;background:#51d8a009}.u1-build-tag[data-state=setup]{color:#ffd2a1;border-color:#d3a25c54;background:#dfab520c}.u1-build-tag[data-state=partial]{color:#c7c3ee;border-color:#a49ecc3c}.u1-release-note{padding:18px 21px;border-left:3px solid #47c7ff;background:#18334d66;border-radius:0 12px 12px 0;color:#afc6d8;line-height:1.7;font-size:13px}
+@media(prefers-reduced-motion:reduce){.hero .u1-planet{animation:none!important}}

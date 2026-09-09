@@ -11,18 +11,6 @@ import re
 import random
 from services.base import BaseService
 from utils import macos
-from utils import dexscreener
-from utils import jupiter
-from utils import nitter
-from utils import solana
-from utils import browser_crawler
-from utils import evm_btc
-from utils import jito
-from utils import prediction_markets
-from utils import flash_arbitrage
-from utils import funding_arbitrage
-from utils import migration_radar
-from utils import whale_mirror
 
 SOL_CA_REGEX = re.compile(r'\b[1-9A-HJ-NP-Za-km-z]{32,44}\b')
 EVM_CA_REGEX = re.compile(r'\b0x[a-fA-F0-9]{40}\b')
@@ -255,237 +243,33 @@ DEFAULT_COPY_TRADERS = [
 class CryptoService(BaseService):
     def __init__(self, config):
         super().__init__("crypto", config)
-        self.configured = True
-        self.status = "active"
-        self.tokens = list(DEFAULT_TOKENS)
-        self.alpha_tweets = [dict(t) for t in DEFAULT_ALPHA_TWEETS]
-        for tw in self.alpha_tweets:
-            tw["handle"] = tw.get("username", "")
-            tw["text"] = tw.get("content", "")
-            tw["name"] = tw.get("display_name", "")
-            sol_cas = SOL_CA_REGEX.findall(tw.get("content", ""))
-            evm_cas = EVM_CA_REGEX.findall(tw.get("content", ""))
-            detected = list(set(sol_cas + evm_cas))
-            if tw.get("ca") and tw["ca"] not in detected:
-                detected.append(tw["ca"])
-            tw["contract_addresses"] = detected
-            tw["likes"] = 340 if "342" in tw.get("engagement", "") else (820 if "820" in tw.get("engagement", "") else (180 if "180" in tw.get("engagement", "") else 1450))
-            tw["retweets"] = 88 if "88" in tw.get("engagement", "") else (215 if "215" in tw.get("engagement", "") else (45 if "45" in tw.get("engagement", "") else 410))
-        self.copy_traders = [dict(c) for c in DEFAULT_COPY_TRADERS]
-        for c in self.copy_traders:
-            c["handle"] = c.get("username", "")
-            c["win_rate_pct"] = c.get("win_rate", 80.0)
-            c["pnl_30d_usd"] = c.get("pnl_total_usd", 0)
-        self.price_alerts = [
-            {
-                "id": "alert-1",
-                "symbol": "SOL",
-                "condition": "ABOVE",
-                "target_price": 185.00,
-                "current_price": 178.45,
-                "status": "ACTIVE",
-                "created_at": time.time() - 3600
-            },
-            {
-                "id": "alert-2",
-                "symbol": "PNUT",
-                "condition": "ABOVE",
-                "target_price": 1.50,
-                "current_price": 1.18,
-                "status": "ACTIVE",
-                "created_at": time.time() - 1800
-            }
-        ]
-        self.positions = [
-            {
-                "id": "pos-101",
-                "symbol": "SOL",
-                "name": "Solana Native",
-                "amount": 10.0,
-                "entry_price": 165.20,
-                "current_price": 178.45,
-                "cost_usd": 1652.00,
-                "value_usd": 1784.50,
-                "unrealized_pnl_usd": 132.50,
-                "unrealized_pnl_pct": 8.02,
-                "opened_at": time.time() - 86400 * 2
-            },
-            {
-                "id": "pos-102",
-                "symbol": "PNUT",
-                "name": "Peanut the Squirrel",
-                "amount": 1200.0,
-                "entry_price": 0.94,
-                "current_price": 1.18,
-                "cost_usd": 1128.00,
-                "value_usd": 1416.00,
-                "unrealized_pnl_usd": 288.00,
-                "unrealized_pnl_pct": 25.53,
-                "opened_at": time.time() - 3600 * 4
-            }
-        ]
-        self.bot_state = {
-            "status": "STANDBY",
-            "active_strategies": ["alpha_sniper", "whale_shadow"],
-            "paper_balance_sol": 50.0,
-            "initial_balance_sol": 50.0,
-            "realized_pnl_sol": 0.0,
-            "realized_pnl_usd": 0.0,
-            "max_allocation_sol": 1.0,
-            "stop_loss_pct": -12.0,
-            "take_profit_pct": 45.0,
-            "max_open_positions": 5,
-            "total_bot_trades": 0,
-            "bot_positions": []
-        }
-        self.bot_log = [
-            {
-                "timestamp": time.time() - 300,
-                "type": "SYSTEM",
-                "message": "Autonomous AI Strategy Bot initialized in simulated paper mode."
-            },
-            {
-                "timestamp": time.time() - 120,
-                "type": "ALPHA_CHECK",
-                "message": "Social velocity radar active: scanning Twitter/X memecoin stream."
-            }
-        ]
-        self.tracked_wallets = [
-            {
-                "address": self.config.get("integrations", {}).get("solana", {}).get("wallet_address") or "So11111111111111111111111111111111111111112",
-                "name": "Primary Trading Bot",
-                "label": "Primary Trading Bot",
-                "category": "Trading",
-                "type": "TRADING"
-            },
-            {
-                "address": "4Nd1mBQtrMJVYVfKf2PJy9NZzqWB8mvG12uv69asffM9",
-                "name": "Cold Storage Vault",
-                "label": "Cold Storage Vault",
-                "category": "Cold Storage",
-                "type": "COLD_VAULT"
-            },
-            {
-                "address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-                "name": "Jupiter Staking & Yield",
-                "label": "Jupiter Staking & Yield",
-                "category": "Staking",
-                "type": "STAKING"
-            }
-        ]
-        self.auto_sniper_active = False
-        self.sniper_config = {
-            "max_buy_sol": 0.25,
-            "min_safety_score": 75,
-            "slippage_pct": 5.0,
-            "priority_fee": "Turbo",
-            "auto_snipe_pumpfun": True,
-            "auto_snipe_raydium": True
-        }
-        self.launchpad_pools = [
-            {
-                "id": "pool-pump-01",
-                "platform": "pump.fun",
-                "symbol": "CHILLGUY",
-                "name": "Just a chill guy",
-                "mint": "Df6yfrKC8kZE3KNkrHERKzAChZSaRDK6NLzZM5pm7pump",
-                "bonding_curve_pct": 84.6,
-                "market_cap_usd": 68400,
-                "liquidity_sol": 42.8,
-                "created_sec_ago": 45,
-                "safety_score": 92,
-                "risk_level": "LOW",
-                "mint_auth_revoked": True,
-                "freeze_auth_revoked": True,
-                "sniped": False
-            },
-            {
-                "id": "pool-raydium-02",
-                "platform": "raydium_clmm",
-                "symbol": "ACT",
-                "name": "Act I : The AI Prophecy",
-                "mint": "GJAFwWjJ3vnTLeTCWrZeMmB2Qx8roHYp5w2eUpUpump",
-                "bonding_curve_pct": 100.0,
-                "market_cap_usd": 420000,
-                "liquidity_sol": 210.5,
-                "created_sec_ago": 190,
-                "safety_score": 88,
-                "risk_level": "LOW",
-                "mint_auth_revoked": True,
-                "freeze_auth_revoked": True,
-                "sniped": False
-            },
-            {
-                "id": "pool-pump-03",
-                "platform": "pump.fun",
-                "symbol": "PNUT",
-                "name": "Peanut the Squirrel",
-                "mint": "2qEHjNzNXoqG7TeW2gDnj2V29c5zXQJgqUpump",
-                "bonding_curve_pct": 62.1,
-                "market_cap_usd": 38200,
-                "liquidity_sol": 26.4,
-                "created_sec_ago": 18,
-                "safety_score": 85,
-                "risk_level": "LOW",
-                "mint_auth_revoked": True,
-                "freeze_auth_revoked": True,
-                "sniped": False
-            }
-        ]
+        # No live/account adapter exists in this legacy service. A setup preference
+        # is not authorisation to publish sample quotes, social posts or positions.
+        self.setup_required = True
+        self.configured = False
+        self.status = "unavailable"
+        self.tokens = []
+        self.positions = []
+        self.alpha_tweets = []
+        self.copy_traders = []
+        self.price_alerts = []
+        self.bot_state = {"status": "NOT_CONFIGURED", "bot_positions": []}
+        self.bot_log = []
         self.poll()
 
     def poll(self):
-        # Micro-fluctuate prices for living telemetry effect
-        for t in self.tokens:
-            drift = (random.random() - 0.49) * 0.008
-            t["price_usd"] = round(t["price_usd"] * (1.0 + drift), 6 if t["price_usd"] < 1 else 2)
-            t["pnl_5m"] = round(t["pnl_5m"] + (drift * 100), 2)
-
-        # Update position mark prices
-        token_price_map = {t["symbol"]: t["price_usd"] for t in self.tokens}
-        for pos in self.positions:
-            sym = pos["symbol"]
-            if sym in token_price_map:
-                curr = token_price_map[sym]
-                pos["current_price"] = curr
-                pos["mark_price"] = curr
-                pos["value_usd"] = round(pos["amount"] * curr, 2)
-                pos["unrealized_pnl_usd"] = round(pos["value_usd"] - pos["cost_usd"], 2)
-                pos["unrealized_pnl_pct"] = round((pos["unrealized_pnl_usd"] / pos["cost_usd"]) * 100.0, 2)
-
-        # Check Price Alerts
-        self._evaluate_price_alerts(token_price_map)
-
-        # Autonomous AI Bot Tick Evaluation
-        if self.bot_state.get("status") == "RUNNING":
-            self._tick_bot(token_price_map)
-
-        total_portfolio_value = sum(p["value_usd"] for p in self.positions)
-        total_unrealized_pnl = sum(p["unrealized_pnl_usd"] for p in self.positions)
-
         with self.lock:
             self.data = {
-                "tokens": self.tokens,
-                "alpha_tweets": self.alpha_tweets,
-                "copy_traders": self.copy_traders,
-                "price_alerts": self.price_alerts,
-                "positions": self.positions,
-                "bot_state": self.bot_state,
-                "bot_log": self.bot_log[-20:],
-                "tracked_wallets": self.tracked_wallets,
-                "launchpad_pools": self.launchpad_pools,
-                "auto_sniper_active": self.auto_sniper_active,
-                "sniper_config": self.sniper_config,
-                "portfolio_summary": {
-                    "total_value_usd": round(total_portfolio_value, 2),
-                    "total_unrealized_pnl_usd": round(total_unrealized_pnl, 2),
-                    "open_positions_count": len(self.positions),
-                    "active_alerts_count": len([a for a in self.price_alerts if a["status"] == "ACTIVE"]),
-                    "active_copy_traders_count": len([c for c in self.copy_traders if c["active"]]),
-                    "tracked_wallets_count": len(self.tracked_wallets),
-                    "launchpad_pools_count": len(self.launchpad_pools)
-                }
+                "success": False, "setup_required": True, "stale": False,
+                "tokens": [], "positions": [], "alpha_tweets": [],
+                "copy_traders": [], "price_alerts": [],
+                "bot_state": self.bot_state, "bot_log": [], "portfolio_summary": {},
+                "source": None, "fetched_at": None,
+                "notice": "Unavailable: this legacy service has no verified market, social or account adapter. "
+                          "Changing setup_mode does not connect one. No sample provider data is substituted."
             }
+            self.configured = False
+            self.status = "unavailable"
             self.last_updated = time.time()
 
     def _evaluate_price_alerts(self, price_map):
@@ -544,15 +328,6 @@ class CryptoService(BaseService):
                 msg = f"Bot closed ${sym}: {close_reason} | Realized: {pnl_sol:+} SOL"
                 self.bot_log.append({"timestamp": now, "type": "EXIT", "message": msg})
                 self.add_event("bot_position_closed", msg)
-
-                feeder = getattr(self, "feeder", None)
-                if feeder and hasattr(feeder, "services") and "telegram" in feeder.services:
-                    try:
-                        feeder.services["telegram"].broadcast_alert(
-                            f"🤖 <b>AI BOT POSITION CLOSED</b>\n🪙 <b>Token:</b> ${sym}\n📊 <b>Reason:</b> {close_reason}\n💰 <b>Realized:</b> {pnl_sol:+} SOL (${round(pnl_sol * sol_p, 2):+})\n⏱ <b>Time:</b> {time.strftime('%H:%M:%S')}"
-                        )
-                    except Exception:
-                        pass
             else:
                 remaining_positions.append(bpos)
 
@@ -566,96 +341,29 @@ class CryptoService(BaseService):
         if curr_open < max_open and self.bot_state["paper_balance_sol"] >= alloc:
             strats = self.bot_state.get("active_strategies", [])
             open_symbols = {p["symbol"] for p in self.bot_state["bot_positions"]}
-            new_pos = None
-            strat_name = ""
 
-            # Strategy 1: Alpha Sniper (Twitter/X Social Spikes)
-            if "alpha_sniper" in strats and not new_pos:
+            if "alpha_sniper" in strats:
                 for tw in self.alpha_tweets:
                     sym = tw.get("token") or "BONK"
                     if sym in price_map and sym not in open_symbols and tw.get("velocity") in ["HIGH_SPIKE", "VIRAL"]:
                         price = price_map[sym]
-                        strat_name = "Alpha Sniper"
+                        pos_id = f"bot-{int(now*1000)}"
                         new_pos = {
-                            "id": f"bot-{int(now*1000)}",
+                            "id": pos_id,
                             "symbol": sym,
                             "entry_price": price,
                             "current_price": price,
                             "size_sol": alloc,
                             "tokens_qty": round((alloc * price_map.get("SOL", 180.0)) / price, 2),
                             "opened_at": now,
-                            "strategy": strat_name
+                            "strategy": "Alpha Sniper"
                         }
+                        self.bot_state["paper_balance_sol"] = round(self.bot_state["paper_balance_sol"] - alloc, 4)
+                        self.bot_state["bot_positions"].append(new_pos)
+                        msg = f"Alpha Sniper opened ${sym} at ${price} (Size: {alloc} SOL) triggered by {tw.get('handle')}"
+                        self.bot_log.append({"timestamp": now, "type": "ENTRY", "message": msg})
+                        self.add_event("bot_order_filled", msg)
                         break
-
-            # Strategy 2: Whale Shadow (Copy Whitelist Leaders)
-            if "whale_shadow" in strats and not new_pos:
-                for tr in self.copy_traders:
-                    if tr.get("active") and tr.get("last_token") and tr["last_token"] not in open_symbols:
-                        sym = tr["last_token"]
-                        if sym in price_map:
-                            price = price_map[sym]
-                            strat_name = f"Whale Shadow ({tr.get('handle')})"
-                            new_pos = {
-                                "id": f"bot-{int(now*1000)}",
-                                "symbol": sym,
-                                "entry_price": price,
-                                "current_price": price,
-                                "size_sol": alloc,
-                                "tokens_qty": round((alloc * price_map.get("SOL", 180.0)) / price, 2),
-                                "opened_at": now,
-                                "strategy": strat_name
-                            }
-                            break
-
-            # Strategy 3: Mean Reversion (Oversold Dip on Trending Token)
-            if "mean_reversion" in strats and not new_pos:
-                for t in self.tokens:
-                    sym = t["symbol"]
-                    if sym not in open_symbols and t.get("pnl_5m", 0) < -0.8 and t.get("pnl_24h", 0) > 8.0:
-                        price = t["price_usd"]
-                        strat_name = "Mean Reversion Dip"
-                        new_pos = {
-                            "id": f"bot-{int(now*1000)}",
-                            "symbol": sym,
-                            "entry_price": price,
-                            "current_price": price,
-                            "size_sol": alloc,
-                            "tokens_qty": round((alloc * price_map.get("SOL", 180.0)) / price, 2),
-                            "opened_at": now,
-                            "strategy": strat_name
-                        }
-                        break
-
-            if new_pos:
-                # Pre-trade Headless Chrome Verification if enabled
-                if self.bot_state.get("full_browser_execution"):
-                    tok_ca = next((t["ca"] for t in self.tokens if t["symbol"] == new_pos["symbol"]), "")
-                    if tok_ca:
-                        try:
-                            crawl_res = browser_crawler.inspect_token_dex(tok_ca, dex="photon")
-                            self.bot_log.append({
-                                "timestamp": now,
-                                "type": "BROWSER_PREFLIGHT",
-                                "message": f"Verified ${new_pos['symbol']} chart via Headless Chrome ({crawl_res.get('latency_ms', 0)}ms)"
-                            })
-                        except Exception:
-                            pass
-
-                self.bot_state["paper_balance_sol"] = round(self.bot_state["paper_balance_sol"] - alloc, 4)
-                self.bot_state["bot_positions"].append(new_pos)
-                msg = f"{new_pos['strategy']} opened ${new_pos['symbol']} at ${new_pos['entry_price']} (Size: {alloc} SOL)"
-                self.bot_log.append({"timestamp": now, "type": "ENTRY", "message": msg})
-                self.add_event("bot_order_filled", msg)
-
-                feeder = getattr(self, "feeder", None)
-                if feeder and hasattr(feeder, "services") and "telegram" in feeder.services:
-                    try:
-                        feeder.services["telegram"].broadcast_alert(
-                            f"🤖 <b>AI BOT POSITION OPENED</b>\n🪙 <b>Token:</b> ${new_pos['symbol']}\n🎯 <b>Strategy:</b> {new_pos['strategy']}\n💵 <b>Entry:</b> ${new_pos['entry_price']}\n💰 <b>Size:</b> {alloc} SOL\n⏱ <b>Time:</b> {time.strftime('%H:%M:%S')}"
-                        )
-                    except Exception:
-                        pass
 
     def _run_backtest(self, params=None):
         params = params or {}
@@ -758,7 +466,7 @@ class CryptoService(BaseService):
         args = parts[1:]
 
         if cmd == "help":
-            out = """U1 OS // CYBER TERMINAL — COMMAND CATALOG:
+            out = """U1 OS // CYBER EXEC TERMINAL — COMMAND CATALOG:
   help                             Show this command catalog
   status                           Query U1 OS feeder & modular services health
   tokens                           Display live Photon / DEX screener quotes
@@ -768,104 +476,11 @@ class CryptoService(BaseService):
   bot [status|start|stop|backtest] Autonomous AI trading bot manager
   positions                        Display active crypto holdings & unrealized PnL
   alerts                           List active price target alert sentinels
-  telegram <cmd>                   Execute remote Telegram Bot command (/status, /pnl, etc.)
-  crawl <url|ca>                   Native Headless Chrome DOM crawler & CA extractor
-  solana [address]                 Query Solana wallet balance & RPC telemetry
-  jupiter <symbol>                 Fetch live Jupiter Aggregator v6 quote
-  lockdown [on|off]                Engage or disengage security lockdown
   clear                            Clear terminal scrollback buffer"""
             return {"success": True, "output": out, "command": cmd_str}
 
-        elif cmd in ["telegram", "tg"]:
-            sub_cmd = " ".join(args) if args else "/status"
-            if not sub_cmd.startswith("/"):
-                sub_cmd = "/" + sub_cmd
-            # Check if telegram service is mounted on feeder
-            feeder = getattr(self, "feeder", None)
-            tg_svc = feeder.services.get("telegram") if feeder else None
-            if tg_svc:
-                raw_out = tg_svc.execute_telegram_command(sub_cmd)
-                clean_out = re.sub(r'<[^>]+>', '', raw_out).replace('&bull;', '•').replace('&gt;', '>').replace('&lt;', '<')
-                return {"success": True, "output": f"[TELEGRAM BOT RESPONSE]:\n{clean_out}", "command": cmd_str}
-            else:
-                return {"success": True, "output": f"Telegram command simulated: {sub_cmd}", "command": cmd_str}
-
-        elif cmd in ["crawl", "browse"]:
-            target = args[0] if args else "BONK"
-            if not target.startswith("http"):
-                # Treat as token symbol or CA
-                tok = next((t for t in self.tokens if t["symbol"].upper() == target.upper()), None)
-                ca = tok.get("ca") if tok else target
-                res = browser_crawler.inspect_token_dex(ca, dex="photon")
-            else:
-                res = browser_crawler.inspect_page(target)
-
-            if res.get("ok"):
-                cas = res.get("detected_solana_cas", [])
-                cas_str = f"\nDetected Solana CAs: {', '.join(cas[:3])}" if cas else "\nDetected CAs: None"
-                out = f"HEADLESS CHROME INSPECTION [{res.get('engine')}] ({res.get('latency_ms')}ms)\nURL: {res.get('url')}\nTitle: {res.get('title')}\nPreview: {res.get('text_preview', '')[:160]}...{cas_str}"
-                return {"success": True, "output": out, "command": cmd_str}
-            else:
-                return {"success": False, "output": f"Chrome crawl failed: {res.get('error')}", "command": cmd_str}
-
-        elif cmd == "solana":
-            addr = args[0] if args else (self.config.get("integrations", {}).get("solana", {}).get("wallet_address") or "So11111111111111111111111111111111111111112")
-            rpc = self.config.get("integrations", {}).get("solana", {}).get("rpc_url")
-            bal_res = solana.get_sol_balance(addr, rpc_url=rpc)
-            out = f"SOLANA ON-CHAIN STATUS:\nWallet: {addr}\nSOL Balance: {bal_res.get('sol', 0.0)} SOL ({bal_res.get('lamports', 0):,} lamports)\nRPC Status: {'ONLINE' if bal_res.get('ok') else 'STANDBY/OFFLINE'}"
-            return {"success": True, "output": out, "command": cmd_str}
-
-        elif cmd == "jupiter":
-            sym = args[0].upper() if args else "BONK"
-            tok = next((t for t in self.tokens if t["symbol"] == sym), None)
-            mint = tok.get("ca") if tok else jupiter.USDC_MINT
-            q = jupiter.get_quote(jupiter.NATIVE_SOL_MINT, mint, 1000000000)
-            if q.get("ok"):
-                out = f"JUPITER v6 ROUTE:\nIn: 1.0 SOL -> Out: {q.get('out_amount', 0)} ({sym})\nPrice Impact: {q.get('price_impact_pct', 0)}%\nRoutes: {len(q.get('route_plan', []))} hops"
-                return {"success": True, "output": out, "command": cmd_str}
-            else:
-                return {"success": False, "output": f"Jupiter quote standby: {q.get('error')}", "command": cmd_str}
-
-        elif cmd == "lockdown":
-            sub = args[0].lower() if args else "status"
-            feeder = getattr(self, "feeder", None)
-            sett_svc = feeder.services.get("settings") if feeder else None
-            if sub in ["on", "engage", "true"]:
-                if sett_svc:
-                    sett_svc.dispatch_action("toggle_lockdown", {"enable": True, "confirmed": True, "reason": "Cyber terminal lockdown"})
-                return {"success": True, "output": "EMERGENCY LOCKDOWN ENGAGED: All outbound mutations frozen.", "command": cmd_str}
-            elif sub in ["off", "disengage", "false"]:
-                if sett_svc:
-                    sett_svc.dispatch_action("toggle_lockdown", {"enable": False, "confirmed": True})
-                return {"success": True, "output": "LOCKDOWN DISENGAGED: Normal operations restored.", "command": cmd_str}
-            else:
-                locked = sett_svc.lockdown_active if sett_svc else False
-                return {"success": True, "output": f"Lockdown Status: {'ENGAGED' if locked else 'DISENGAGED'}", "command": cmd_str}
-
-        elif cmd in ["multichain", "chains"]:
-            mc = evm_btc.get_multichain_portfolio()
-            lines = [f"=== MULTI-CHAIN TREASURY MATRIX (Total: ${mc['total_multichain_usd']:,.2f}) ==="]
-            for w in mc.get("wallets", []):
-                lines.append(f"[{w['chain'].upper()}] {w['name']}: {w['balance']} {w['asset']} (${w['usd_value']:,.2f})")
-            lines.append(f"\nGAS: ETH {mc['gas_matrix']['ethereum_gwei']} Gwei | Base {mc['gas_matrix']['base_gwei']} Gwei | BTC Fast {mc['gas_matrix']['btc_fees']['fast']} sat/vB")
-            return {"success": True, "output": "\n".join(lines), "command": cmd_str}
-
-        elif cmd == "gas":
-            eth_g = evm_btc.query_evm_gas_price("ethereum")
-            base_g = evm_btc.query_evm_gas_price("base")
-            arb_g = evm_btc.query_evm_gas_price("arbitrum")
-            btc_f = evm_btc.get_mempool_fee_rates()
-            out = (
-                f"⛽ CROSS-CHAIN GAS & MEMPOOL TRACKER:\n"
-                f"• Ethereum L1: {eth_g} Gwei\n"
-                f"• Base L2:     {base_g} Gwei\n"
-                f"• Arbitrum:    {arb_g} Gwei\n"
-                f"• Bitcoin:     {btc_f['fast']} sat/vB (Fast), {btc_f['medium']} sat/vB (Med), {btc_f['slow']} sat/vB (Eco)"
-            )
-            return {"success": True, "output": out, "command": cmd_str}
-
         elif cmd == "status":
-            out = f"U1 OS v1.0 Feeder: ONLINE\nBinding: 127.0.0.1:8787 (Strict Localhost)\nServices: 10 Subsystems Active\nBot Engine: {self.bot_state['status']}"
+            out = f"U1 OS v1.0 Feeder: ONLINE\nBinding: 127.0.0.1:8788 (Strict Localhost)\nServices: 10 Subsystems Active\nBot Engine: {self.bot_state['status']}"
             return {"success": True, "output": out, "command": cmd_str}
 
         elif cmd == "tokens":
@@ -908,138 +523,19 @@ class CryptoService(BaseService):
                 lines.append(f"{p['symbol']:<8} {p['amount']:<12,.1f} ${p['entry_price']:<9.4f} ${p['mark_price']:<9.4f} ${p['unrealized_pnl_usd']:+,.2f}")
             return {"success": True, "output": "\n".join(lines), "command": cmd_str}
 
-        elif cmd in ["wallets", "treasury"]:
-            total_sol = sum(w.get("sol_balance", 0.0) for w in self.tracked_wallets)
-            sol_price = next((t["price_usd"] for t in self.tokens if t["symbol"] == "SOL"), 180.0)
-            lines = [f"=== MULTI-WALLET SOLANA TREASURY ({len(self.tracked_wallets)} Wallets) ==="]
-            for w in self.tracked_wallets:
-                b = w.get("sol_balance", 0.0)
-                w_name = w.get("name") or w.get("label", "Solana Wallet")
-                lines.append(f"• {w_name:<22} [{w.get('category', 'General')}]: {b:.4f} SOL (~${b*sol_price:,.2f}) | {w['address'][:6]}...{w['address'][-4:]}")
-            lines.append(f"TOTAL TREASURY: {total_sol:.4f} SOL (~${total_sol*sol_price:,.2f})")
+        elif cmd == "alerts":
+            lines = ["ACTIVE PRICE TARGET ALERTS:"]
+            for a in self.price_alerts:
+                lines.append(f"[{a['id']}] ${a['symbol']} {a['condition']} ${a['target_price']} ({a['status']})")
             return {"success": True, "output": "\n".join(lines), "command": cmd_str}
-
-        elif cmd in ["pools", "launchpad"]:
-            lines = ["=== PUMP.FUN & RAYDIUM LAUNCHPAD POOLS ==="]
-            for p in self.launchpad_pools:
-                lines.append(f"• ${p['symbol']:<10} [{p['platform']}]: Curve: {p['bonding_curve_pct']}% | Liq: {p['liquidity_sol']} SOL | Safety: {p['safety_score']}/100 ({p['risk_level']}) | {p['mint'][:6]}...{p['mint'][-4:]}")
-            return {"success": True, "output": "\n".join(lines), "command": cmd_str}
-
-        elif cmd == "snipe":
-            target = args[0] if args else "CHILLGUY"
-            sol_amt = float(args[1]) if len(args) > 1 else self.sniper_config.get("max_buy_sol", 0.25)
-            res = self.dispatch_action("execute_snipe_order", {"mint": target, "amount_sol": sol_amt, "strict_safety": False})
-            if res.get("success"):
-                out = f"🚀 SNIPE ORDER EXECUTED:\nToken: ${res.get('symbol')} | Amount: {res.get('amount_sol')} SOL\nTX: {res.get('signature')}\nSafety Score: {res.get('audit', {}).get('safety_score')}/100"
-                return {"success": True, "output": out, "command": cmd_str}
-            else:
-                return {"success": False, "output": f"Snipe blocked: {res.get('error')}", "command": cmd_str}
-
-        elif cmd in ["ai", "copilot"]:
-            prompt = " ".join(args) if args else "status"
-            feeder = getattr(self, "feeder", None)
-            if feeder and hasattr(feeder, "services") and "ai_workbench" in feeder.services:
-                ai_res = feeder.services["ai_workbench"].dispatch_action("execute_agent_action", {"prompt": prompt})
-                out = f"=== AI WORKBENCH COPILOT ===\nDirective: {prompt}\nResult: {ai_res.get('summary', 'Done')}\nAction Type: {ai_res.get('action_type', 'ORCHESTRATED')}"
-                return {"success": True, "output": out, "command": cmd_str, "ai_res": ai_res}
-            return {"success": True, "output": f"=== AI WORKBENCH COPILOT ===\nProcessed directive: {prompt}\nStatus: Direct execution completed.", "command": cmd_str}
-
-        elif cmd in ["jito", "mev"]:
-            sub = args[0].lower() if args else "status"
-            if sub in ["tips", "floor", "status"]:
-                floor = jito.get_tip_floor()
-                accs = jito.get_tip_accounts()
-                out = (
-                    f"=== JITO BLOCK ENGINE MEV ROUTER ===\n"
-                    f"Status: ONLINE (Sub-Second Private Mempool)\n"
-                    f"50th Percentile Tip: {floor.get('p50_lamports'):,} lamports ({floor.get('p50_sol')} SOL)\n"
-                    f"95th Percentile Tip: {floor.get('p95_lamports'):,} lamports ({floor.get('p95_sol')} SOL)\n"
-                    f"99th Percentile Tip: {floor.get('p99_lamports'):,} lamports\n"
-                    f"Active Tip Accounts: {len(accs)} Validators ({accs[0][:8]}...{accs[0][-6:]})"
-                )
-                return {"success": True, "output": out, "command": cmd_str}
-            elif sub in ["bundle", "send"]:
-                lamports = int(args[1]) if len(args) > 1 and args[1].isdigit() else 50000
-                dummy_tx = f"tx_sig_{int(time.time()*1000)}"
-                res = jito.send_mev_bundle([dummy_tx], tip_lamports=lamports)
-                b = res.get("bundle", {})
-                out = (
-                    f"🚀 JITO MEV BUNDLE TRANSMITTED:\n"
-                    f"Bundle ID: {b.get('bundle_id')}\n"
-                    f"Status: {b.get('status')} (Slot {b.get('slot')})\n"
-                    f"Latency: {b.get('latency_ms')}ms | Tip: {b.get('tip_lamports'):,} lamports ({b.get('tip_sol')} SOL)\n"
-                    f"Protection: {b.get('protection')}"
-                )
-                return {"success": True, "output": out, "command": cmd_str}
-            else:
-                return {"success": True, "output": f"Jito MEV usage: 'jito tips' or 'jito send [lamports]'", "command": cmd_str}
-
-        elif cmd in ["predict", "poly", "kalshi"]:
-            sub = args[0].lower() if args else "arb"
-            if sub in ["arb", "spreads", "scan"]:
-                scan_res = prediction_markets.scan_prediction_arbitrage()
-                opps = scan_res.get("opportunities", [])
-                lines = [f"=== PREDICTION MARKET STATISTICAL ARBITRAGE RADAR ({len(opps)} Opportunities) ==="]
-                for o in opps:
-                    lines.append(f"• [{o['platform'].upper()}] {o['title'][:32]}... | Edge: +{o['guaranteed_edge_pct']}% | Implied Sum: {o['implied_sum']}")
-                lines.append(f"Optimal Kelly sizing active. Status: {scan_res.get('status')}")
-                return {"success": True, "output": "\n".join(lines), "command": cmd_str}
-            else:
-                trade_res = prediction_markets.execute_prediction_trade("pm_fed_cut_nov", "25 bps Cut", 250.0)
-                t = trade_res.get("trade", {})
-                out = f"🎯 PREDICTION ORDER EXECUTED:\nMarket: {t.get('title')}\nOutcome: {t.get('outcome')} @ ${t.get('entry_price')} | Stake: ${t.get('amount_usd')} -> Payout: ${t.get('payout_if_win_usd')}"
-                return {"success": True, "output": out, "command": cmd_str}
-
-        elif cmd in ["flasharb", "triangles", "flash"]:
-            sub = args[0].lower() if args else "scan"
-            if sub in ["scan", "routes", "list"]:
-                res = flash_arbitrage.scan_triangular_arbitrage()
-                opps = res.get("opportunities", [])
-                lines = [f"=== CROSS-DEX FLASH-LOAN TRIANGULAR ARBITRAGE ({len(opps)} Routes) ==="]
-                for o in opps:
-                    lines.append(f"• [{o['chain'].upper()}] {o['id']} | Net Spread: +{o['net_spread_pct']}% (+{o.get('net_profit_sol', o.get('net_profit_eth'))} {o['base_token']})")
-                lines.append(f"Status: {res.get('status')} | Top Spread: {res.get('top_spread_pct')}%")
-                return {"success": True, "output": "\n".join(lines), "command": cmd_str}
-            else:
-                exec_res = flash_arbitrage.execute_flash_arbitrage()
-                rec = exec_res.get("execution", {})
-                out = f"⚡ FLASH ARBITRAGE EXECUTED ATOMICALLY:\nRoute: {rec.get('route_id')} ({rec.get('chain').upper()})\nBorrowed: {rec.get('borrow_amount')} {rec.get('base_token')} -> Net Profit: +{rec.get('net_profit')} {rec.get('base_token')} ({rec.get('net_spread_pct')}% spread)\nTX: {rec.get('tx_id')}"
-                return {"success": True, "output": out, "command": cmd_str}
-
-        elif cmd in ["funding", "perp", "harvester"]:
-            sub = args[0].lower() if args else "scan"
-            if sub in ["scan", "rates", "list"]:
-                res = funding_arbitrage.scan_funding_arbitrage()
-                opps = res.get("opportunities", [])
-                lines = [f"=== PERPETUAL DEX DELTA-NEUTRAL FUNDING MATRIX ({len(opps)} Venues) ==="]
-                for o in opps:
-                    lines.append(f"• [{o['platform']}] {o['symbol']} | APR: +{o['annualized_apr_pct']}% | Rate(8h): +{o['funding_rate_8h_pct']}% ({o['predicted_direction']})")
-                lines.append(f"Status: {res.get('status')} | Top APR: {res.get('top_apr_pct')}%")
-                return {"success": True, "output": "\n".join(lines), "command": cmd_str}
-            else:
-                hedge_res = funding_arbitrage.execute_delta_neutral_hedge()
-                rec = hedge_res.get("hedge", {})
-                out = f"🌾 DELTA-NEUTRAL FUNDING HEDGE DEPLOYED:\nMarket: {rec.get('symbol')} ({rec.get('platform')})\nCapital: ${rec.get('allocated_capital_usd')} | APR: {rec.get('annualized_apr_pct')}%\nEst. Daily Cashflow: +${rec.get('est_daily_yield_usd')}/day (Delta: {rec.get('delta')})"
-                return {"success": True, "output": out, "command": cmd_str}
-
-        elif cmd in ["shadow", "whale", "whales"]:
-            sub = args[0].lower() if args else "list"
-            if sub in ["list", "track", "scan"]:
-                whales = whale_mirror.get_tracked_whales()
-                lines = [f"=== SMART MONEY WHALE SHADOW MIRROR ({len(whales)} Whales) ==="]
-                for w in whales:
-                    lines.append(f"• [{w['chain'].upper()}] {w['label']} ({w['address'][:8]}...{w['address'][-6:]}) | Win Rate: {w['win_rate_pct']}%")
-                return {"success": True, "output": "\n".join(lines), "command": cmd_str}
-            else:
-                mirror_res = whale_mirror.execute_shadow_trade()
-                rec = mirror_res.get("order", {})
-                out = f"🐋 WHALE COPY-TRADE EXECUTED:\nMirroring: {rec.get('whale_label')} ({rec.get('chain').upper()})\nOrder: {rec.get('action')} ${rec.get('executed_stake_usd')} {rec.get('token')} @ ${rec.get('price')} (Slippage: {rec.get('slippage_pct')}%)\nStatus: {rec.get('status')}"
-                return {"success": True, "output": out, "command": cmd_str}
 
         return {"success": True, "output": f"Executed command: {cmd_str}", "command": cmd_str}
 
     def dispatch_action(self, action, payload=None):
         payload = payload or {}
+        if self.setup_required:
+            return {"success": False, "error": "CRYPTO_NOT_CONFIGURED",
+                    "message": "Crypto setup is deferred. Open Integrations to review installed adapters."}
 
         if action == "execute_swap":
             if not payload.get("confirmed"):
@@ -1246,329 +742,5 @@ class CryptoService(BaseService):
         elif action == "execute_terminal_command":
             cmd_str = payload.get("command", "")
             return self.execute_terminal_command(cmd_str)
-
-        # --- Real On-Chain & DEX Actions ---
-        elif action == "get_jupiter_quote":
-            input_mint = payload.get("input_mint", "So11111111111111111111111111111111111111112")
-            output_mint = payload.get("output_mint", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
-            amount_lamports = int(payload.get("amount_lamports", 1000000000))
-            slippage_bps = int(payload.get("slippage_bps", 200))
-            res = jupiter.get_quote(input_mint, output_mint, amount_lamports, slippage_bps)
-            return {"success": res.get("ok", False), "quote": res, **res}
-
-        elif action == "get_solana_wallet":
-            wallet_addr = payload.get("wallet_address") or self.config.get("integrations", {}).get("solana", {}).get("wallet_address") or "So11111111111111111111111111111111111111112"
-            rpc = self.config.get("integrations", {}).get("solana", {}).get("rpc_url")
-            bal_res = solana.get_sol_balance(wallet_addr, rpc_url=rpc)
-            tok_res = solana.get_token_accounts(wallet_addr, rpc_url=rpc)
-            tx_res = solana.get_recent_transactions(wallet_addr, limit=10, rpc_url=rpc)
-            return {
-                "success": True,
-                "wallet_address": wallet_addr,
-                "sol_balance": bal_res.get("sol", 0.0),
-                "lamports": bal_res.get("lamports", 0),
-                "tokens": tok_res.get("accounts", []),
-                "recent_transactions": tx_res.get("transactions", []),
-                "is_live_rpc": bal_res.get("ok", False)
-            }
-
-        elif action == "search_dex_tokens":
-            query = payload.get("query", "SOL")
-            results = dexscreener.search_token(query, limit=8)
-            return {"success": True, "query": query, "results": results}
-
-        elif action == "set_autonomous_mode":
-            mode = payload.get("mode", "PAPER")
-            enabled = bool(payload.get("autonomous_buying_enabled", False))
-            browser = bool(payload.get("full_browser_execution", False))
-            self.bot_state["autonomous_mode"] = mode
-            self.bot_state["autonomous_buying_enabled"] = enabled
-            self.bot_state["full_browser_execution"] = browser
-            if enabled:
-                self.bot_state["status"] = "RUNNING"
-                msg = f"Autonomous AI Trading activated ({mode} mode, Browser: {browser})"
-            else:
-                self.bot_state["status"] = "STANDBY"
-                msg = "Autonomous AI Trading set to standby."
-            self.bot_log.append({"timestamp": time.time(), "type": "AUTONOMOUS", "message": msg})
-            self.poll()
-            return {"success": True, "bot_state": self.bot_state, "message": msg}
-
-        elif action == "browse_token_chart":
-            symbol = payload.get("symbol", "").upper()
-            ca = payload.get("ca", "")
-            dex = payload.get("dex", "photon")
-
-            if not ca and symbol:
-                tok = next((t for t in self.tokens if t["symbol"] == symbol), None)
-                if tok:
-                    ca = tok.get("ca", "")
-
-            if not ca:
-                ca = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"  # Fallback to BONK
-
-            crawl_res = browser_crawler.inspect_token_dex(ca, dex=dex)
-            self.add_event("browser_chart_inspected", f"Headless Chrome inspected {dex.upper()} chart for {symbol or ca[:8]}", crawl_res)
-            return {"success": crawl_res.get("ok", False), "ca": ca, "dex": dex, "crawler": crawl_res}
-
-        elif action == "capture_chart_snapshot":
-            symbol = payload.get("symbol", "BONK").upper()
-            ca = payload.get("ca", "")
-            if not ca:
-                tok = next((t for t in self.tokens if t["symbol"] == symbol), None)
-                ca = tok.get("ca") if tok else "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
-
-            out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "charts")
-            os.makedirs(out_dir, exist_ok=True)
-            shot_file = os.path.join(out_dir, f"chart_{symbol}_{int(time.time())}.png")
-            url = f"https://photon-sol.tinyastro.io/en/lp/{ca}"
-            snap_res = browser_crawler.capture_screenshot(url, shot_file, wait_ms=2500)
-            return {"success": snap_res.get("ok", False), "symbol": symbol, "ca": ca, "snapshot": snap_res}
-
-        elif action == "get_multi_wallet_portfolio":
-            sol_price = next((t["price_usd"] for t in self.tokens if t["symbol"] == "SOL"), 180.0)
-            rpc = self.config.get("integrations", {}).get("solana", {}).get("rpc_url")
-            summary = solana.get_multi_wallet_summary(self.tracked_wallets, sol_price_usd=sol_price, rpc_url=rpc)
-            return {"success": True, "portfolio": summary, **summary}
-
-        elif action == "add_tracked_wallet":
-            addr = payload.get("address", "").strip()
-            label = payload.get("name") or payload.get("label", "Custom Wallet").strip()
-            category = payload.get("category") or payload.get("type", "Trading").strip()
-            if not addr:
-                return {"success": False, "error": "Wallet address is required"}
-
-            exists = any(w["address"] == addr for w in self.tracked_wallets)
-            if not exists:
-                new_w = {
-                    "address": addr,
-                    "name": label,
-                    "label": label,
-                    "category": category,
-                    "type": category.upper()
-                }
-                self.tracked_wallets.append(new_w)
-                self.poll()
-                return {"success": True, "wallet": new_w, "tracked_wallets": self.tracked_wallets}
-            return {"success": False, "error": "Wallet address already tracked"}
-
-        elif action == "remove_tracked_wallet":
-            addr = payload.get("address", "").strip()
-            self.tracked_wallets = [w for w in self.tracked_wallets if w["address"] != addr]
-            self.poll()
-            return {"success": True, "address": addr, "remaining_count": len(self.tracked_wallets), "tracked_wallets": self.tracked_wallets}
-
-        elif action == "get_launchpad_pools":
-            return {
-                "success": True,
-                "pools": self.launchpad_pools,
-                "auto_sniper_active": self.auto_sniper_active,
-                "config": self.sniper_config,
-                "total_pools": len(self.launchpad_pools)
-            }
-
-        elif action == "audit_token_security":
-            mint = payload.get("mint", "").strip() or payload.get("symbol", "BONK")
-            tok = next((t for t in self.tokens if t["symbol"].upper() == mint.upper()), None)
-            mint_ca = tok.get("ca") if tok else mint
-            rpc = self.config.get("integrations", {}).get("solana", {}).get("rpc_url")
-            res = solana.audit_token_security(mint_ca, rpc_url=rpc)
-            return {"success": True, "mint": mint_ca, "audit": res, **res}
-
-        elif action == "execute_snipe_order":
-            mint = payload.get("mint", "").strip()
-            amount_sol = float(payload.get("amount_sol", self.sniper_config.get("max_buy_sol", 0.25)))
-            pool = next((p for p in self.launchpad_pools if p["mint"] == mint or p["symbol"].upper() == mint.upper()), None)
-            sym = pool["symbol"] if pool else (payload.get("symbol") or "SNIPE")
-
-            rpc = self.config.get("integrations", {}).get("solana", {}).get("rpc_url")
-            audit = solana.audit_token_security(mint or "Df6yfrKC8kZE3KNkrHERKzAChZSaRDK6NLzZM5pm7pump", rpc_url=rpc)
-            if not audit.get("can_snipe") and payload.get("strict_safety", True):
-                return {
-                    "success": False,
-                    "error": f"ANTI_RUG_BLOCK: Token safety score {audit.get('safety_score')} failed threshold (Risk: {audit.get('risk_level')})",
-                    "audit": audit
-                }
-
-            tx_sig = f"5ZpSnipe{int(time.time()*1000)}"
-            if pool:
-                pool["sniped"] = True
-                pool["bonding_curve_pct"] = min(100.0, pool["bonding_curve_pct"] + 1.8)
-
-            msg = f"🚀 LAUNCHPAD SNIPED ${sym}: {amount_sol} SOL -> TX: {tx_sig[:12]}... (Safety: {audit.get('safety_score')}/100)"
-            self.bot_log.append({"timestamp": time.time(), "type": "SNIPE", "message": msg})
-            self.add_event("launchpad_snipe_executed", msg)
-
-            feeder = getattr(self, "feeder", None)
-            if feeder and hasattr(feeder, "services") and "telegram" in feeder.services:
-                try:
-                    feeder.services["telegram"].broadcast_alert(f"🎯 <b>LAUNCHPAD SNIPER EXECUTION</b>\n🪙 <b>Token:</b> ${sym}\n⚡ <b>Amount:</b> {amount_sol} SOL\n🛡 <b>Safety:</b> {audit.get('safety_score')}/100 ({audit.get('risk_level')})\n🔗 <b>TX:</b> {tx_sig}")
-                except Exception:
-                    pass
-
-            order_data = {
-                "signature": tx_sig,
-                "symbol": sym,
-                "amount_sol": amount_sol,
-                "audit": audit
-            }
-            return {
-                "success": True,
-                "order": order_data,
-                "signature": tx_sig,
-                "symbol": sym,
-                "amount_sol": amount_sol,
-                "audit": audit,
-                "message": msg
-            }
-
-        elif action == "toggle_auto_sniper":
-            active = payload.get("active", not self.auto_sniper_active)
-            self.auto_sniper_active = active
-            if "config" in payload:
-                self.sniper_config.update(payload["config"])
-            self.poll()
-            return {
-                "success": True,
-                "active": self.auto_sniper_active,
-                "auto_sniper_active": self.auto_sniper_active,
-                "config": self.sniper_config
-            }
-
-        elif action == "get_multichain_portfolio":
-            res = evm_btc.get_multichain_portfolio()
-            return res
-
-        elif action == "get_gas_tracker":
-            return {
-                "success": True,
-                "ethereum_gwei": evm_btc.query_evm_gas_price("ethereum"),
-                "base_gwei": evm_btc.query_evm_gas_price("base"),
-                "arbitrum_gwei": evm_btc.query_evm_gas_price("arbitrum"),
-                "btc_fees": evm_btc.get_mempool_fee_rates()
-            }
-
-        elif action == "execute_evm_swap":
-            from_token = payload.get("from_token", "ETH")
-            to_token = payload.get("to_token", "USDC")
-            amt = float(payload.get("amount", 0.5))
-            chain = payload.get("chain", "base")
-            res = evm_btc.execute_evm_swap(from_token, to_token, amt, chain=chain)
-            return res
-
-        elif action == "get_jito_tip_floor":
-            floor = jito.get_tip_floor()
-            return {"success": True, "tip_floor": floor}
-
-        elif action == "get_jito_tip_accounts":
-            accounts = jito.get_tip_accounts()
-            return {"success": True, "accounts": accounts}
-
-        elif action == "send_jito_bundle":
-            txs = payload.get("transactions") or payload.get("txs") or [f"bundle_tx_{int(time.time()*1000)}"]
-            tip = int(payload.get("tip_lamports", 50000))
-            account = payload.get("tip_account")
-            region = payload.get("region", "mainnet")
-            sim = payload.get("simulated", True)
-            res = jito.send_mev_bundle(txs, tip_lamports=tip, tip_account=account, region=region, simulated=sim)
-            if res.get("success"):
-                b = res.get("bundle", {})
-                self.add_event("jito_bundle_sent", f"Jito MEV bundle {b.get('bundle_id')} sent ({tip} lamports)")
-            return res
-
-        elif action == "get_jito_bundle_status":
-            bundle_id = payload.get("bundle_id", "")
-            return jito.get_bundle_status(bundle_id)
-
-        elif action == "get_prediction_markets":
-            markets = prediction_markets.get_prediction_markets()
-            return {"success": True, "markets": markets, "total_markets": len(markets)}
-
-        elif action == "scan_prediction_arbitrage":
-            arb_res = prediction_markets.scan_prediction_arbitrage()
-            return {
-                "success": True, 
-                "arbitrage": arb_res,
-                "arbitrage_opportunities": arb_res.get("opportunities", [])
-            }
-
-        elif action == "execute_prediction_trade":
-            market_id = payload.get("market_id", "pm_fed_cut_nov")
-            outcome = payload.get("outcome", "25 bps Cut")
-            amount = float(payload.get("amount_usd", payload.get("stake_usd", 250.0)))
-            res = prediction_markets.execute_prediction_trade(market_id, outcome, amount)
-            if res.get("success"):
-                t = res.get("trade", {})
-                self.add_event("prediction_trade_executed", f"Executed ${amount:.2f} on {t.get('title')} ({outcome})")
-            return res
-
-        # 1. Flash-Loan Triangular Arbitrage
-        elif action == "scan_flash_arbitrage":
-            res = flash_arbitrage.scan_triangular_arbitrage()
-            return {"success": True, "arbitrage": res, "opportunities": res.get("opportunities", []), "routes": res.get("opportunities", [])}
-
-        elif action == "execute_flash_arbitrage":
-            route_id = payload.get("route_id", "tri_sol_usdc_bonk")
-            amount = payload.get("borrow_amount") or payload.get("amount")
-            res = flash_arbitrage.execute_flash_arbitrage(route_id, amount)
-            if res.get("success"):
-                r = res.get("record", {})
-                self.add_event("flash_arb_executed", f"Executed atomic flash-loan: {r.get('route_id')} (+{r.get('net_profit')} {r.get('base_token')})")
-            return res
-
-        elif action == "get_flash_arb_history":
-            history = flash_arbitrage.get_flash_arb_history()
-            return {"success": True, "history": history, "total_executions": len(history)}
-
-        # 2. Perpetual Funding Rate Harvester
-        elif action == "scan_funding_arbitrage":
-            res = funding_arbitrage.scan_funding_arbitrage()
-            return {"success": True, "funding": res, "markets": res.get("opportunities", []), "opportunities": res.get("opportunities", [])}
-
-        elif action == "execute_delta_neutral_hedge":
-            market_id = payload.get("market_id", "hl_sol_perp")
-            capital = payload.get("allocated_capital_usd") or payload.get("capital_usd", 10000.0)
-            res = funding_arbitrage.execute_delta_neutral_hedge(market_id, capital)
-            if res.get("success"):
-                h = res.get("hedge", {})
-                self.add_event("funding_hedge_deployed", f"Deployed ${capital} delta-neutral hedge on {h.get('symbol')} ({h.get('annualized_apr_pct')}% APR)")
-            return res
-
-        elif action == "get_active_hedges":
-            hedges = funding_arbitrage.get_active_hedges()
-            return {"success": True, "hedges": hedges, "total_hedges": len(hedges)}
-
-        # 3. Liquidity Pool Migration Radar
-        elif action == "scan_pool_migrations":
-            res = migration_radar.scan_pool_migrations()
-            return {"success": True, "radar": res, "migrations": res.get("migrations", [])}
-
-        elif action == "audit_pool_migration":
-            mint = payload.get("mint") or payload.get("token_id", "CYBER_DOGE_99")
-            return migration_radar.audit_pool_migration(mint)
-
-        # 4. Whale Copy-Trading & Shadow Mirror
-        elif action == "get_tracked_whales":
-            whales = whale_mirror.get_tracked_whales()
-            return {"success": True, "whales": whales, "total_whales": len(whales)}
-
-        elif action == "add_tracked_whale":
-            addr = payload.get("address", "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU")
-            chain = payload.get("chain", "solana")
-            label = payload.get("label", "Smart Money Whale")
-            return whale_mirror.add_tracked_whale(addr, chain, label)
-
-        elif action == "execute_shadow_trade":
-            whale_id = payload.get("whale_id", "whale_sol_alpha_1")
-            fraction = payload.get("mirror_fraction", 0.05)
-            res = whale_mirror.execute_shadow_trade(whale_id, fraction)
-            if res.get("success"):
-                o = res.get("order", {})
-                self.add_event("whale_shadow_trade", f"Shadow mirrored {o.get('whale_label')}: {o.get('action')} ${o.get('executed_stake_usd')} {o.get('token')}")
-            return res
-
-        elif action == "get_shadow_trade_history":
-            history = whale_mirror.get_shadow_trade_history()
-            return {"success": True, "history": history, "total_orders": len(history)}
 
         return super().dispatch_action(action, payload)

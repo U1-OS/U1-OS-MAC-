@@ -1,0 +1,14 @@
+#u1-terminal{position:fixed;z-index:270;left:238px;right:22px;bottom:112px;height:min(540px,calc(100dvh - 165px));min-height:270px;display:flex;flex-direction:column;border:1px solid #87d7ff79;border-radius:17px;background:#030b16f7;color:#dcedff;box-shadow:0 25px 90px #000a,0 0 25px #098aff14;overflow:hidden;font-family:Manrope,sans-serif;backdrop-filter:blur(20px)}
+#u1-terminal[hidden]{display:none!important}#u1-terminal.is-expanded{top:130px;bottom:100px;height:auto}
+#u1-terminal>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;background:linear-gradient(100deg,#0c2949,#061426);border-bottom:1px solid #82caff30}
+#u1-terminal>header>div{display:flex;align-items:center;gap:10px}#u1-terminal svg{width:18px;height:18px;color:#8aeaff}#u1-terminal strong{font:500 15px 'Space Grotesk',sans-serif}#u1-terminal header span{font-size:8px;color:#88accd;letter-spacing:1px}
+#u1-terminal button{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #76c6ff3b;border-radius:7px;background:#12375550;color:#c9eaff;padding:7px 10px;cursor:pointer;font:10px Manrope,sans-serif}
+#u1-terminal button:hover{border-color:#8fe4ff;background:#19558370}#u1-terminal button:disabled{opacity:.5;cursor:wait}#u1-terminal button:focus-visible{outline:2px solid #85e8ff;outline-offset:2px}
+.u1-terminal-toolbar{display:flex;gap:7px;padding:10px 14px;flex-wrap:wrap;border-bottom:1px solid #64b5ff21}.u1-terminal-toolbar [data-terminal-end]{margin-left:auto;color:#ffbeae}
+.u1-terminal-consent{padding:15px 22px;max-width:790px}.u1-terminal-consent h2{font:500 28px 'Space Grotesk',sans-serif;letter-spacing:-.8px;margin:7px 0 14px}.u1-terminal-consent p{font-size:11px;line-height:1.8;color:#9cb9d4}
+#u1-terminal>[data-terminal-start]{margin:8px 22px 15px;width:180px;background:linear-gradient(130deg,#145795,#153979);padding:11px}
+#u1-terminal [hidden]{display:none!important}#u1-terminal-mount{flex:1;min-height:0;margin:0 13px 10px;overflow:hidden}#u1-terminal .xterm{height:100%;padding:3px}#u1-terminal .xterm-viewport{scrollbar-width:thin;scrollbar-color:#315c80 #030b16}
+#u1-terminal>footer{display:flex;gap:10px;justify-content:space-between;padding:10px 15px;border-top:1px solid #68baff25;font-size:8px;color:#a1cae7;line-height:1.6}#u1-terminal footer small{color:#7899b6;font-size:8px}
+@media(max-width:1050px){#u1-terminal{left:204px}#u1-terminal header span{display:none}}
+@media(max-width:820px){#u1-terminal{left:12px;right:12px;bottom:95px;height:calc(100dvh - 220px)}#u1-terminal.is-expanded{top:120px;bottom:95px}.u1-terminal-consent{padding:10px 17px;overflow:auto}.u1-terminal-consent h2{font-size:24px}#u1-terminal footer{flex-direction:column;gap:3px}#u1-terminal header{padding:11px 13px}}
+@media print{#u1-terminal{display:none!important}}

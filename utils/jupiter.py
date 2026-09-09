@@ -130,10 +130,8 @@ def execute_swap_with_keypair(
     # We use a subprocess-safe approach via base58 decode + ed25519
     try:
         from utils.solana import send_transaction
-        try:
-            import base58 as _base58
-        except ImportError:
-            from utils import base58_util as _base58
+        import base58 as _base58
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
         raw = _base58.b58decode(private_key_b58)
         # Solana keypair is 64 bytes: first 32 = private seed, last 32 = public key
@@ -142,19 +140,16 @@ def execute_swap_with_keypair(
             pub_bytes = raw[32:]
         elif len(raw) == 32:
             seed = raw
-            try:
-                from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as PK
-                pub_bytes = PK.from_private_bytes(seed).public_key().public_bytes_raw()
-            except ImportError:
-                from utils.ed25519_util import public_key_from_seed
-                pub_bytes = public_key_from_seed(seed)
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as PK
+            pub_bytes = PK.from_private_bytes(seed).public_key().public_bytes_raw()
         else:
             return {"ok": False, "error": f"Invalid keypair length: {len(raw)}"}
 
-        public_key = _base58.b58encode(pub_bytes).decode("utf-8")
+        import base58 as _b58
+        public_key = _b58.b58encode(pub_bytes).decode("utf-8")
 
-    except Exception as e:
-        return {"ok": False, "error": f"Failed to initialize keypair: {e}"}
+    except ImportError as e:
+        return {"ok": False, "error": f"Missing crypto dependency: {e}. Run: pip install base58 cryptography"}
 
     # Step 2: Get quote
     quote = get_quote(input_mint, output_mint, amount_lamports, slippage_bps)
@@ -184,16 +179,15 @@ def execute_swap_with_keypair(
     # Step 4: Sign the transaction
     try:
         tx_bytes = base64.b64decode(swap_tx["swap_transaction"])
+        priv_key = Ed25519PrivateKey.from_private_bytes(seed)
+        # Versioned transaction: first byte indicates version prefix (0x80)
+        # We need to find the message bytes and sign them
+        # For versioned transactions, message starts after 1-byte prefix and compact-u16 sig count
+        # Sig count is typically 1 for single-signer swaps
+        # Message hash = everything after signatures
         msg_start = 1 + 1 + 64  # version_prefix(1) + sig_count(1) + one_empty_sig(64)
         msg_bytes = tx_bytes[msg_start:]
-        try:
-            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-            priv_key = Ed25519PrivateKey.from_private_bytes(seed)
-            signature = priv_key.sign(msg_bytes)
-        except ImportError:
-            from utils.ed25519_util import sign as ed25519_sign
-            signature = ed25519_sign(seed, msg_bytes)
-
+        signature = priv_key.sign(msg_bytes)
         # Replace the empty signature placeholder with our real signature
         signed_bytes = bytearray(tx_bytes)
         signed_bytes[2:66] = signature

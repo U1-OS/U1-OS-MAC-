@@ -11,8 +11,30 @@ sandboxes/
 .command-center.pid
 backups/*.ccvault
 data/*.db
-briefings/
-*.aiff
-vault/.decoy_admin_keys.env
-*.app/
-*.dmg
+data/
+config.json
+.runtime/
+.u1-os.pid
+.u1-os-launch.lock/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db-*
+logs/
+exports/
+backups/
+sandboxes/
+deployments/
+
+# Local desktop builds contain installation-specific paths.
+dist/
+
+# U1 OS safety settings contain a passphrase hash and stay on this Mac.
+/data/safety/

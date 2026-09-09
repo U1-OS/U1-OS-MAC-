@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#10181d">
+  <title>Creative Studio | U1 OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/creative-studio.css">
+  <style id="print-page-style">@page { size: A4; margin: 0; }</style>
+  <script src="/js/creative-studio.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to studio</a>
+  <div class="studio-shell">
+    <aside class="studio-sidebar" aria-label="Studio navigation">
+      <a class="studio-brand" href="/"><span class="brand-orbit" aria-hidden="true">U1</span><span>U1 OS<small>PERSONAL WORKSPACE</small></span></a>
+      <div class="sidebar-label">MAKE SPACE FOR IDEAS</div>
+      <nav class="studio-nav" aria-label="Creative tools">
+        <button class="is-active" type="button" data-view="design" aria-current="page"><span data-icon="layers"></span>Document studio<span class="nav-tag">01</span></button>
+        <button type="button" data-view="prompts"><span data-icon="spark"></span>Prompt builder<span class="nav-tag">02</span></button>
+        <button type="button" data-view="library"><span data-icon="folder"></span>My projects<span id="project-count" class="nav-tag">0</span></button>
+      </nav>
+      <div class="sidebar-note"><span class="small-orbit" aria-hidden="true"></span><h3>Your ideas.<br>Your files.</h3><p>Design and export locally. No account needed for the document engine.</p><span class="status-label">LOCAL CREATION ENGINE</span></div>
+      <nav class="studio-nav sidebar-bottom" aria-label="Workspace">
+        <a href="/"><span data-icon="home"></span>Back to desktop</a>
+        <a href="/integrations.html"><span data-icon="plug"></span>Connections<span class="nav-tag">↗</span></a>
+      </nav>
+      <p class="privacy-footnote">Browser storage is not encrypted. Avoid saving sensitive information.</p>
+    </aside>
+    <main id="main" class="studio-main">
+      <header class="studio-topbar">
+        <div class="breadcrumb"><a href="/">Workspace</a><span>/</span><strong>Creative Studio</strong></div>
+        <div class="topbar-right"><span id="save-state" class="save-state" role="status">Local draft</span><button class="icon-button" id="appearance-toggle" type="button" aria-label="Reduce decorative motion" aria-pressed="false"><span data-icon="sun"></span></button><a class="avatar" href="/integrations.html" aria-label="Account connections">U1</a></div>
+      </header>
+      <section class="studio-hero">
+        <div><p class="eyebrow"><span></span>IDEAS INTO SOMETHING REAL</p><h1>Make something<br><em>worth keeping.</em></h1><p class="hero-copy">Beautiful documents. Better prompts. A little more room to create.</p></div>
+        <div class="hero-art" aria-hidden="true"><div class="hero-ring ring-one"></div><div class="hero-ring ring-two"></div><div class="hero-sheet sheet-back"></div><div class="hero-sheet sheet-front"><span></span><b>CREATE<br>YOUR<br>NEXT.</b><i></i></div><span class="art-coordinate">U1 / STUDIO</span></div>
+      </section>
+      <nav class="mobile-studio-nav" aria-label="Studio views"><button type="button" data-view="design" class="is-active" aria-current="page">Documents</button><button type="button" data-view="prompts">Prompts</button><button type="button" data-view="library">My projects</button></nav>
+      <section id="download-ready" class="download-ready" aria-label="Prepared download" hidden>
+        <div><span>YOUR FILE IS READY</span><strong id="download-ready-name"></strong><small>If the automatic download did not start, use Save file.</small></div>
+        <a id="download-ready-link" class="button button-primary" download>Save file</a>
+        <button id="dismiss-download" class="icon-button" type="button" aria-label="Dismiss prepared download">×</button>
+      </section>
+      <section id="view-design" class="studio-view" aria-label="Document designer">
+        <div class="section-heading"><div><p class="eyebrow">THE DOCUMENT LAB</p><h2>From blank page to brilliant.</h2></div><button id="new-document" type="button" class="button button-quiet"><span data-icon="plus"></span>New document</button></div>
+        <div id="template-grid" class="template-grid" role="group" aria-label="Choose a document template"></div>
+        <section class="workbench" aria-label="Document editor">
+          <header class="workbench-header"><div><span class="editor-dot"></span><h3 id="editor-title">Daily planner</h3><span id="page-size-badge" class="small-badge">A4</span></div><div class="editor-actions"><button id="save-project" class="button button-quiet" type="button"><span data-icon="save"></span>Save project</button><button id="export-pdf" class="button button-primary" type="button"><span data-icon="download"></span>Export PDF</button></div></header>
+          <div class="editor-grid">
+            <form id="document-controls" class="document-controls" autocomplete="off">
+              <details open><summary><span>01</span>Make it yours</summary><div class="control-body">
+                <label>Document title<input id="document-title" name="title" maxlength="100" placeholder="Give your idea a name"></label>
+                <label>Subtitle<input id="document-subtitle" name="subtitle" maxlength="140" placeholder="A little context or inspiration"></label>
+                <label>Made for<input id="document-owner" name="owner" maxlength="70" placeholder="Name or brand (optional)"></label>
+                <label><span id="content-label">Your priorities, one per line</span><textarea id="document-content" name="content" rows="5" maxlength="6000" placeholder="Leave blank for a reusable template"></textarea></label>
+                <label>Footer note<input id="document-note" name="note" maxlength="160" placeholder="Optional note for each page"></label>
+              </div></details>
+              <details open><summary><span>02</span>Format &amp; finish</summary><div class="control-body">
+                <div class="two-fields"><label>Paper<select id="document-size" name="size"><option value="a4">A4</option><option value="letter">US Letter</option></select></label><label>Pages<input id="document-pages" name="pages" type="number" min="1" max="24" value="1"></label></div>
+                <label>Starting date<input id="document-date" name="date" type="date"></label>
+                <fieldset class="swatch-field"><legend>Accent palette</legend><div id="palette-options" class="palette-options"></div></fieldset>
+                <label>Typography<select id="document-font" name="font"><option value="modern">Modern / sans</option><option value="editorial">Editorial / serif</option></select></label>
+                <label id="pattern-control" hidden>Coloring pattern<select id="document-pattern" name="pattern"><option value="mandala">Orbital mandala</option><option value="botanical">Botanical garden</option><option value="cosmic">Cosmic collection</option></select></label>
+                <label>PDF resolution<select id="document-quality" name="quality"><option value="150">150 DPI / smaller file</option><option value="300">300 DPI / print quality</option></select></label>
+                <p class="field-help">Calendars advance by month; weekly sheets by week. Up to 24 pages per document.</p>
+              </div></details>
+              <details><summary><span>03</span>Take it anywhere</summary><div class="control-body export-options">
+                <button id="export-svg" type="button" class="button button-secondary"><span data-icon="image"></span>Download current page SVG</button>
+                <button id="print-document" type="button" class="button button-secondary"><span data-icon="printer"></span>Print document</button>
+                <button id="export-project" type="button" class="button button-secondary"><span data-icon="folder"></span>Back up project JSON</button>
+                <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer" class="canva-link"><span class="canva-mark">C</span><span><strong>Continue in Canva</strong><small>Export here, then upload there</small></span><span>↗</span></a>
+                <p class="field-help">Canva handoff is manual. Signing in elsewhere does not connect this studio or grant API access. No subscription is charged by the local export engine.</p>
+              </div></details>
+            </form>
+            <div class="preview-column">
+              <div class="preview-toolbar"><span><span class="preview-dot"></span>DOCUMENT PREVIEW</span><label class="zoom-control">Zoom<select id="preview-zoom"><option value="65">65%</option><option value="85" selected>85%</option><option value="100">100%</option><option value="125">125%</option></select></label></div>
+              <div id="paper-stage" class="paper-stage"><div id="paper-preview" class="paper-preview" aria-label="Current document page"></div></div>
+              <footer class="preview-footer"><span id="document-summary">A4 · 1 page</span><div class="page-switcher"><button id="previous-page" class="icon-button" type="button" aria-label="Previous page"><span data-icon="left"></span></button><span id="page-counter" aria-live="polite">1 / 1</span><button id="next-page" class="icon-button" type="button" aria-label="Next page"><span data-icon="right"></span></button></div><span class="local-label">CREATED ON YOUR DEVICE</span></footer>
+              <div id="export-progress" class="export-progress" role="status" hidden><span class="progress-spinner" aria-hidden="true"></span><span id="export-progress-text">Preparing PDF...</span></div>
+            </div>
+          </div>
+        </section>
+        <div class="studio-footnotes"><span><span data-icon="shield"></span>No pretend AI output. These are real, editable templates.</span><span>PDFs contain high-resolution page images. SVG keeps the page editable.</span></div>
+      </section>
+      <section id="view-prompts" class="studio-view" aria-label="Prompt builder" hidden>
+        <div class="section-heading"><div><p class="eyebrow">THINK CLEARER. ASK BETTER.</p><h2>A great result starts with a great brief.</h2></div><span class="small-badge mint-badge">LOCAL PROMPT COMPOSER</span></div>
+        <div class="prompt-workbench">
+          <form id="prompt-controls" class="prompt-controls">
+            <div class="two-fields"><label>Purpose<select id="prompt-category"><option value="general">Anything</option><option value="design">Design &amp; creative</option><option value="coding">Software &amp; coding</option><option value="research">Research &amp; analysis</option><option value="content">Content &amp; social</option><option value="business">Business &amp; planning</option><option value="learning">Learning &amp; education</option></select></label><label>Destination<select id="prompt-provider"><option value="general">Any assistant</option><option value="claude">Claude</option><option value="codex">Codex</option><option value="antigravity">Antigravity</option><option value="canva">Canva</option></select></label></div>
+            <label>What do you want to achieve?<textarea id="prompt-task" rows="4" maxlength="3000" placeholder="Example: Design a 12-page undated planner for busy creatives..."></textarea></label>
+            <label>Who is it for?<input id="prompt-audience" maxlength="250" placeholder="Audience, experience level, needs"></label>
+            <label>Context &amp; reference material<textarea id="prompt-context" rows="3" maxlength="4000" placeholder="Relevant background, links or facts you want used"></textarea></label>
+            <div class="two-fields"><label>Output format<input id="prompt-format" maxlength="250" placeholder="Plan, table, code, checklist..."></label><label>Tone<select id="prompt-tone"><option>Clear and professional</option><option>Warm and approachable</option><option>Bold and concise</option><option>Technical and precise</option><option>Playful and imaginative</option></select></label></div>
+            <label>Constraints &amp; must-haves<textarea id="prompt-constraints" rows="3" maxlength="2000" placeholder="Budget, tools, style, privacy, what to avoid"></textarea></label>
+            <button type="button" id="prompt-from-document" class="button button-secondary"><span data-icon="layers"></span>Start from my current document</button>
+          </form>
+          <div class="prompt-output-panel"><header><div><span class="editor-dot"></span><h3>Your ready-to-use prompt</h3></div><span id="prompt-length" class="small-badge">0 characters</span></header><pre id="prompt-output" tabindex="0"></pre><footer><button id="copy-prompt" type="button" class="button button-primary"><span data-icon="copy"></span>Copy prompt</button><button id="download-prompt" type="button" class="button button-secondary"><span data-icon="download"></span>Download .txt</button></footer><p class="field-help">Your brief is structured automatically in this browser. No model is called and no account usage is invented. Paste the prompt into your chosen assistant, or use the desktop's connected assistant.</p></div>
+        </div>
+      </section>
+      <section id="view-library" class="studio-view" aria-label="Saved projects" hidden>
+        <div class="section-heading"><div><p class="eyebrow">YOUR CREATIVE SHELF</p><h2>Pick up where you left off.</h2></div><button id="import-project" type="button" class="button button-secondary"><span data-icon="upload"></span>Import project</button><input id="project-file" type="file" accept=".json,application/json" hidden></div>
+        <div class="library-notice"><span data-icon="shield"></span><p>Projects stay in this browser on this app address, not in your cloud accounts. Export JSON backups before clearing browser data or moving to another device.</p></div>
+        <div id="project-library" class="project-library"></div>
+      </section>
+      <footer class="studio-page-footer"><span>U1 OS / CREATIVE STUDIO</span><span>Made to help you make.</span><a href="/">Return to desktop ↗</a></footer>
+    </main>
+  </div>
+  <div id="studio-toast" class="studio-toast" role="status" aria-live="polite" hidden></div>
+  <div id="print-pages" aria-hidden="true"></div>
+<script type="module" src="/js/prism-os.js"></script>
+</body>
+</html>
