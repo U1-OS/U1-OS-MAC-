@@ -25,6 +25,20 @@ enum PolicyChecks {
         check(NavigationPolicy.matchesWorkspace("/tmp/u1/../u1", root: "/tmp/u1"), "canonical owner")
         check(!NavigationPolicy.matchesWorkspace("/tmp/other", root: "/tmp/u1"), "foreign owner")
         check(!NavigationPolicy.matchesWorkspace(nil, root: "/tmp/u1"), "missing owner")
+        let identity = NavigationPolicy.installationID(root: "/tmp/u1")
+        check(identity.count == 64, "nonsecret hashed identity")
+        check(identity == NavigationPolicy.installationID(root: "/tmp/u1/../u1"), "canonical hashed identity")
+        var health: [String: Any] = ["service": "u1-os", "protocol": 1, "installation_id": identity, "locked": true]
+        check(NavigationPolicy.matchesHealthIdentity(health, root: "/tmp/u1"), "locked installation remains ready for unlock shell")
+        health["locked"] = false
+        check(NavigationPolicy.matchesHealthIdentity(health, root: "/tmp/u1"), "unlocked installation identity")
+        check(!NavigationPolicy.matchesHealthIdentity(health, root: "/tmp/other"), "foreign health identity")
+        health["service"] = "other-app"
+        check(!NavigationPolicy.matchesHealthIdentity(health, root: "/tmp/u1"), "wrong health service")
+        health["service"] = "u1-os"; health["protocol"] = 2
+        check(!NavigationPolicy.matchesHealthIdentity(health, root: "/tmp/u1"), "unknown health protocol")
+        health["protocol"] = 1; health.removeValue(forKey: "locked")
+        check(!NavigationPolicy.matchesHealthIdentity(health, root: "/tmp/u1"), "incomplete health identity")
         print("PASS: \(count) native navigation/ownership checks")
     }
 }

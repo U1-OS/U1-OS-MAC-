@@ -1,5 +1,6 @@
 (function (global) {
   'use strict';
+  var lifecycles = new WeakMap();
   var TOPICS = Object.freeze({
     'tech-gaming': Object.freeze([
       { id: 'technology', name: 'Technology / BBC News', existing: true },
@@ -53,6 +54,8 @@
     return node;
   }
   function mount(host, id) {
+    var previous = lifecycles.get(host);
+    if (previous) previous.deactivate();
     var doc = host.ownerDocument, win = doc.defaultView, topics = TOPICS[id];
     var root = element(doc, 'section', undefined, 'u1-discovery u1-native-workspace');
     root.setAttribute('aria-label', id === 'tech-gaming' ? 'Tech & Gaming' : 'Sports & News');
@@ -78,6 +81,7 @@
       + 'UFC coverage is not all MMA. Refresh checks a five-minute shared cache; no background polling.', 'u1-discovery-notice');
     root.append(head, tools, state, meta, list, notice); host.replaceChildren(root);
     var cache = new Map(), current = null, serial = 0, controller = null, busy = false;
+    var active = true, resumeRequest = false, requestTimer = null;
     function selected() { return topics.find(function (topic) { return topic.id === select.value; }) || topics[0]; }
     function render() {
       var topic = selected(); meta.replaceChildren(); list.replaceChildren();
@@ -90,6 +94,7 @@
       var sourceURL = safeURL(current.source_url);
       if (sourceURL) { var source = element(doc, 'a', 'Open publisher (external)'); source.href = sourceURL; source.target = '_blank'; source.rel = 'noopener noreferrer'; meta.append(source); }
       if (current.success !== true) meta.append(element(doc, 'p', 'Provider or local route unavailable. Retained headlines, if any, are not current.'));
+      if (current.success !== true && typeof current.error === 'string') meta.append(element(doc, 'p', current.error.slice(0, 500)));
       if (current.feed_age_warning) meta.append(element(doc, 'p', 'Publisher feed is older than 48 hours. A recent fetch does not make these stories new.'));
       if (current.coverage) meta.append(element(doc, 'p', current.coverage));
       if (current.notice) meta.append(element(doc, 'p', String(current.notice).slice(0, 800)));
@@ -108,34 +113,71 @@
           : 'No retained headlines. Try again later or open the publisher.'));
     }
     async function load() {
+      if (!active) { resumeRequest = true; return; }
       var token = ++serial, topic = selected();
       if (controller) controller.abort();
       controller = new win.AbortController(); var request = controller;
       busy = true; refresh.disabled = true; refresh.textContent = 'Refreshing...'; list.setAttribute('aria-busy', 'true');
       current = cache.get(topic.id) || null; render();
       var timer = win.setTimeout(function () { request.abort(); }, 15000);
+      requestTimer = timer;
       try {
         var response = await win.fetch(endpoint(topic), { credentials: 'same-origin', signal: request.signal, headers: { Accept: 'application/json' } });
         if (!response.ok) throw new Error('Request unavailable');
         var payload = await response.json();
         if (!payload || typeof payload !== 'object' || typeof payload.success !== 'boolean' || (payload.items !== undefined && !Array.isArray(payload.items))) throw new Error('Invalid snapshot');
         if (token !== serial) return;
-        current = payload; cache.set(topic.id, payload);
+        if (payload.success === true) current = payload;
+        else {
+          var old = cache.get(topic.id);
+          var usable = function (value) { return value && Array.isArray(value.items) && typeof value.fetched_at === 'number' && Number.isFinite(value.fetched_at) && value.fetched_at > 0; };
+          var incoming = usable(payload) ? payload : null;
+          var retained = usable(old) && (!incoming || old.fetched_at >= incoming.fetched_at) ? old : incoming;
+          current = Object.assign({}, retained || payload, { success: false, stale: !!retained,
+            attempted_at: payload.attempted_at,
+            error: typeof payload.error === 'string' ? payload.error : 'Provider unavailable. Retained headlines are stale.' });
+        }
+        cache.set(topic.id, current);
       } catch (_) {
         if (token !== serial) return;
         current = Object.assign({}, cache.get(topic.id) || {}, { success: false, stale: !!(cache.get(topic.id) || {}).fetched_at });
       } finally {
         win.clearTimeout(timer);
+        if (requestTimer === timer) requestTimer = null;
+        if (controller === request) controller = null;
         if (token === serial) { busy = false; refresh.disabled = false; refresh.textContent = 'Refresh'; list.setAttribute('aria-busy', 'false'); render(); }
       }
     }
+    lifecycles.set(host, {
+      activate: function () {
+        if (active) { render(); return; }
+        active = true;
+        var resume = resumeRequest; resumeRequest = false;
+        render();
+        if (resume) return load();
+      },
+      deactivate: function () {
+        if (!active) return;
+        active = false; resumeRequest = busy; ++serial;
+        if (controller) controller.abort();
+        controller = null;
+        if (requestTimer !== null) win.clearTimeout(requestTimer);
+        requestTimer = null; busy = false;
+        refresh.disabled = false; refresh.textContent = 'Refresh'; list.setAttribute('aria-busy', 'false');
+      }
+    });
     refresh.addEventListener('click', load); select.addEventListener('change', load);
     search.addEventListener('input', render); load();
     return root;
   }
   function register(core) {
     if (!core || typeof core.register !== 'function') return false;
-    Object.keys(TOPICS).forEach(function (id) { core.register(id, function (host) { return mount(host, id); }); });
+    Object.keys(TOPICS).forEach(function (id) {
+      core.register(id, function (host) { return mount(host, id); }, {
+        activate: function (host) { var lifecycle = lifecycles.get(host); if (lifecycle) return lifecycle.activate(); },
+        deactivate: function (host) { var lifecycle = lifecycles.get(host); if (lifecycle) return lifecycle.deactivate(); }
+      });
+    });
     return true;
   }
   var api = Object.freeze({ topics: TOPICS, endpoint: endpoint, safeURL: safeURL, date: date, freshness: freshness, entries: entries, mount: mount, register: register });

@@ -243,169 +243,33 @@ DEFAULT_COPY_TRADERS = [
 class CryptoService(BaseService):
     def __init__(self, config):
         super().__init__("crypto", config)
-        self.setup_required = config.get("system", {}).get("setup_mode", True)
-        if self.setup_required:
-            self.tokens = []
-            self.positions = []
-            self.alpha_tweets = []
-            self.copy_traders = []
-            self.price_alerts = []
-            self.bot_state = {"status": "NOT_CONFIGURED", "bot_positions": []}
-            self.bot_log = []
-            self.poll()
-            return
-        self.configured = True
-        self.status = "active"
-        self.tokens = list(DEFAULT_TOKENS)
-        self.alpha_tweets = [dict(t) for t in DEFAULT_ALPHA_TWEETS]
-        for tw in self.alpha_tweets:
-            tw["handle"] = tw.get("username", "")
-            tw["text"] = tw.get("content", "")
-            tw["name"] = tw.get("display_name", "")
-            sol_cas = SOL_CA_REGEX.findall(tw.get("content", ""))
-            evm_cas = EVM_CA_REGEX.findall(tw.get("content", ""))
-            detected = list(set(sol_cas + evm_cas))
-            if tw.get("ca") and tw["ca"] not in detected:
-                detected.append(tw["ca"])
-            tw["contract_addresses"] = detected
-            tw["likes"] = 340 if "342" in tw.get("engagement", "") else (820 if "820" in tw.get("engagement", "") else (180 if "180" in tw.get("engagement", "") else 1450))
-            tw["retweets"] = 88 if "88" in tw.get("engagement", "") else (215 if "215" in tw.get("engagement", "") else (45 if "45" in tw.get("engagement", "") else 410))
-        self.copy_traders = [dict(c) for c in DEFAULT_COPY_TRADERS]
-        for c in self.copy_traders:
-            c["handle"] = c.get("username", "")
-            c["win_rate_pct"] = c.get("win_rate", 80.0)
-            c["pnl_30d_usd"] = c.get("pnl_total_usd", 0)
-        self.price_alerts = [
-            {
-                "id": "alert-1",
-                "symbol": "SOL",
-                "condition": "ABOVE",
-                "target_price": 185.00,
-                "current_price": 178.45,
-                "status": "ACTIVE",
-                "created_at": time.time() - 3600
-            },
-            {
-                "id": "alert-2",
-                "symbol": "PNUT",
-                "condition": "ABOVE",
-                "target_price": 1.50,
-                "current_price": 1.18,
-                "status": "ACTIVE",
-                "created_at": time.time() - 1800
-            }
-        ]
-        self.positions = [
-            {
-                "id": "pos-101",
-                "symbol": "SOL",
-                "name": "Solana Native",
-                "amount": 10.0,
-                "entry_price": 165.20,
-                "current_price": 178.45,
-                "cost_usd": 1652.00,
-                "value_usd": 1784.50,
-                "unrealized_pnl_usd": 132.50,
-                "unrealized_pnl_pct": 8.02,
-                "opened_at": time.time() - 86400 * 2
-            },
-            {
-                "id": "pos-102",
-                "symbol": "PNUT",
-                "name": "Peanut the Squirrel",
-                "amount": 1200.0,
-                "entry_price": 0.94,
-                "current_price": 1.18,
-                "cost_usd": 1128.00,
-                "value_usd": 1416.00,
-                "unrealized_pnl_usd": 288.00,
-                "unrealized_pnl_pct": 25.53,
-                "opened_at": time.time() - 3600 * 4
-            }
-        ]
-        self.bot_state = {
-            "status": "STANDBY",
-            "active_strategies": ["alpha_sniper", "whale_shadow"],
-            "paper_balance_sol": 50.0,
-            "initial_balance_sol": 50.0,
-            "realized_pnl_sol": 0.0,
-            "realized_pnl_usd": 0.0,
-            "max_allocation_sol": 1.0,
-            "stop_loss_pct": -12.0,
-            "take_profit_pct": 45.0,
-            "max_open_positions": 5,
-            "total_bot_trades": 0,
-            "bot_positions": []
-        }
-        self.bot_log = [
-            {
-                "timestamp": time.time() - 300,
-                "type": "SYSTEM",
-                "message": "Autonomous AI Strategy Bot initialized in simulated paper mode."
-            },
-            {
-                "timestamp": time.time() - 120,
-                "type": "ALPHA_CHECK",
-                "message": "Social velocity radar active: scanning Twitter/X memecoin stream."
-            }
-        ]
+        # No live/account adapter exists in this legacy service. A setup preference
+        # is not authorisation to publish sample quotes, social posts or positions.
+        self.setup_required = True
+        self.configured = False
+        self.status = "unavailable"
+        self.tokens = []
+        self.positions = []
+        self.alpha_tweets = []
+        self.copy_traders = []
+        self.price_alerts = []
+        self.bot_state = {"status": "NOT_CONFIGURED", "bot_positions": []}
+        self.bot_log = []
         self.poll()
 
     def poll(self):
-        if self.setup_required:
-            with self.lock:
-                self.data = {"setup_required": True, "tokens": [], "positions": [],
-                             "alpha_tweets": [], "copy_traders": [], "price_alerts": [],
-                             "bot_state": self.bot_state, "bot_log": [],
-                             "portfolio_summary": {},
-                             "notice": "Adapter files installed. Live account connections and trading implementation are pending."}
-                self.last_updated = time.time()
-            return
-        # Micro-fluctuate prices for living telemetry effect
-        for t in self.tokens:
-            drift = (random.random() - 0.49) * 0.008
-            t["price_usd"] = round(t["price_usd"] * (1.0 + drift), 6 if t["price_usd"] < 1 else 2)
-            t["pnl_5m"] = round(t["pnl_5m"] + (drift * 100), 2)
-
-        # Update position mark prices
-        token_price_map = {t["symbol"]: t["price_usd"] for t in self.tokens}
-        for pos in self.positions:
-            sym = pos["symbol"]
-            if sym in token_price_map:
-                curr = token_price_map[sym]
-                pos["current_price"] = curr
-                pos["mark_price"] = curr
-                pos["value_usd"] = round(pos["amount"] * curr, 2)
-                pos["unrealized_pnl_usd"] = round(pos["value_usd"] - pos["cost_usd"], 2)
-                pos["unrealized_pnl_pct"] = round((pos["unrealized_pnl_usd"] / pos["cost_usd"]) * 100.0, 2)
-
-        # Check Price Alerts
-        self._evaluate_price_alerts(token_price_map)
-
-        # Autonomous AI Bot Tick Evaluation
-        if self.bot_state.get("status") == "RUNNING":
-            self._tick_bot(token_price_map)
-
-        total_portfolio_value = sum(p["value_usd"] for p in self.positions)
-        total_unrealized_pnl = sum(p["unrealized_pnl_usd"] for p in self.positions)
-
         with self.lock:
             self.data = {
-                "tokens": self.tokens,
-                "alpha_tweets": self.alpha_tweets,
-                "copy_traders": self.copy_traders,
-                "price_alerts": self.price_alerts,
-                "positions": self.positions,
-                "bot_state": self.bot_state,
-                "bot_log": self.bot_log[-20:],
-                "portfolio_summary": {
-                    "total_value_usd": round(total_portfolio_value, 2),
-                    "total_unrealized_pnl_usd": round(total_unrealized_pnl, 2),
-                    "open_positions_count": len(self.positions),
-                    "active_alerts_count": len([a for a in self.price_alerts if a["status"] == "ACTIVE"]),
-                    "active_copy_traders_count": len([c for c in self.copy_traders if c["active"]])
-                }
+                "success": False, "setup_required": True, "stale": False,
+                "tokens": [], "positions": [], "alpha_tweets": [],
+                "copy_traders": [], "price_alerts": [],
+                "bot_state": self.bot_state, "bot_log": [], "portfolio_summary": {},
+                "source": None, "fetched_at": None,
+                "notice": "Unavailable: this legacy service has no verified market, social or account adapter. "
+                          "Changing setup_mode does not connect one. No sample provider data is substituted."
             }
+            self.configured = False
+            self.status = "unavailable"
             self.last_updated = time.time()
 
     def _evaluate_price_alerts(self, price_map):

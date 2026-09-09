@@ -6,7 +6,7 @@
 
 **Your personal workspace for life, creative work and building a living.**
 
-[Explore the workspaces](#one-place-for-the-things-that-matter) · [Start on your Mac](#start-on-your-mac) · [Operational status](docs/OPERATIONAL-UPGRADE.md) · [Review the replacement](docs/REPLACEMENT-REVIEW.md)
+[Explore the workspaces](#one-place-for-the-things-that-matter) · [What's new](#new-in-the-rounded-rebuild) · [Audit evidence](docs/AUDIT-ROUNDED-20260908.md) · [Start on your Mac](#start-on-your-mac)
 
 **LOCAL-FIRST** · **MAC WORKSPACE** · **PROPOSED REPLACEMENT BUILD**
 
@@ -34,17 +34,45 @@ proven. Read the [replacement review guide](docs/REPLACEMENT-REVIEW.md) before a
 
 ## A look inside
 
-### Home: your day in view
+### A considered arrival
 
-![U1 OS operational Home, captured in the browser on 2026-09-08 at 1440 by 1000 pixels](docs/previews/operational-home-20260908.png)
+![U1 OS rounded startup preview, with actual local readiness and unverified accounts, captured on 2026-09-08](docs/previews/rounded-startup-20260908.png)
 
-### Discovery: headlines with clear sources
+### Create: make something worth keeping
 
-![U1 OS operational Discovery, captured in the browser on 2026-09-08 at 1440 by 1000 pixels](docs/previews/operational-discovery-20260908.png)
+![U1 OS Create workspace in the Orbit theme, showing the actual empty catalogue](docs/previews/rounded-create-20260908.png)
 
-These actual **1440 x 1000** browser captures were recaptured and accepted on
-**2026-09-08** after the layout and mobile-label fixes. They do not establish live
-OAuth/account access, media or file playback, or native Mac-app visual acceptance.
+### Earn: a clear next move
+
+![U1 OS Earn workspace, showing real local record counts rather than sample revenue](docs/previews/rounded-earn-20260908.png)
+
+These are actual **1440 x 1000** application captures from **2026-09-08**, not
+generated mockups. Zero counts reflect the observed local catalogue. Readiness,
+saved account settings and real provider authorisation are deliberately separate.
+The startup image is the explicit, hold-open preview; normal startup completes
+automatically after its local checks. No sound or native Mac acceptance is proved
+by a screenshot.
+
+[Home with the existing globe](docs/previews/rounded-home-20260908.png) ·
+[Daylight Appearance](docs/previews/rounded-appearance-20260908.png) ·
+[Phone layout, 390 x 844](docs/previews/rounded-phone-20260908.png)
+
+## New in the rounded rebuild
+
+- **Create and Earn have dedicated native homes.** Plan an original product, inspect real structures, review a saved file version and work an explicit launch list. Advanced Studio and Income remain inside U1 OS.
+- **One shared rounded system.** Orbit, Graphite and Daylight themes, adjustable spacing and corners, and an optional ambient glow. Some legacy editors deliberately retain their existing dark surfaces.
+- **A rebuilt loading screen.** Actual readiness labels, an immediate Enter action, generation-safe completion and a hold-open preview rather than invented service progress.
+- **Sound, on your terms.** An optional startup chime, one-off tone preview, and a shared mute/volume contract between Appearance and the top bar. Existing mute preferences are preserved; browsers may require a gesture before playback.
+- **Less obstruction on phones.** The navigation backdrop now sits behind its menu, and the persistent allowance/Media controls and closed Spotify summary use a compact layout.
+- **An adverse audit, not just a visual refresh.** Repairs cover locked-screen data exposure, static-file containment, provider cancellation, managed-file integrity, export completeness, editor drafts and actual media-output validation.
+
+Open **Settings > Appearance & audio** to choose a theme, preview startup, or
+enable both **Interface audio** and **Play a startup chime**. Opening Create or
+Earn does not send an AI request, connect an account or write a product for you.
+
+[Create and Earn guide](docs/CREATE-EARN.md) · [Rounded system](docs/ROUNDED-SYSTEM.md) ·
+[Dated audit and acceptance](docs/AUDIT-ROUNDED-20260908.md) ·
+[The next 60 proposals](docs/NEXT-60-IMPROVEMENTS.md)
 
 <details>
 <summary>Earlier development screenshots</summary>
@@ -112,14 +140,16 @@ OSINT app. Presence and configured addresses do not prove working services or qu
 | Spotify | Implemented but **unactivated**: official PKCE, a Keychain-helper adapter, native view and persistent widget. Your public Client ID, dashboard redirect configuration, consent and explicit first check are required. Automatic checking is off by default; metadata GET requests read cached data only. | [Spotify](docs/SPOTIFY.md) |
 | Account activation | Native setup preflight implemented and fixture-tested; this does not activate accounts or prove live access. **Canva remains unfinished.** | [Account activation](docs/ACCOUNT-ACTIVATION.md) |
 | Tech/gaming and sports news | Implemented headline discovery: official PlayStation/Xbox RSS and Guardian AFL, cricket, boxing and UFC RSS, plus existing news adapters. **Headlines only, not live scores, fixtures or match status.** UFC is a subset, not all MMA coverage. | [Discovery Hub](docs/DISCOVERY-HUB.md) |
-| Mac wrapper | Installed Desktop app ad-hoc checks reported; native visual acceptance pending. | [Mac release](docs/MAC-RELEASE.md) |
+| Mac wrapper | New minimal-identity locked-startup policy compiled and fixture-tested. This audit did not replace the installed Desktop bundle or complete native visual acceptance. | [Mac release](docs/MAC-RELEASE.md) |
 
 The Discovery component report records six fixed feeds returning HTTP 200 with
 valid RSS on **2026-09-08**, with a bounded five-minute cache and timestamps. This
 is dated source evidence, not a guarantee of continuous freshness or complete coverage.
-Integration wiring is complete and final post-fix gate **r6 passed**. The
-[dated acceptance report](docs/OPERATIONAL-ACCEPTANCE-20260908.md) records the actual
-gate, browser and installation evidence and their separate boundaries.
+The earlier operational gate **r6 passed**, but the subsequent adverse audit
+found additional real defects. The [new audit report](docs/AUDIT-ROUNDED-20260908.md)
+records the repairs, expanded gate and fresh browser evidence. The
+[earlier acceptance report](docs/OPERATIONAL-ACCEPTANCE-20260908.md) remains dated
+history, including its separate installation boundaries.
 [Connections](docs/CONNECTIONS.md) distinguishes installed software, saved settings,
 authorised account access and successful synchronisation.
 
@@ -152,6 +182,31 @@ from the local source build.
 
 ## Honest progress, visible evidence
 
+The complete rounded-rebuild **strict R2 report passed at
+`2026-09-08T11:42:22.619604+00:00`**: **805 tests/contracts**, comprising **570
+Python tests across 30 named modules** and **235 Node checks across 17 suites**,
+plus **116 syntax checks**. Failures, errors, skipped required tests and missing
+items: **zero**. These are actual executed counts, not sums of overlapping agent
+reports.
+
+The report was produced from the frozen, uncommitted working tree; its revision
+field is explicitly `unrecorded`. The outer console-mirroring pipeline returned
+1 because the sandbox rejected `tee`'s `/dev/fd/3` destination. The complete JSON
+report and all suite records are PASS; a separate inner-process exit code was not
+captured. The logger failure is not hidden or described as a recorded exit-zero
+command. The initial failing audit run is preserved in the
+[audit evidence](docs/AUDIT-ROUNDED-20260908.md).
+
+Three real-FFmpeg integration methods are explicitly **NOT_RUN in the strict
+unit gate**. A separate, opted-in synthetic-media run passed 38 tests, including
+actual generated MP4/WAV decoding. Mocked provider tests do not establish account
+activation. Full native keyboard, sleep/wake and installed-app acceptance remain
+separate work. A passing test report is not a guarantee of zero defects or a
+production security certification.
+
+<details>
+<summary>Earlier operational r6 evidence, retained as history</summary>
+
 The [operational upgrade report](docs/OPERATIONAL-UPGRADE.md) distinguishes ready
 local workflows, setup-dependent work, unavailable features and pending acceptance.
 Final post-fix operational gate **r6 passed at `2026-09-08T10:08:00Z`**:
@@ -172,6 +227,8 @@ activation and Discovery component results are recorded in the
 mocked checks do not establish live Spotify activation. The
 [60-item build tracker](docs/BUILD-STATUS.md) and detailed validation records remain
 available; no all-`main` feature migration claim is made.
+
+</details>
 
 [Validation evidence](docs/PERSONAL-RELEASE-VALIDATION.md) · [Architecture](docs/U1-OS-ARCHITECTURE.md) · [Design system](docs/U1-OS-DESIGN-SYSTEM.md) · [Earlier technical README](docs/README-ARCHIVE-20260908.md)
 

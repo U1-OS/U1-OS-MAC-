@@ -1,10 +1,12 @@
 """Isolated release contracts; no real application, Keychain, network or Desktop."""
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
 import plistlib
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -20,6 +22,9 @@ def load(name):
 
 support = load("release_support")
 checks = load("release_checks")
+launcher_spec = importlib.util.spec_from_file_location("release_launcher", ROOT / "launch_u1.py")
+launcher = importlib.util.module_from_spec(launcher_spec)
+launcher_spec.loader.exec_module(launcher)
 
 
 class MacReleaseTests(unittest.TestCase):
@@ -133,13 +138,18 @@ class MacReleaseTests(unittest.TestCase):
     def test_only_exact_real_ffmpeg_test_is_opt_in(self):
         class SyntheticFFmpegTests(unittest.TestCase):
             def test_generated_owned_video_exports_real_mp4_and_wav(self): pass
+            def test_real_empty_outputs_are_rejected_even_when_ffmpeg_returns_zero(self): pass
+            def test_real_short_audio_cannot_pass_a_longer_export_contract(self): pass
             def test_other_contract(self): pass
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(SyntheticFFmpegTests)
         selected, excluded = checks.unit_suite(suite, "tests/test_u1_media_research.py")
         self.assertEqual(selected.countTestCases(), 1)
-        self.assertEqual(excluded, ["SyntheticFFmpegTests.test_generated_owned_video_exports_real_mp4_and_wav"])
+        self.assertEqual(excluded, [
+            "SyntheticFFmpegTests.test_generated_owned_video_exports_real_mp4_and_wav",
+            "SyntheticFFmpegTests.test_real_empty_outputs_are_rejected_even_when_ffmpeg_returns_zero",
+            "SyntheticFFmpegTests.test_real_short_audio_cannot_pass_a_longer_export_contract"])
         selected, excluded = checks.unit_suite(suite, "tests/test_updater.py")
-        self.assertEqual(selected.countTestCases(), 2)
+        self.assertEqual(selected.countTestCases(), 4)
         self.assertEqual(excluded, [])
 
     def test_javascript_gate_has_exact_file_permissions(self):
@@ -286,6 +296,245 @@ class MacReleaseTests(unittest.TestCase):
         self.assertEqual(command[-1], str(script))
         with self.assertRaises(PermissionError):
             checks.node_command(["/node", "-e", "void 0", "/other.js"], self.root, "/node", "tests/test_u1_osint_tools.py")
+
+    def test_wrapper_health_probe_does_not_depend_on_a_protected_api(self):
+        source = (ROOT / "macos/U1OS.swift").read_text()
+        self.assertIn('base.appendingPathComponent("healthz")', source)
+        self.assertNotIn('base.appendingPathComponent("api/integrations")', source)
+        self.assertIn("NavigationPolicy.matchesHealthIdentity(object, root: self.root)", source)
+        self.assertIn("self.web.load(URLRequest(url: self.lastLocalURL))", source)
+
+    def test_native_policy_covers_both_locked_and_unlocked_health(self):
+        source = (ROOT / "macos/PolicyChecks.swift").read_text()
+        for contract in ("locked installation remains ready for unlock shell", "unlocked installation identity",
+                         "foreign health identity", "unknown health protocol", "incomplete health identity"):
+            self.assertIn(contract, source)
+
+    def test_promotion_keyboard_interrupt_restores_previous_bundle(self):
+        old, new = self.bundle("old.app"), self.bundle("new.app")
+        (old / "marker").write_text("previous")
+        rename = Path.rename
+        def interrupt(path, destination):
+            if path == new:
+                raise KeyboardInterrupt("fixture interruption")
+            return rename(path, destination)
+        with patch.object(Path, "rename", interrupt), self.assertRaises(KeyboardInterrupt):
+            support.promote_bundle(new, old, replace=True)
+        self.assertEqual((old / "marker").read_text(), "previous")
+        self.assertTrue(new.exists())
+
+    def test_interruption_immediately_after_backup_rename_also_rolls_back(self):
+        old, new = self.bundle("old.app"), self.bundle("new.app")
+        (old / "marker").write_text("previous")
+        rename = Path.rename
+        def interrupt(path, destination):
+            result = rename(path, destination)
+            if path == old:
+                raise KeyboardInterrupt("fixture after backup rename")
+            return result
+        with patch.object(Path, "rename", interrupt), self.assertRaises(KeyboardInterrupt):
+            support.promote_bundle(new, old, replace=True)
+        self.assertEqual((old / "marker").read_text(), "previous")
+        self.assertTrue(new.exists())
+
+    def test_promotion_system_exit_also_restores_previous_bundle(self):
+        old, new = self.bundle("old.app"), self.bundle("new.app")
+        rename = Path.rename
+        def interrupt(path, destination):
+            if path == new:
+                raise SystemExit("fixture exit")
+            return rename(path, destination)
+        with patch.object(Path, "rename", interrupt), self.assertRaises(SystemExit):
+            support.promote_bundle(new, old, replace=True)
+        self.assertTrue(old.exists())
+        self.assertTrue(new.exists())
+
+    def test_interruption_after_successful_promotion_preserves_new_app_and_backup(self):
+        old, new = self.bundle("old.app"), self.bundle("new.app")
+        (old / "marker").write_text("previous")
+        (new / "marker").write_text("new")
+        rename, backups = Path.rename, []
+        def interrupt(path, destination):
+            result = rename(path, destination)
+            if path == old:
+                backups.append(destination)
+            if path == new:
+                raise KeyboardInterrupt("fixture after promotion")
+            return result
+        with patch.object(Path, "rename", interrupt), self.assertRaises(KeyboardInterrupt):
+            support.promote_bundle(new, old, replace=True)
+        self.assertEqual((old / "marker").read_text(), "new")
+        self.assertEqual((backups[0] / "marker").read_text(), "previous")
+
+    def test_rollback_never_overwrites_a_concurrent_destination(self):
+        old, new = self.bundle("old.app"), self.bundle("new.app")
+        rename, backups = Path.rename, []
+        def interrupt(path, destination):
+            if path == new:
+                old.mkdir()
+                (old / "concurrent-marker").write_text("do not overwrite")
+                raise KeyboardInterrupt("fixture concurrent destination")
+            result = rename(path, destination)
+            if path == old:
+                backups.append(destination)
+            return result
+        with patch.object(Path, "rename", interrupt), self.assertRaises(KeyboardInterrupt):
+            support.promote_bundle(new, old, replace=True)
+        self.assertEqual((old / "concurrent-marker").read_text(), "do not overwrite")
+        self.assertTrue(backups[0].exists())
+
+    def test_startup_lock_ignores_but_preserves_legacy_orphan_directory(self):
+        legacy = self.root / ".u1-os-launch.lock"
+        legacy.mkdir()
+        with patch.object(launcher, "ROOT", self.root):
+            with launcher.startup_lock():
+                self.assertTrue(legacy.is_dir())
+            with launcher.startup_lock():
+                pass
+        self.assertTrue(legacy.is_dir())
+        self.assertEqual((self.root / ".u1-os-launch.flock").stat().st_mode & 0o777, 0o600)
+
+    def test_startup_kernel_lock_refuses_a_second_owner(self):
+        with patch.object(launcher, "ROOT", self.root), launcher.startup_lock():
+            with self.assertRaisesRegex(SystemExit, "already in progress"):
+                with launcher.startup_lock():
+                    self.fail("A second owner must not enter")
+
+    def test_startup_kernel_lock_releases_on_catchable_interruption(self):
+        with patch.object(launcher, "ROOT", self.root):
+            with self.assertRaises(KeyboardInterrupt):
+                with launcher.startup_lock():
+                    raise KeyboardInterrupt("fixture only")
+            with launcher.startup_lock():
+                pass
+
+    def test_startup_lock_rejects_symlink_and_hardlink(self):
+        target = self.root / "do-not-modify"
+        target.write_text("fixture")
+        guard = self.root / ".u1-os-launch.flock"
+        with patch.object(launcher, "ROOT", self.root):
+            guard.symlink_to(target)
+            with self.assertRaises(OSError):
+                with launcher.startup_lock():
+                    pass
+            guard.unlink()
+            os.link(target, guard)
+            with self.assertRaises(SystemExit):
+                with launcher.startup_lock():
+                    pass
+        self.assertEqual(target.read_text(), "fixture")
+
+    def test_launcher_rechecks_health_after_acquiring_lock_without_spawning(self):
+        runtime = self.root / ".runtime/bin/python3"
+        runtime.parent.mkdir(parents=True)
+        runtime.touch()
+        with patch.object(launcher, "ROOT", self.root), \
+             patch.object(launcher, "running_here", side_effect=[False, True]) as health, \
+             patch.object(launcher.sys, "argv", ["launch_u1.py", "--no-browser"]), \
+             patch.object(launcher.subprocess, "Popen", side_effect=AssertionError("No real process")) as spawn:
+            launcher.main()
+        self.assertEqual(health.call_count, 2)
+        spawn.assert_not_called()
+
+    def test_launcher_accepts_only_exact_public_health_identity_locked_or_unlocked(self):
+        with patch.object(launcher, "ROOT", self.root):
+            identity = launcher.hashlib.sha256(str(self.root.resolve()).encode()).hexdigest()
+            for locked in (False, True):
+                value = dict(service="u1-os", protocol=1, installation_id=identity, locked=locked)
+                with patch.object(launcher.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps(value).encode())) as request:
+                    self.assertTrue(launcher.running_here())
+                    request.assert_called_once_with(launcher.URL + "/healthz", timeout=1)
+            for changes in ({"installation_id": "other"}, {"protocol": True}, {"locked": "true"}, {"service": "other"}):
+                with patch.object(launcher.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps({**value, **changes}).encode())):
+                    self.assertFalse(launcher.running_here())
+
+    def test_launcher_opens_only_canonical_workspace(self):
+        runtime = self.root / ".runtime/bin/python3"
+        runtime.parent.mkdir(parents=True)
+        runtime.touch()
+        with patch.object(launcher, "ROOT", self.root), patch.object(launcher, "running_here", return_value=True), \
+             patch.object(launcher.sys, "argv", ["launch_u1.py"]), \
+             patch.object(launcher.subprocess, "run") as opener:
+            launcher.main()
+        opener.assert_called_once_with(["/usr/bin/open", launcher.URL + "/"], check=True)
+
+    def test_open_audit_uses_actual_fixture_directory_descriptor(self):
+        descriptor = os.open(self.root, os.O_RDONLY)
+        try:
+            checks.guard_event("open", ("fixture.txt", None, os.O_WRONLY | os.O_CREAT),
+                               ROOT, self.root, open_dir_fd=descriptor)
+        finally:
+            os.close(descriptor)
+
+    def test_open_audit_rejects_outside_descriptor_traversal_and_symlink(self):
+        allowed, outside = self.root / "allowed", self.root / "outside"
+        allowed.mkdir(); outside.mkdir()
+        (allowed / "redirect").symlink_to(outside, target_is_directory=True)
+        inside_fd, outside_fd = os.open(allowed, os.O_RDONLY), os.open(outside, os.O_RDONLY)
+        try:
+            for path, descriptor in (("file", outside_fd), ("../outside/file", inside_fd),
+                                     ("redirect/file", inside_fd), (outside / "file", inside_fd)):
+                with self.subTest(path=path), self.assertRaises(PermissionError):
+                    checks.guard_event("open", (path, None, os.O_WRONLY | os.O_CREAT),
+                                       ROOT, allowed, open_dir_fd=descriptor)
+        finally:
+            os.close(inside_fd); os.close(outside_fd)
+
+    def test_real_fixture_openat_keeps_original_descriptor_and_nofollow(self):
+        directory = os.open(self.root, os.O_RDONLY)
+        try:
+            descriptor = os.open("openat-fixture", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                                 0o600, dir_fd=directory)
+            try:
+                os.write(descriptor, b"synthetic openat fixture")
+            finally:
+                os.close(descriptor)
+        finally:
+            os.close(directory)
+        self.assertEqual((self.root / "openat-fixture").read_bytes(), b"synthetic openat fixture")
+
+    def test_open_context_preserves_arguments_and_restores_after_failure(self):
+        context, calls = threading.local(), []
+        context.dir_fd = 17
+        def original(path, flags, mode, *, dir_fd):
+            calls.append((path, flags, mode, dir_fd, context.dir_fd))
+            raise OSError("fixture-only open failure")
+        flags = os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW
+        with self.assertRaises(OSError):
+            checks.scoped_open(original, context)(b"fixture", flags, 0o600, dir_fd=23)
+        self.assertEqual(calls, [(b"fixture", flags, 0o600, 23, 23)])
+        self.assertEqual(context.dir_fd, 17)
+
+    def test_open_context_is_thread_local(self):
+        context, observed = threading.local(), []
+        context.dir_fd = 17
+        def original(path, flags, mode, *, dir_fd):
+            observed.append(context.dir_fd)
+            return 101  # Synthetic descriptor, never used by the OS.
+        def child():
+            opened = checks.scoped_open(original, context)
+            observed.append(opened("fixture", os.O_RDONLY, dir_fd=23))
+            observed.append(context.dir_fd)
+        thread = threading.Thread(target=child)
+        thread.start(); thread.join(1)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(observed, [23, 101, None])
+        self.assertEqual(context.dir_fd, 17)
+
+    def test_boundary_and_rounded_gate_additions_are_explicit(self):
+        self.assertIn("tests/test_u1_server_boundaries.py", checks.TEST_FILES)
+        self.assertIn("tests/test_u1_provider_boundaries.py", checks.TEST_FILES)
+        self.assertEqual(checks.JS_TESTS["tests/test_u1_assistant_workspace.js"],
+                         ("static/js/u1-assistant-workspace.js",))
+        marker, count = checks.JS_CONTRACT_MARKERS["tests/test_u1_assistant_workspace.js"]
+        self.assertEqual(count, 7)
+        self.assertEqual(checks.javascript_result("tests/test_u1_assistant_workspace.js", 0, marker)["status"], "PASS")
+        self.assertEqual(checks.javascript_result("tests/test_u1_assistant_workspace.js", 0, marker.splitlines()[-1])["status"], "FAIL")
+        self.assertEqual(checks.JS_TESTS["tests/test_u1_rounded_system.cjs"],
+                         ("static/js/u1-rounded-system.js", "static/js/u1-cinematic.js", "static/js/u1-safety.js"))
+        self.assertIn("static/js/u1-feedback.js", checks.JS_SYNTAX_FILES)
+        for source in ("utils/u1_google.py", "server.py", "launch_u1.py"):
+            self.assertIn(source, checks.PYTHON_FILES)
 
 
 if __name__ == "__main__":

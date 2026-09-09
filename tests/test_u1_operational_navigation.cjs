@@ -33,7 +33,7 @@ test('declares every new asset once, with scoped cache busting and dependency or
     'u1-activation-workspace', 'u1-osint-tools', 'u1-media-download',
     'u1-discovery-workspace', 'u1-operational-polish', 'u1-spotify-widget'];
   for (const name of scripts) {
-    const version = ['u1-operational-polish', 'u1-spotify-widget'].includes(name) ? '7' : '6';
+    const version = name === 'u1os' ? '10' : ['u1-operational-polish', 'u1-discovery-workspace'].includes(name) ? '11' : ['u1-daily-flow', 'u1-osint-tools', 'u1-media-download'].includes(name) ? '6' : '8';
     const tags = html.match(new RegExp('<script\\b[^>]*src="/js/' + name + '\\.js\\?v=20260908\\.' + version + '"[^>]*>', 'g')) || [];
     assert.equal(tags.length, 1, name);
   }
@@ -71,7 +71,7 @@ function searchFixture(native = true) {
   const dialog = { open: true, close() { this.open = false; } };
   const context = {
     window: native ? { U1: { navigate: id => calls.push(id) } } : {},
-    document: { querySelector: () => null }, location, dialog
+    document: { querySelector: () => null }, location, dialog, accessLocked: () => false
   };
   vm.runInNewContext(routes[0] + '\n' + navigate[0], context);
   return { ...context, calls };
@@ -111,7 +111,7 @@ test('initial hashes wait for feature registration and subsequent hashes use nat
 
 test('shell palette includes extension metadata and refreshes when opened', () => {
   assert.match(shell, /Object\.keys\(VIEWS\)/);
-  assert.match(shell, /function openPal\([^)]*\)\s*\{\s*buildPalette\(\)/);
+  assert.match(shell, /function openPal\([^)]*\)\s*\{[\s\S]{0,100}buildPalette\(\)/);
   assert.match(shell, /setAttribute\('aria-current',\s*'page'\)/);
   assert.match(shell, /closest\('details'\)/);
   const palette = shell.slice(shell.indexOf('function buildPalette()'), shell.indexOf('function openPal()'));

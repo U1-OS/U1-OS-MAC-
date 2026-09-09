@@ -34,7 +34,26 @@
    var network=data.network||{};if(finite(network.receive_rate))el('sysFoot').innerHTML+='<div>Receive<b>'+((network.receive_rate*8)/1e6).toFixed(2)+' Mbps</b></div>';
   }).catch(function(){el('gauges').innerHTML=empty('Telemetry unavailable','No values are being estimated.');el('sysTag').textContent='UNAVAILABLE';el('sysTag').className='tag warn';el('sysFoot').textContent='Retry when the local telemetry service is available.';});
  }
- function weatherWidget(){return window.U1Launch.get('/api/workspace/prism/weather').then(function(d){if(d.success===false)throw Error('Unavailable');var current=d.current||d.weather||d;var temperature=current.temperature_2m;if(!finite(temperature))temperature=current.temperature;if(!finite(temperature))temperature=current.temp_c;if(!finite(temperature))throw Error('No observation');el('weather').innerHTML='<div class="place">'+esc(profile.city||'Configured location')+'</div><div class="wx"><div class="deg">'+Math.round(temperature)+'&deg;C</div></div><p class="u1-source-note">Source: '+esc(d.source||'Local weather adapter')+'. Forecast/observation timestamp is provided by the adapter.</p>';}).catch(function(){el('weather').innerHTML=empty('Weather unavailable','No verified observation was returned for your configured location.');});}
+ function weatherWidget(){
+  return window.U1Launch.get('/api/workspace/prism/weather').then(function(d){
+   if(!d||(d.success!==true&&!d.stale))throw Error('Unavailable');
+   var current=d.current||d.weather||d,temperature=current.temperature_2m;
+   if(!finite(temperature))temperature=current.temperature;
+   if(!finite(temperature))temperature=current.temp_c;
+   if(!finite(temperature))throw Error('No observation');
+   function supplied(value){return typeof value==='string'&&value.trim()?value.trim().slice(0,180):null;}
+   var place=[supplied(d.city),supplied(d.region),supplied(d.country)].filter(Boolean).join(', ')||'Location not supplied';
+   var observed=supplied(current.time)||supplied(d.observed_at)||supplied(d.source_timestamp)||'Not supplied';
+   var zone=supplied(d.timezone)||'Not supplied';
+   var fetched=finite(d.fetched_at)?d.fetched_at:d.checked_at;
+   var validTime=finite(fetched)&&fetched>0&&fetched<=Date.now()/1000+30;
+   var stale=d.stale===true||d.success!==true||(validTime&&Date.now()/1000-fetched>600);
+   var stamp=validTime?new Date(fetched*1000).toLocaleString():'Not supplied or invalid';
+   el('weather').innerHTML='<div class="place">'+esc(place)+'</div><div class="wx"><div class="deg">'+Math.round(temperature)+'&deg;C</div></div>'+
+    '<p class="u1-source-note">'+(stale?'Stale weather snapshot. Retained values are not current.':'Provider weather snapshot.')+'</p>'+
+    '<p class="u1-source-note">Source: '+esc(supplied(d.source)||'Not supplied')+'. Provider time: '+esc(observed)+'. Timezone: '+esc(zone)+'. Fetched (device time): '+esc(stamp)+'.</p>';
+  }).catch(function(){el('weather').innerHTML=empty('Weather unavailable','No verified observation was returned for your configured location.');});
+ }
  function integrationList(registry){var cards=registry&&registry.cards||[];el('integrations').innerHTML=cards.slice(0,8).map(function(c){return '<div class="intg"><span class="nm">'+esc(c.name)+'</span><span class="st">'+(c.saved_fields?'Saved / unverified':'Needs setup')+'</span></div>';}).join('')||empty('Registry unavailable','Open Integrations to review the local connection settings.');}
  function stream(){
   if(eventSource||!window.EventSource)return;eventSource=new EventSource('/api/events');var tag=el('u1-stream-status');

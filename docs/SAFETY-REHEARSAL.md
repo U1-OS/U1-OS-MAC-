@@ -198,3 +198,64 @@ configuration or provider termination was exercised. The widget layout source
 passes syntax checking; the parent owns its actual browser/layout acceptance.
 The real-FFmpeg fixture remains OPT-IN NOT_RUN. No native rebuild, Desktop
 installation or Git operation was performed by this run.
+
+### Subsequent massive-audit repairs, 2026-09-08
+
+The earlier 516-test r6 and massive-audit baseline are historical, pre-repair
+evidence. They do not validate the following changes. Targeted results are
+reported separately; the next combined gate waits for parent consolidation.
+
+Safety now notifies both already-loaded providers independently after releasing
+its mutex. Google uses its module `LOCK` and local-only `cancel_all()` contract:
+invalidate the epoch and pending flow, set cancellation markers for running work,
+invalidate session verification, and set `PAUSED=True`. The helper performs no
+startup, database, Keychain, provider request or listener shutdown. Each provider
+lock acquisition is bounded to 50 ms. No thread is spawned and no callback is
+imported lazily. Provider code must preserve this bounded local-only contract.
+Google failure/busy delivery is visible as `google_cancel_pending` and
+`google_cancel_error`; Spotify retains its existing fields. One provider failure
+cannot suppress the other's notification. Failed delivery retries on a later
+Safety update, without leaking exception details.
+
+Google auto-sync remains paused after locking until an explicit reviewed Sync or
+Connect action. Reconnection and unlocking alone do not resume it. These provider
+invalidation requests do not change assistant semantics: an access lock is not
+automatic assistant cancellation, dispatch pause is not process suspension, and
+unlock is not queue resume. Provider-owner race regressions remain separate from
+these fake-provider central-hook fixtures. Locked `POST
+/api/workspace/prism/upload-abort` remains protected like other workspace writes;
+no public or Safety exemption is added for it.
+
+An active check-in now expires at the earlier of its process-local monotonic
+deadline and its wall-clock deadline. Moving wall time backward cannot extend
+the monotonic lease; ordinary forward wall time also accounts for sleep on
+platforms whose monotonic clock pauses in suspend. This does not claim a tested
+platform continuous-suspend clock under simultaneous sleep and wall-clock edits.
+Explicit unlock/check-in atomically persists `checkin_deadline_wall` alongside
+the existing configuration, then publishes the new in-memory deadlines. A failed
+write neither unlocks nor renews the previous lease. Monotonic values are never
+persisted. Every configured restart still starts locked, with no resumed lease,
+even if the persisted wall deadline is in the future or the clock moved back.
+The new optional field is backward-compatible with version-1 configurations.
+The existing authentication cooldown is unchanged and remains process-local.
+
+The desktop launcher now uses the same minimal `/healthz` identity contract as
+the wrapper and opens only `/`. A persistent owner-only `.u1-os-launch.flock`
+regular file is protected by a nonblocking kernel lock. Process exit releases
+ownership; the file is deliberately not unlinked, avoiding split-inode locks.
+The old ownerless directory is left intact and ignored by updated launchers.
+This does not retrofit coordination into an already-running older launcher.
+No process is killed and port conflicts remain errors, not takeover requests.
+
+Bundle promotion now rolls back catchable `KeyboardInterrupt`/`SystemExit` as
+well as ordinary failures, including interruption immediately after the backup
+rename. If promotion already completed, or another actor created a destination,
+that destination is not overwritten during rollback. Backups remain available.
+This is not a SIGKILL/power-loss-atomic filesystem exchange; interruption of the
+rollback itself still requires explicit operator recovery from the backup.
+
+New fixture coverage is explicit in the existing two owned test modules:
+Google lock paths and mutex/retry boundaries, unchanged assistant execution,
+dual-clock expiry/persistence failures, kernel lock ownership and canonical
+launcher readiness, and catchable promotion interruption. All fixture state and
+bundles are temporary. No real Safety, provider or Desktop operation is used.

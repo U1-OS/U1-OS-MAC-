@@ -19,8 +19,10 @@ import stat
 import subprocess
 import tempfile
 import threading
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from fractions import Fraction
 from urllib.parse import parse_qs, urlsplit
 import uuid
 
@@ -39,6 +41,9 @@ MAX_CAPTIONS = 48000
 MAX_CLIP = 120
 PROBE_TIMEOUT = 4
 EXPORT_TIMEOUT = 12
+MEDIA_TIMEOUT = 18
+MAX_PROBE_BYTES = 4 * 1024 * 1024
+MAX_PROBE_PACKETS = 50000
 MEDIA_LOCK = threading.BoundedSemaphore(1)
 FORMATS = {
     ".mp4": "mov", ".m4v": "mov", ".mov": "mov", ".m4a": "mov",
@@ -335,6 +340,8 @@ def captions_export(body):
     if body.get("trim_to_clip") is True:
         start, end = clip_range(body)
         lo, hi = round(start * 1000), round(end * 1000)
+        if (end - start) * 1000 < 1 - 1e-7 or hi <= lo:
+            raise ValueError("SRT clips must span at least one representable millisecond.")
         cues = [(max(a, lo) - lo, min(b, hi) - lo, line) for a, b, line in cues if b > lo and a < hi]
     if not cues:
         raise ValueError("There are no captions inside the selected clip.")
@@ -377,16 +384,23 @@ def managed_source(source_id):
     return metadata, raw
 
 
-def run_bounded(arguments, timeout):
-    """No shell, no inherited stdin, bounded combined output, killed on timeout."""
+def run_bounded(arguments, timeout, *, stdout_line=None):
+    """Bound diagnostics; optionally consume structured stdout separately.
+
+    Decoder diagnostics and metadata must never be parsed as structured results.
+    Both pipes are drained concurrently, with bounded records and byte counts.
+    """
     process = subprocess.Popen(arguments, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT, shell=False, close_fds=True)
+                               stderr=subprocess.PIPE if stdout_line else subprocess.STDOUT,
+                               shell=False, close_fds=True)
     log, overflow = bytearray(), threading.Event()
+    structured_errors = []
 
     def drain():
         try:
+            pipe = process.stderr if stdout_line else process.stdout
             while True:
-                chunk = process.stdout.read(4096)
+                chunk = pipe.read(4096)
                 if not chunk:
                     break
                 remaining = MAX_LOG - len(log)
@@ -398,8 +412,26 @@ def run_bounded(arguments, timeout):
         except (OSError, ValueError):
             pass
 
-    reader = threading.Thread(target=drain, daemon=True)
-    reader.start()
+    def structured():
+        total = 0
+        try:
+            while True:
+                line = process.stdout.readline(1025)
+                if not line:
+                    break
+                total += len(line)
+                if len(line) > 1024 or total > MAX_PROBE_BYTES:
+                    raise ValueError("Decoded stream data exceeded its bounded probe limit.")
+                stdout_line(line.decode("ascii"))
+        except (ValueError, OSError) as error:
+            structured_errors.append(error)
+            process.kill()
+
+    readers = [threading.Thread(target=drain, daemon=True)]
+    if stdout_line:
+        readers.append(threading.Thread(target=structured, daemon=True))
+    for reader in readers:
+        reader.start()
     try:
         process.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -407,10 +439,15 @@ def run_bounded(arguments, timeout):
         process.wait()
         raise ValueError("FFmpeg reached its time limit. Try a shorter clip or smaller source.") from None
     finally:
-        reader.join(timeout=1)
+        for reader in readers:
+            reader.join(timeout=1)
         process.stdout.close()
+        if stdout_line:
+            process.stderr.close()
     if overflow.is_set():
         raise ValueError("FFmpeg exceeded its diagnostic output limit.")
+    if structured_errors or any(reader.is_alive() for reader in readers):
+        raise ValueError("FFmpeg returned invalid or excessive decoded stream data.")
     return process.returncode, bytes(log)
 
 
@@ -422,18 +459,111 @@ def input_options(metadata, source):
     return options + ["-i", str(source)]
 
 
-def probe(binary, metadata, source):
-    _, log = run_bounded([binary, "-hide_banner", "-nostdin", *input_options(metadata, source)], PROBE_TIMEOUT)
-    value = log.decode("utf-8", errors="replace")
-    found = re.search(r"Duration: (\d+):([0-5]\d):([0-5]\d(?:\.\d+)?)", value)
-    if not found:
-        raise ValueError("FFmpeg could not read a finite duration from this file. Browser playback may still work.")
-    duration = int(found[1]) * 3600 + int(found[2]) * 60 + float(found[3])
-    audio = bool(re.search(r"Stream #.*Audio:", value))
-    video = bool(re.search(r"Stream #.*Video:", value))
-    if not audio and not video:
-        raise ValueError("This upload has no supported audio or video stream.")
-    return dict(duration_seconds=duration, audio=audio, video=video, metadata_source="FFmpeg")
+class DecodedStreams:
+    """Aggregate FFmpeg framehash records, never tags or human-readable logs."""
+
+    def __init__(self):
+        self.streams = {}
+        self.packets = 0
+
+    def line(self, line):
+        line = line.strip()
+        if not line:
+            return
+        if line.startswith("#"):
+            header = re.fullmatch(r"#(tb|media_type|codec_id|sample_rate|dimensions) ([01]): (.+)", line)
+            if header:
+                key, index, value = header.groups()
+                stream = self.streams.setdefault(int(index), {})
+                if key in stream:
+                    raise ValueError("Duplicate decoded stream header.")
+                if key == "tb":
+                    if not re.fullmatch(r"[1-9]\d{0,8}/[1-9]\d{0,8}", value):
+                        raise ValueError("Invalid decoded time base.")
+                    value = Fraction(value)
+                elif key == "sample_rate":
+                    if not re.fullmatch(r"[1-9]\d{0,5}", value):
+                        raise ValueError("Invalid decoded sample rate.")
+                    value = int(value)
+                stream[key] = value
+            return
+        fields = [field.strip() for field in line.split(",")]
+        if len(fields) != 6 or any(not re.fullmatch(r"-?\d{1,18}", value) for value in fields[:5]) or not re.fullmatch(r"[a-fA-F0-9]{8}", fields[5]):
+            raise ValueError("Invalid decoded frame record.")
+        index, _, pts, duration, size = map(int, fields[:5])
+        stream = self.streams.get(index, {})
+        if "tb" not in stream or duration <= 0 or size <= 0 or abs(pts * stream["tb"]) > 86400:
+            raise ValueError("Missing or invalid decoded frame timing.")
+        if "end" in stream and pts < stream["end"]:
+            raise ValueError("Overlapping decoded timestamps are unsupported.")
+        self.packets += 1
+        if self.packets > MAX_PROBE_PACKETS:
+            raise ValueError("Decoded stream packet limit exceeded.")
+        stream.setdefault("start", pts)
+        stream["end"] = pts + duration
+        stream["units"] = stream.get("units", 0) + duration
+        stream["packets"] = stream.get("packets", 0) + 1
+        stream["bytes"] = stream.get("bytes", 0) + size
+
+    def result(self):
+        result = []
+        for stream in self.streams.values():
+            if not stream.get("packets"):
+                continue
+            kind = stream.get("media_type")
+            if kind not in {"audio", "video"} or stream.get("codec_id") != ("pcm_s16le" if kind == "audio" else "rawvideo"):
+                raise ValueError("Unsupported decoded stream description.")
+            duration = stream["units"] * stream["tb"]
+            end = stream["end"] * stream["tb"]
+            span = (stream["end"] - stream["start"]) * stream["tb"]
+            if not 0 < duration <= 86400 or not 0 < end <= 86400 or not 0 < span <= 86400:
+                raise ValueError("Decoded stream duration is unavailable or exceeds 24 hours.")
+            item = dict(kind=kind, decoded_duration_seconds=float(duration), end_seconds=float(end),
+                        span_seconds=float(span), tick_seconds=float(stream["tb"]),
+                        video_frames=stream["packets"] if kind == "video" else 0, audio_samples=0)
+            if kind == "audio":
+                samples = duration * stream.get("sample_rate", 0)
+                if samples.denominator != 1 or samples <= 0 or stream["bytes"] < samples * 2:
+                    raise ValueError("Decoded audio has no complete PCM samples.")
+                item["audio_samples"] = int(samples)
+            result.append(item)
+        if not result:
+            raise ValueError("This file has no decodable audio samples or video frames.")
+        return dict(duration_seconds=max(item["end_seconds"] for item in result),
+                    audio=any(item["kind"] == "audio" for item in result),
+                    video=any(item["kind"] == "video" for item in result), streams=result,
+                    metadata_source="FFmpeg decoded frame/sample checksums; not metadata tags")
+
+
+def probe(binary, metadata, source, timeout=PROBE_TIMEOUT):
+    decoded = DecodedStreams()
+    code, _ = run_bounded([
+        binary, "-hide_banner", "-nostdin", "-loglevel", "error", "-xerror", "-threads", "2",
+        *input_options(metadata, source), "-map", "0:v:0?", "-map", "0:a:0?",
+        "-map_metadata", "-1", "-map_chapters", "-1", "-sn", "-dn",
+        "-c:v", "rawvideo", "-c:a", "pcm_s16le", "-fps_mode", "passthrough",
+        "-threads", "2", "-f", "framehash", "-hash", "crc32", "pipe:1",
+    ], timeout, stdout_line=decoded.line)
+    if code != 0:
+        raise ValueError("FFmpeg could not fully decode this file within the probe limits. Browser playback may still work.")
+    return decoded.result()
+
+
+def validate_output(binary, output, output_format, requested, source_info, timeout):
+    decoded = probe(binary, {"name": output.name}, output, timeout)
+    required = {"audio"} if output_format == "wav" else {"video"}
+    if output_format == "mp4" and source_info["audio"]:
+        required.add("audio")
+    for kind in required:
+        stream = next((item for item in decoded["streams"] if item["kind"] == kind), None)
+        if stream is None:
+            raise ValueError("The exported clip is missing required decoded frames or audio samples.")
+        tolerance = 0.05 if kind == "audio" else max(0.05, min(0.5, stream["tick_seconds"] + 0.001))
+        if abs(stream["decoded_duration_seconds"] - requested) > tolerance or abs(stream["span_seconds"] - requested) > tolerance:
+            raise ValueError("The decoded export does not cover the requested clip duration. Choose a supported shorter range.")
+    return {"method": "decoded_frame_and_sample_checksums", "duration_seconds": decoded["duration_seconds"],
+            "video_frames": sum(item["video_frames"] for item in decoded["streams"]),
+            "audio_samples": sum(item["audio_samples"] for item in decoded["streams"])}
 
 
 def media_action(body):
@@ -449,15 +579,25 @@ def media_action(body):
     if not MEDIA_LOCK.acquire(blocking=False):
         raise ValueError("Another local media operation is running. Try again after it finishes.")
     try:
+        deadline = time.monotonic() + MEDIA_TIMEOUT
+
+        def remaining(limit):
+            value = min(limit, deadline - time.monotonic())
+            if value <= 0:
+                raise ValueError("Media verification reached its total time limit. Try a shorter clip or smaller source.")
+            return value
+
         metadata, raw = managed_source(body.get("source_id"))
         with tempfile.TemporaryDirectory(prefix="u1-media-research-") as directory:
             source = Path(directory) / ("source" + Path(metadata["name"]).suffix.lower())
             source.write_bytes(raw)
             del raw
-            info = probe(binary, metadata, source)
+            info = probe(binary, metadata, source, remaining(PROBE_TIMEOUT))
             if body["action"] == "inspect":
                 return dict(success=True, source_id=metadata["id"], name=metadata["name"], size=metadata["size"], **info)
             start, end = clip_range(body, info["duration_seconds"])
+            if (end - start) * 1000 < 1 - 1e-7:
+                raise ValueError("Media clips must span at least one millisecond.")
             output_format = body["format"]
             if output_format == "wav" and not info["audio"]:
                 raise ValueError("This source does not contain an audio stream.")
@@ -465,8 +605,8 @@ def media_action(body):
                 raise ValueError("Choose WAV for an audio-only source.")
             output = Path(directory) / ("clip." + output_format)
             arguments = [binary, "-hide_banner", "-nostdin", "-loglevel", "error", "-y",
-                         "-threads", "2", *input_options(metadata, source), "-ss", f"{start:.3f}",
-                         "-t", f"{end - start:.3f}", "-map_metadata", "-1", "-map_chapters", "-1", "-sn", "-dn"]
+                         "-threads", "2", *input_options(metadata, source), "-ss", f"{start:.6f}",
+                         "-t", f"{end - start:.6f}", "-map_metadata", "-1", "-map_chapters", "-1", "-sn", "-dn"]
             if output_format == "wav":
                 arguments += ["-map", "0:a:0", "-vn", "-c:a", "pcm_s16le", "-ar", "44100", "-ac", "2"]
             else:
@@ -475,14 +615,16 @@ def media_action(body):
                               "scale=1280:720:force_original_aspect_ratio=decrease:force_divisible_by=2",
                               "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart"]
             arguments += ["-threads", "2", "-fs", str(MAX_OUTPUT), "-f", output_format, str(output)]
-            code, _ = run_bounded(arguments, EXPORT_TIMEOUT)
+            code, _ = run_bounded(arguments, remaining(EXPORT_TIMEOUT))
             if code != 0 or not output.is_file() or output.stat().st_size <= 0:
                 raise ValueError("FFmpeg could not create this clip. The file or installed codecs may be unsupported.")
             if output.stat().st_size >= MAX_OUTPUT - 65536:
                 raise ValueError("The clip reached the output limit. Choose a shorter range.")
+            validation = validate_output(binary, output, output_format, end - start, info, remaining(PROBE_TIMEOUT))
             return download(output.read_bytes(), "clip." + output_format,
                             "video/mp4" if output_format == "mp4" else "audio/wav",
                             engine="FFmpeg", provider=provider, clip_in=start, clip_out=end,
+                            validation=validation,
                             captions="Export edited captions separately as an SRT sidecar.")
     finally:
         MEDIA_LOCK.release()

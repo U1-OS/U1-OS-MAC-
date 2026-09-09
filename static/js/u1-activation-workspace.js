@@ -2,6 +2,7 @@
   'use strict';
   var key = 'u1.activation.operator.v1', ids = ['google', 'codex', 'images', 'canva'];
   var active = null, controller = null, serial = 0, manual = emptyManual(), storedLocally = true;
+  var states = new WeakMap();
   var labels = { recorded_success: 'Past success recorded', configured_unverified: 'Configured / unverified', setup_needed: 'Setup needed', unknown: 'Metadata unavailable', not_installed: 'Not installed', installed_unverified: 'Installed / unverified', unfinished_handoff: 'Unfinished / manual handoff' };
   function emptyManual() { var out = {}; ids.forEach(function (id) { out[id] = { steps: [false, false, false], reviewed_at: null }; }); return out; }
   function normalize(value) {
@@ -48,7 +49,8 @@
     finally { clearTimeout(timer); if (controller === mine) controller = null; }
   }
   function mount(host) {
-    stop(); var state = { host: host, data: null }; active = state; loadManual();
+    if (states.has(host) && host.querySelector('[data-activation-root]')) { activate(host); return; }
+    stop(); var state = { host: host, data: null }; active = state; states.set(host, state); loadManual();
     host.classList.add('u1-native-workspace', 'u1-activation-workspace');
     host.innerHTML = '<section data-activation-root><header class="u1-core-header"><div><span class="u1-core-eyebrow">U1 WORKSPACE / ACCOUNT ACTIVATION</span><h2>Activate</h2><p>Review setup, choose one action, inspect the result.</p></div><button type="button" data-activation-refresh>Refresh local evidence</button></header><div class="u1-activation-intro"><strong>You control each provider action.</strong><p>This page checks local metadata only. It does not connect accounts, inspect credentials, send prompts or generate images. Open the provider view to review and perform one action.</p><p>Keep credentials in the native setup forms. Never paste keys or tokens into chat.</p></div><p data-activation-evidence class="u1-activation-meta">No metadata read yet.</p><p data-activation-status class="u1-activation-status" role="status" aria-live="polite"></p><div class="u1-activation-grid" data-activation-cards></div><p data-activation-queue class="u1-activation-meta"></p><p class="u1-activation-footer">Operator checklists contain only checkmarks and timestamps. They are local to this browser, may be cleared by the browser, and are never proof of API authorisation.</p></section>';
     host.addEventListener('click', function (event) {
@@ -72,14 +74,16 @@
     });
     refresh(state);
   }
+  function deactivate(host) { if (active && active.host === host) { stop(); active = null; } }
+  function activate(host) { var state = states.get(host); if (!state || !host.querySelector('[data-activation-root]')) return; stop(); active = state; refresh(state); }
   function init() {
     loadManual();
-    if (window.U1CoreViews) ['activate', 'activation'].forEach(function (id) { window.U1CoreViews.register(id, mount); });
+    if (window.U1CoreViews) ['activate', 'activation'].forEach(function (id) { window.U1CoreViews.register(id, mount, { activate: activate, deactivate: deactivate }); });
     document.addEventListener('u1:safety-change', function (event) { if (event.detail && event.detail.locked) stop(); });
     new MutationObserver(function () { if (document.documentElement.dataset.u1Safety === 'locked') stop(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-u1-safety'] });
     window.addEventListener('pagehide', stop);
     window.addEventListener('u1:navigate', function (event) { if (event.detail && !['activate', 'activation'].includes(event.detail.id)) stop(); });
   }
-  window.U1Activation = Object.freeze({ mount: mount, stop: stop, normalizeManual: normalize });
+  window.U1Activation = Object.freeze({ mount: mount, activate: activate, deactivate: deactivate, stop: stop, normalizeManual: normalize });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true }); else init();
 })();

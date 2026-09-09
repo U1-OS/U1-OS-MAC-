@@ -12,8 +12,9 @@
   function locked() { return safetyLocked || document.documentElement.dataset.u1Safety === 'locked' || !!(window.U1Safety && window.U1Safety.isLocked()); }
   function status(state, text, error) { var el = state.host.querySelector('[data-ai-status]'); if (el) { el.textContent = text; el.setAttribute('role', error ? 'alert' : 'status'); } }
   function when(value) { return value ? new Date(value * 1000).toLocaleString() : 'Not started'; }
-  async function request(path, body, timeoutMs) {
+  async function request(path, body, timeoutMs, validate) {
     if (locked()) throw Error('Safety is locked. Unlock the workspace before continuing.');
+    if (validate && !validate()) throw Error('The reviewed conversation changed. Reload its history and confirm again.');
     var controller = new AbortController(); controllers.add(controller);
     var timeout = setTimeout(function () { controller.abort(); }, timeoutMs || 12000);
     try {
@@ -27,9 +28,26 @@
       return result;
     } finally { clearTimeout(timeout); controllers.delete(controller); }
   }
-  async function api(path, body, timeoutMs) {
+  async function api(path, body, timeoutMs, validate) {
     if (body && !csrf) { var registry = await request('/api/integrations'); csrf = registry.csrf_token || ''; if (!csrf) throw Error('Reload the workspace to obtain its action token.'); }
-    return request(path, body, timeoutMs);
+    return request(path, body, timeoutMs, validate);
+  }
+  function clearConsent(state) { var field = state.host.querySelector('[name=allowance]'); if (field) field.checked = false; }
+  function reviewCurrent(state) { return !!(state.active && state.review && state.review.conversation === state.conversation && state.review.generation === state.generation && state.review.signature === state.transcriptSignature); }
+  function composerReady(state) {
+    var ready = reviewCurrent(state) && !state.refreshing && !state.sending && !locked();
+    var button = state.host.querySelector('form [type=submit]'), field = state.host.querySelector('[name=allowance]');
+    if (button) button.disabled = !ready;
+    if (field) field.disabled = !ready;
+  }
+  function invalidateReview(state) {
+    state.generation += 1; state.review = null; clearConsent(state); composerReady(state);
+  }
+  function selectConversation(state, identifier) {
+    state.conversation = lastConversation = identifier || ''; state.pendingSend = null;
+    invalidateReview(state); state.transcriptSignature = null; state.messages = [];
+    var node = state.host.querySelector('[data-ai-transcript]');
+    if (node) node.textContent = state.conversation ? 'Loading the selected conversation for review. Sending is disabled until it is current.' : 'New conversation selected. Confirm after its local status finishes loading.';
   }
   function stopVoice(discard) {
     voiceEpoch += 1;
@@ -43,7 +61,7 @@
   }
   function contain() {
     stopVoice(true); controllers.forEach(function (controller) { controller.abort(); }); csrf = '';
-    instances.forEach(function (s) { status(s, 'Safety stopped browser activity. The server Safety integration controls queued and running jobs.', true); });
+    instances.forEach(function (s) { invalidateReview(s); status(s, 'Safety stopped browser activity. The server Safety integration controls queued and running jobs.', true); });
   }
   function voiceDraft(state) {
     if (speech) { stopVoice(false); return; }
@@ -122,35 +140,55 @@
     state.messages = conversation ? conversation.messages : [];
   }
   async function refresh(state) {
-    if (state.refreshing || !state.host.isConnected || !state.host.querySelector('[data-ai-provider]') || locked()) return;
-    state.refreshing = true;
+    if (!state.active || state.sending || !state.host.isConnected || !state.host.querySelector('[data-ai-provider]') || locked()) return;
+    if (state.refreshing && state.refreshing.generation === state.generation && state.refreshing.conversation === state.conversation) return;
+    var selected = state.conversation, generation = state.generation;
+    var pending = { conversation: selected, generation: generation, serial: ++state.refreshSerial };
+    state.refreshing = pending; composerReady(state);
+    function current() { return state.active && !locked() && instances.get(state.host) === state && state.host.querySelector('[data-ai-provider]') && state.generation === generation && state.conversation === selected && state.refreshSerial === pending.serial; }
     try {
-      var path = state.conversation ? '/api/workspace/assistant?conversation_id=' + encodeURIComponent(state.conversation) : '/api/workspace/' + (state.view === 'jobs' ? 'jobs' : 'assistant');
-      var data = await api(path); if (instances.get(state.host) === state && state.host.querySelector('[data-ai-provider]')) renderEvidence(state, data);
-    } catch (error) { status(state, error.message, true); }
-    finally { state.refreshing = false; }
+      var path = selected ? '/api/workspace/assistant?conversation_id=' + encodeURIComponent(selected) : '/api/workspace/' + (state.view === 'jobs' ? 'jobs' : 'assistant');
+      var data = await api(path);
+      if (!current()) return;
+      if (selected && (!data.conversation || data.conversation.id !== selected)) throw Error('Conversation identity did not match. Refresh and review before sending.');
+      var signature = JSON.stringify(data.conversation || null);
+      if (!state.review || state.review.signature !== signature) clearConsent(state);
+      renderEvidence(state, data);
+      if (!selected) transcriptView(state, null);
+      state.review = { conversation: selected, generation: generation, signature: signature };
+    } catch (error) { if (current()) { state.review = null; clearConsent(state); status(state, error.message, true); } }
+    finally {
+      if (state.refreshing === pending) state.refreshing = null;
+      composerReady(state);
+      if (state.active && !locked() && state.generation !== generation && !state.refreshing && !reviewCurrent(state)) refresh(state);
+    }
   }
   async function send(state, form) {
-    if (state.sending || locked()) return;
+    if (state.sending || locked() || !state.active) return;
+    if (state.refreshing || !reviewCurrent(state)) { clearConsent(state); status(state, 'Wait for the selected conversation to finish loading, review its current history, then confirm again.', true); return; }
     var prompt = form.elements.prompt.value.trim(), role = form.elements.role.value;
     if (!prompt || size(prompt) > 8000) { status(state, 'Enter a prompt of at most 8,000 UTF-8 bytes.', true); return; }
     if (!form.elements.allowance.checked) { status(state, 'Review the prompt, selected context and conversation history, then confirm allowance use.', true); return; }
     stopVoice(false);
     var payload = { action: 'send', role: role, prompt: prompt, context: state.context.map(function (item) { return { label: item.label, text: item.text }; }),
       confirmed: true, conversation_id: state.conversation || undefined };
+    var reviewed = state.review, generation = state.generation;
+    function stillReviewed() { return state.active && !locked() && state.generation === generation && state.review === reviewed && reviewCurrent(state) && !state.refreshing && form.elements.allowance.checked && form.elements.prompt.value.trim() === prompt && form.elements.role.value === role && JSON.stringify(state.context) === JSON.stringify(payload.context); }
     var signature = JSON.stringify(payload);
     if (!state.pendingSend || state.pendingSend.signature !== signature) state.pendingSend = { signature: signature, request_id: crypto.randomUUID() };
     payload.request_id = state.pendingSend.request_id;
     state.sending = true; form.querySelector('[type=submit]').disabled = true;
     try {
-      var result = await api('/api/workspace/assistant', payload);
-      state.conversation = lastConversation = result.conversation_id;
+      var result = await api('/api/workspace/assistant', payload, undefined, stillReviewed);
+      if (!state.active || locked() || state.generation !== generation) return;
+      selectConversation(state, result.conversation_id);
       form.elements.prompt.value = ''; form.elements.allowance.checked = false;
       state.context = []; state.pendingSend = null; contextView(state);
       status(state, result.duplicate ? 'This request was already accepted. No duplicate request was created.' : 'Confirmed request queued. Its actual state is shown in Jobs.');
+      state.sending = false;
       await refresh(state);
-    } catch (error) { status(state, error.message + ' If acceptance is uncertain, retry the unchanged draft; its request identifier prevents duplicate sends while retained.', true); }
-    finally { state.sending = false; form.querySelector('[type=submit]').disabled = false; }
+    } catch (error) { if (state.active && state.generation === generation) status(state, error.message + ' If acceptance is uncertain, retry the unchanged draft; its request identifier prevents duplicate sends while retained.', true); }
+    finally { state.sending = false; composerReady(state); }
   }
   function composer() {
     return '<form class="u1-ai-composer"><div class="u1-ai-form-row"><label>Conversation<select name="conversation"><option value="">New conversation</option></select></label><label>Text assistant role<select name="role">' + Object.keys(roleDescriptions).map(function (r) { return '<option>' + r + '</option>'; }).join('') + '</select></label></div><label>Your prompt<textarea name="prompt" rows="6" maxlength="8000" required placeholder="What would you like help thinking through?"></textarea></label><fieldset><legend>Choose context to send</legend><p class="u1-ai-muted">Only selected text is attached. Repository files and email are not automatically imported.</p><div class="u1-ai-actions"><button type="button" data-ai-choose-notes>Choose local notes</button><label class="u1-ai-file">Choose a text file<input type="file" data-ai-file accept=".txt,.md,.csv,.json,.log,text/plain,text/markdown,text/csv,application/json"></label></div><div data-ai-notes class="u1-ai-note-picker"></div><label>Paste additional context<textarea name="contextDraft" rows="3" maxlength="16000"></textarea></label><button type="button" data-ai-add-context>Select pasted context</button><div data-ai-context></div></fieldset><details class="u1-ai-voice"><summary>Voice draft and read-aloud</summary><p>Your browser may process voice remotely. Recording is explicit and stops after one utterance or 45 seconds. Review the transcript before using it. Nothing is sent automatically.</p><button type="button" data-ai-mic>Record a voice draft</button><label>Review and edit voice transcript<textarea name="voice" rows="3" maxlength="8000"></textarea></label><div class="u1-ai-actions"><button type="button" data-ai-use-voice>Use reviewed transcript in prompt</button><button type="button" data-ai-stop-voice>Stop voice and read-aloud</button></div></details><label class="u1-ai-confirm"><input type="checkbox" name="allowance" required><span>I reviewed the prompt, selected context and displayed conversation history. Send this request using my signed-in Codex subscription allowance.</span></label><p class="u1-ai-muted">Responses are text for your review. Generated commands are never executed. Exact allowance consumption is unavailable.</p><div class="u1-ai-actions"><button type="submit" class="u1-core-primary">Confirm and send</button><button type="button" data-ai-new>New conversation</button><button type="button" data-ai-delete>Delete local conversation</button></div></form>';
@@ -158,7 +196,9 @@
   function mount(host, view) {
     if (!host) return;
     var old = instances.get(host); if (old) clearInterval(old.timer);
-    var state = { host: host, view: view || 'ai', conversation: lastConversation, context: [], notes: [], messages: [], data: null };
+    if (old && old.view === (view || 'ai') && host.querySelector('[data-ai-provider]')) { activate(host); return; }
+    if (old) old.active = false;
+    var state = { host: host, view: view || 'ai', conversation: lastConversation, context: [], notes: [], messages: [], data: null, active: true, generation: 0, refreshSerial: 0, review: null, refreshing: null };
     instances.set(host, state); host.classList.add('u1-native-workspace', 'u1-ai-workspace');
     var title = state.view === 'jobs' ? 'Managed Jobs' : state.view === 'war-room' ? 'War Room' : 'AI Command';
     host.innerHTML = '<header class="u1-core-header"><div><span class="u1-core-eyebrow">U1 WORKSPACE / NATIVE ASSISTANT</span><h2>' + title + '</h2><p>' + (state.view === 'war-room' ? 'Five text roles. Evidence from your actual requests.' : state.view === 'jobs' ? 'Confirmed requests, real process states and direct controls.' : 'Think, draft and plan with your existing Codex sign-in.') + '</p></div><button type="button" data-ai-refresh>Refresh evidence</button></header><div class="u1-core-source" data-ai-provider>Checking installed provider status...</div><p data-ai-status class="u1-ai-status" role="status" aria-live="polite"></p>' + (state.view === 'war-room' ? '<section class="u1-ai-roles" data-ai-roles aria-label="Text assistant roles"></section>' : '') + '<div class="u1-ai-layout' + (state.view === 'jobs' ? ' u1-ai-jobs-only' : '') + '"><section class="u1-ai-main">' + (state.view !== 'jobs' ? composer() : '') + '<div data-ai-transcript aria-label="Reviewed conversation"></div></section><aside class="u1-ai-queue"><h3>Request queue</h3><p data-ai-queue-state class="u1-ai-muted"></p><div class="u1-ai-actions"><button type="button" data-ai-pause>Pause queue</button><button type="button" data-ai-cancel-all>Cancel all requests</button></div><div data-ai-jobs></div></aside></div>';
@@ -175,9 +215,9 @@
         if (button.hasAttribute('data-ai-stop-voice')) stopVoice(false);
         if (button.hasAttribute('data-ai-use-voice')) { stopVoice(false); var text = host.querySelector('[name=voice]').value.trim(), prompt = host.querySelector('[name=prompt]'); if (size(prompt.value + '\n' + text) > 8000) throw Error('The combined prompt exceeds 8,000 bytes.'); prompt.value = (prompt.value + '\n' + text).trim(); host.querySelector('[name=allowance]').checked = false; status(state, 'Transcript added to the editable prompt. Review and confirm to send.'); }
         if (button.dataset.aiSpeak != null && !locked()) { stopVoice(false); var message = state.messages[Number(button.dataset.aiSpeak)]; if (message && message.role === 'assistant') { if (window.confirm('Read this response using your browser speech voice? Some voices may use a remote service.')) window.speechSynthesis.speak(new SpeechSynthesisUtterance(message.text)); } }
-        if (button.dataset.aiReview) { state.conversation = lastConversation = button.dataset.aiReview; state.transcriptSignature = null; await refresh(state); }
-        if (button.hasAttribute('data-ai-new')) { state.conversation = lastConversation = ''; state.context = []; state.pendingSend = null; contextView(state); transcriptView(state, null); await refresh(state); }
-        if (button.hasAttribute('data-ai-delete') && state.conversation && window.confirm('Delete this local conversation? Its bounded job evidence remains until history retention removes it.')) { await api('/api/workspace/assistant', { action: 'delete_conversation', conversation_id: state.conversation, confirmed: true }); state.conversation = lastConversation = ''; transcriptView(state, null); await refresh(state); }
+        if (button.dataset.aiReview) { selectConversation(state, button.dataset.aiReview); await refresh(state); }
+        if (button.hasAttribute('data-ai-new')) { selectConversation(state, ''); state.context = []; contextView(state); await refresh(state); }
+        if (button.hasAttribute('data-ai-delete') && state.conversation && window.confirm('Delete this local conversation? Its bounded job evidence remains until history retention removes it.')) { await api('/api/workspace/assistant', { action: 'delete_conversation', conversation_id: state.conversation, confirmed: true }); selectConversation(state, ''); await refresh(state); }
         if (button.hasAttribute('data-ai-pause') && state.data) { await api('/api/workspace/jobs', { action: 'pause', paused: !state.data.paused }); await refresh(state); }
         if (button.dataset.aiCancel) { await api('/api/workspace/jobs', { action: 'cancel', job_id: button.dataset.aiCancel }); await refresh(state); }
         if (button.hasAttribute('data-ai-cancel-all') && window.confirm('Cancel every queued assistant request and stop its owned running Codex process? Work already performed may still consume allowance.')) { await api('/api/workspace/jobs', { action: 'cancel_all' }); await refresh(state); }
@@ -185,25 +225,39 @@
     };
     host.onchange = async function (event) {
       try {
-        if (event.target.name === 'conversation') { state.conversation = lastConversation = event.target.value; state.transcriptSignature = null; if (!state.conversation) transcriptView(state, null); host.querySelector('[name=allowance]').checked = false; await refresh(state); }
+        if (event.target.name === 'conversation') { if (state.sending) { event.target.value = state.conversation; return; } selectConversation(state, event.target.value); await refresh(state); }
         if (event.target.hasAttribute('data-ai-file')) { var file = event.target.files[0]; if (file) { if (file.size > 16000) throw Error('Choose a text file no larger than 16,000 bytes.'); var text = await file.text(); if (text.includes('\u0000')) throw Error('Choose a text file.'); addContext(state, file.name, text); } event.target.value = ''; }
       } catch (error) { status(state, error.message, true); }
     };
     var form = host.querySelector('form'); if (form) { form.onsubmit = function (event) { event.preventDefault(); send(state, form); }; form.addEventListener('input', function (event) { if (event.target.name !== 'allowance') form.elements.allowance.checked = false; }); }
-    state.timer = setInterval(function () { if (!host.isConnected || !host.querySelector('[data-ai-provider]')) { clearInterval(state.timer); instances.delete(host); return; } if (!document.hidden && host.getClientRects().length) refresh(state); }, 2500);
+    armTimer(state);
     refresh(state);
+  }
+  function armTimer(state) {
+    clearInterval(state.timer);
+    state.timer = setInterval(function () { if (!state.active || !state.host.isConnected || !state.host.querySelector('[data-ai-provider]')) { clearInterval(state.timer); return; } if (!document.hidden && state.host.getClientRects().length) refresh(state); }, 2500);
+  }
+  function deactivate(host) {
+    var state = instances.get(host); if (!state) return;
+    state.active = false; clearInterval(state.timer); invalidateReview(state); state.refreshSerial += 1; state.refreshing = null;
+    stopVoice(locked());
+  }
+  function activate(host) {
+    var state = instances.get(host); if (!state || !host.querySelector('[data-ai-provider]')) return;
+    state.active = true; invalidateReview(state); armTimer(state); refresh(state);
   }
   function init() {
     if (window.U1CoreViews) {
-      ['ai', 'assistant', 'ai-command'].forEach(function (id) { window.U1CoreViews.register(id, function (host) { mount(host, 'ai'); }); });
-      window.U1CoreViews.register('jobs', function (host) { mount(host, 'jobs'); });
-      ['war-room', 'warroom'].forEach(function (id) { window.U1CoreViews.register(id, function (host) { mount(host, 'war-room'); }); });
+      var lifecycle = { activate: activate, deactivate: deactivate };
+      ['ai', 'assistant', 'ai-command'].forEach(function (id) { window.U1CoreViews.register(id, function (host) { mount(host, 'ai'); }, lifecycle); });
+      window.U1CoreViews.register('jobs', function (host) { mount(host, 'jobs'); }, lifecycle);
+      ['war-room', 'warroom'].forEach(function (id) { window.U1CoreViews.register(id, function (host) { mount(host, 'war-room'); }, lifecycle); });
     }
     document.addEventListener('u1:safety-change', function (event) { safetyLocked = !!(event.detail && event.detail.locked); if (safetyLocked) contain(); else instances.forEach(refresh); });
     new MutationObserver(function () { if (document.documentElement.dataset.u1Safety === 'locked') contain(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-u1-safety'] });
     document.addEventListener('visibilitychange', function () { if (document.hidden) stopVoice(false); });
     window.addEventListener('pagehide', function () { contain(); instances.forEach(function (s) { clearInterval(s.timer); }); });
   }
-  window.U1Assistant = Object.freeze({ mount: mount, stop: contain, request: api, isLocked: locked });
+  window.U1Assistant = Object.freeze({ mount: mount, activate: activate, deactivate: deactivate, stop: contain, request: api, isLocked: locked });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true }); else init();
 })();

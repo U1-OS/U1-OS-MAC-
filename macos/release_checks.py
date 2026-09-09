@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 import urllib.parse
 
@@ -23,7 +24,8 @@ TEST_FILES = tuple("tests/test_" + name + ".py" for name in (
     "updater", "integrations_hub", "u1_studio_pro", "u1_personal_core", "u1_assistant", "u1_safety",
     "u1_private_backup", "u1_release_guard", "u1_native_routes", "u1_media_research", "u1_image_provider", "u1_macos_release",
     "u1_operational_safety", "u1_usage_windows", "u1_osint_tools", "u1_media_download",
-    "u1_discovery", "u1_spotify", "u1_connection_preflight"))
+    "u1_discovery", "u1_spotify", "u1_connection_preflight", "u1_server_boundaries", "u1_provider_boundaries",
+    "u1_assistant_retention", "u1_information_truth", "u1_data_boundaries"))
 TEST_FIXTURES = {"tests/test_u1_image_provider.py": ("tests/test_u1_assistant.py",)}
 JS_TESTS = {
     "tests/test_u1_connections.cjs": ("static/js/u1-connection-policy.js", "static/js/u1-connections-workspace.js", "static/css/u1-connections-workspace.css"),
@@ -33,6 +35,20 @@ JS_TESTS = {
     "tests/test_u1_daily_flow.cjs": ("static/js/u1-daily-flow.js", "static/css/u1-daily-flow.css"),
     "tests/test_u1_usage_selection.cjs": ("static/js/u1-platform-core.js",),
     "tests/test_u1_operational_polish.cjs": ("static/js/u1-operational-polish.js",),
+    "tests/test_u1_rounded_system.cjs": ("static/js/u1-rounded-system.js", "static/js/u1-cinematic.js", "static/js/u1-safety.js"),
+    "tests/test_u1_assistant_workspace.js": ("static/js/u1-assistant-workspace.js",),
+    "tests/test_u1_create_earn.cjs": ("static/js/u1-create-earn-workspaces.js",),
+    "tests/test_u1_studio_drafts.cjs": ("static/js/u1-studio-pro.js",),
+    "tests/test_u1_rounded_contrast.cjs": ("static/css/u1-rounded-system.css",),
+    "tests/test_u1_discovery_truth.cjs": ("static/js/u1-discovery-workspace.js", "static/js/u1-workspaces.js"),
+    "tests/test_u1_navigation_adversarial.cjs": (
+        "static/js/u1-connection-policy.js", "static/js/u1-connections-workspace.js",
+        "static/js/u1-core-workspaces.js", "static/js/u1-data.js", "static/js/u1-media-research.js",
+        "static/js/u1-platform-core.js", "static/js/u1-platform.js", "static/js/u1-safety.js", "static/js/u1os.js"),
+    "tests/test_u1_rounded_navigation.cjs": (
+        "static/u1os.html", "static/js/u1-native-operations.js", "static/js/u1-platform-core.js",
+        "static/js/u1-platform.js", "static/js/u1-rounded-system.js"),
+    "tests/test_u1_platform.cjs": ("static/js/u1-platform-core.js",),
     "tests/test_u1_operational_navigation.cjs": (
         "static/u1os.html", "static/js/u1-native-operations.js", "static/js/u1os.js",
         "static/js/u1-platform.js", "utils/u1_native_routes.py", "server.py"),
@@ -44,18 +60,29 @@ PYTHON_NODE_FIXTURES = {
 }
 JS_CONTRACT_MARKERS = {
     "tests/test_u1_shell_navigation.cjs": ("PASS 6 native registration and direct-entry contracts", 6),
+    "tests/test_u1_assistant_workspace.js": ("\n".join((
+        "PASS testOutOfOrder", "PASS testSendBlockedDuringReviewLoad", "PASS testCurrentReviewIsSent",
+        "PASS testSelectionChangeDuringCsrfPreventsPost", "PASS testHistoryChangeInvalidatesConsent",
+        "PASS testIdentityMismatchIsRejected", "PASS testLifecyclePreservesDraftAndOnlyReads",
+        "7 assistant consent/lifecycle tests passed; all I/O mocked.")), 7),
 }
 OPT_IN_TESTS = {
-    "tests/test_u1_media_research.py": {"SyntheticFFmpegTests.test_generated_owned_video_exports_real_mp4_and_wav"},
+    "tests/test_u1_media_research.py": {
+        "SyntheticFFmpegTests.test_generated_owned_video_exports_real_mp4_and_wav",
+        "SyntheticFFmpegTests.test_real_empty_outputs_are_rejected_even_when_ffmpeg_returns_zero",
+        "SyntheticFFmpegTests.test_real_short_audio_cannot_pass_a_longer_export_contract"},
 }
 JS_SYNTAX_FILES = ("static/js/u1-image-provider.js", "static/js/u1-spotify-widget.js",
                    "static/js/u1-activation-workspace.js", "static/js/u1-discovery-workspace.js",
-                   "static/js/u1-osint-tools.js", "static/js/u1-media-download.js")
+                   "static/js/u1-osint-tools.js", "static/js/u1-media-download.js", "static/js/u1-feedback.js")
 PYTHON_FILES = ("macos/release_checks.py", "macos/release_support.py",
                 "utils/u1_studio_pro.py", "utils/u1_personal_core.py", "utils/u1_assistant.py",
                 "utils/u1_credentials.py", "utils/u1_image_provider.py", "utils/u1_safety.py",
                 "utils/u1_usage_windows.py", "utils/u1_discovery.py", "utils/u1_osint_tools.py",
-                "utils/u1_media_download.py", "utils/u1_spotify.py", "utils/u1_connection_preflight.py")
+                "utils/u1_media_download.py", "utils/u1_spotify.py", "utils/u1_connection_preflight.py",
+                "utils/u1_google.py", "utils/workspace_hub.py", "server.py", "launch_u1.py",
+                "services/crypto.py", "services/intelligence.py", "utils/briefing.py", "utils/news_markets.py",
+                "utils/prism_workspace.py", "utils/u1_recovery.py")
 SHELL_FILES = ("scripts/check-personal-release.sh", "macos/build-desktop.sh", "macos/install-u1.sh", "macos/bootstrap-personal.sh")
 WORKFLOW = ".github/workflows/personal-os-quality.yml"
 
@@ -151,7 +178,24 @@ def node_launch_options(options, temporary):
     return confined
 
 
-def guard_event(event, args, root, temporary, allowed_processes=()):
+def scoped_open(original_open, context):
+    """Carry openat's descriptor into its audit event without changing the call.
+
+    CPython's open event supplies path/mode/flags, but omits dir_fd. Preserve
+    per-thread context only during the original operation; never replace its
+    descriptor-relative, O_NOFOLLOW-protected open with an absolute-path open.
+    """
+    def opened(path, flags, mode=0o777, *, dir_fd=None):
+        previous = getattr(context, "dir_fd", None)
+        context.dir_fd = dir_fd
+        try:
+            return original_open(path, flags, mode, dir_fd=dir_fd)
+        finally:
+            context.dir_fd = previous
+    return opened
+
+
+def guard_event(event, args, root, temporary, allowed_processes=(), *, open_dir_fd=None):
     """Regression guard for trusted tests, not an OS sandbox for hostile Python."""
     root, temporary = Path(root), Path(temporary)
 
@@ -194,7 +238,7 @@ def guard_event(event, args, root, temporary, allowed_processes=()):
         mode, flags = args[1], args[2]
         write = bool(isinstance(mode, str) and any(letter in mode for letter in "wax+"))
         write = write or bool(isinstance(flags, int) and flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND))
-        checked_path(args[0], write)
+        checked_path(args[0], write, open_dir_fd)
     elif event == "sqlite3.connect" and str(args[0]) != ":memory:":
         raw = os.fsdecode(args[0])
         if raw.startswith("file:"):
@@ -234,6 +278,8 @@ def worker(name, output, temporary):
     sys.dont_write_bytecode = True
     sys.path.insert(0, str(ROOT))
     allowed_processes = set()
+    open_context = threading.local()
+    os.open = scoped_open(os.open, open_context)
     if name in PYTHON_NODE_FIXTURES:
         original_popen = subprocess.Popen
         original_which = shutil.which
@@ -244,7 +290,8 @@ def worker(name, output, temporary):
             allowed_processes.add(tuple(command))
             return original_popen(command, *arguments, **options)
         subprocess.Popen = isolated_node
-    sys.addaudithook(lambda event, args: guard_event(event, args, ROOT, temporary, allowed_processes))
+    sys.addaudithook(lambda event, args: guard_event(event, args, ROOT, temporary, allowed_processes,
+                                                  open_dir_fd=getattr(open_context, "dir_fd", None)))
     stream = io.StringIO()
     try:
         # The image suite reuses assistant fixture classes without rerunning them.

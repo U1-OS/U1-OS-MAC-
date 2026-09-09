@@ -12,39 +12,59 @@
   function still(){return reduced.matches||preferences.motion==='reduced'||preferences.quality==='low';}
   function get(url,timeout){var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},timeout||7000);return fetch(url,{cache:'no-store',signal:controller.signal}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json();}).finally(function(){clearTimeout(timer);});}
   function checked(url,valid){return get(url,2200).then(function(data){if(!valid(data))throw Error('Unexpected API response');return {available:true,data:data};}).catch(function(){return {available:false,data:null};});}
-  var pending=null,results=null;
+  var pending=null,results=null,requestGeneration=0;
   function requests(fresh){
     if(pending&&!fresh)return pending;
+    var requestId=++requestGeneration;
     pending=Promise.all([
       checked('/api/state',function(d){return d&&d.services&&typeof d.services==='object';}),
       checked('/api/workspace/prism/summary',function(d){return d&&d.success===true&&Array.isArray(d.records);}),
       checked('/api/integrations',function(d){return d&&d.success===true&&Array.isArray(d.cards);})
-    ]).then(function(rows){results={services:rows[0],workspace:rows[1],integrations:rows[2]};return results;});
+    ]).then(function(rows){var value={services:rows[0],workspace:rows[1],integrations:rows[2]};if(requestId===requestGeneration)results=value;return value;});
     return pending;
   }
   function stage(id,status,message){var el=document.querySelector('[data-boot-stage="'+id+'"]');if(!el)return;el.dataset.state=status;el.querySelector('b').textContent=message;}
-  var bootTimer,bootMinimum;
-  function enter(){clearTimeout(bootTimer);clearTimeout(bootMinimum);var boot=document.getElementById('boot');if(!boot)return;boot.classList.add('gone');boot.setAttribute('aria-hidden','true');boot.inert=true;window.dispatchEvent(new CustomEvent('u1:boot-complete',{detail:{checks:results}}));}
+  var bootTimer,bootMinimum,bootGeneration=0,bootActive=false,bootResults=null,previousFocus=null,previousShellInert=false;
+  function setBootInert(node,value){node.inert=!!value;if(value)node.setAttribute('inert','');else node.removeAttribute('inert');}
+  function enter(generation){
+    if(!bootActive||(generation!==undefined&&generation!==bootGeneration))return false;
+    bootActive=false;clearTimeout(bootTimer);clearTimeout(bootMinimum);
+    var boot=document.getElementById('boot'),shell=document.querySelector('.shell');if(!boot)return false;
+    boot.classList.add('gone');boot.setAttribute('aria-hidden','true');setBootInert(boot,true);
+    var locked=!!(window.U1Safety&&window.U1Safety.isLocked());if(shell){delete shell.dataset.u1BootInert;if(locked)shell.dataset.u1SafetyInert='true';setBootInert(shell,previousShellInert||locked||shell.dataset.u1SafetyInert==='true');}
+    if(!locked){var target=previousFocus&&previousFocus.isConnected&&previousFocus!==document.body&&!boot.contains(previousFocus)?previousFocus:document.getElementById('main');if(target&&target.focus){if(target.id==='main')target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}}
+    window.dispatchEvent(new CustomEvent('u1:boot-complete',{detail:{checks:bootResults,generation:bootGeneration}}));return true;
+  }
   function startup(preview){
     var boot=document.getElementById('boot');if(!boot)return;
-    clearTimeout(bootTimer);clearTimeout(bootMinimum);boot.classList.remove('gone');boot.removeAttribute('aria-hidden');boot.inert=false;
+    var generation=++bootGeneration,shell=document.querySelector('.shell');
+    if(!bootActive){previousFocus=document.activeElement;previousShellInert=!!(shell&&(shell.inert||shell.hasAttribute('inert'))&&!shell.dataset.u1BootInert&&!shell.dataset.u1SafetyInert);}
+    bootActive=true;bootResults=null;if(shell){shell.dataset.u1BootInert='true';setBootInert(shell,true);}
+    clearTimeout(bootTimer);clearTimeout(bootMinimum);boot.classList.remove('gone');boot.removeAttribute('aria-hidden');setBootInert(boot,false);
+    boot.setAttribute('role','dialog');boot.setAttribute('aria-modal','true');
     ['core','data','services','ai','integrations'].forEach(function(id){stage(id,'checking','Checking');});
     root.style.setProperty('--u1-boot-progress','20%');stage('core','ready','Interface loaded');
     var start=performance.now();
-    document.getElementById('u1-skip-boot').onclick=enter;
-    if(preferences.skipBoot&&!preview)enter();
-    bootTimer=setTimeout(function(){document.getElementById('u1-boot-message').textContent='Some checks are still unavailable. The workspace remains accessible.';enter();},2800);
+    var skip=document.getElementById('u1-skip-boot');skip.onclick=function(){enter(generation);};
+    function focusEnter(){if(generation!==bootGeneration||!bootActive||(window.U1Safety&&window.U1Safety.isLocked())||boot.contains(document.activeElement))return;skip.focus({preventScroll:true});}
+    focusEnter();requestAnimationFrame(focusEnter);
+    window.dispatchEvent(new CustomEvent('u1:boot-start',{detail:{preview:!!preview,generation:generation}}));
+    if(preferences.skipBoot&&!preview){enter(generation);requests(false);return;}
+    if(!preview)bootTimer=setTimeout(function(){if(generation!==bootGeneration||!bootActive)return;document.getElementById('u1-boot-message').textContent='Some checks are still unavailable. The workspace remains accessible.';enter(generation);},2800);
     requests(!!preview).then(function(r){
+      if(generation!==bootGeneration||!bootActive)return;bootResults=r;
       stage('services',r.services.available?'ready':'unavailable',r.services.available?'Backend responding':'Backend unavailable');
       stage('data',r.workspace.available?'ready':'unavailable',r.workspace.available?'Local records available':'Data unavailable');
       stage('integrations',r.integrations.available?'partial':'unavailable',r.integrations.available?'Account verification required':'Registry unavailable');
       stage('ai','partial','Choose an authorised provider');
       root.style.setProperty('--u1-boot-progress','100%');
       document.getElementById('u1-boot-message').textContent=r.services.available?'Local checks complete. Saved settings are not proof of account access.':'Backend unavailable. Use the U1 OS launcher to start your local server.';
-      bootMinimum=setTimeout(enter,Math.max(0,(still()?0:1200)-(performance.now()-start)));
+      if(preview)document.getElementById('u1-boot-message').textContent+=' Preview stays open until you choose Enter or press Escape.';
+      else bootMinimum=setTimeout(function(){enter(generation);},Math.max(0,(still()?0:1200)-(performance.now()-start)));
     });
   }
-  window.U1Launch={start:startup,preview:function(){startup(true);},requests:requests,get:get,preferences:function(){return Object.assign({},preferences);},save:function(values){Object.keys(preferences).forEach(function(k){if(values[k]!==undefined)preferences[k]=values[k];});apply();var persisted=true;try{localStorage.setItem(key,JSON.stringify(preferences));}catch(e){persisted=false;}window.dispatchEvent(new Event('u1:preferences'));return persisted;}};
+  document.addEventListener('keydown',function(event){if(!bootActive)return;var boot=document.getElementById('boot');if(event.key==='Escape'||(event.key==='Enter'&&document.activeElement===document.getElementById('u1-skip-boot'))){event.preventDefault();enter(bootGeneration);return;}if(event.key!=='Tab'||!boot)return;var items=Array.from(boot.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),[tabindex="0"]')).filter(function(el){return el.getClientRects().length>0;});if(!items.length)return;var first=items[0],last=items[items.length-1];if(event.shiftKey&&(document.activeElement===first||!boot.contains(document.activeElement))){event.preventDefault();last.focus();}else if(!event.shiftKey&&(document.activeElement===last||!boot.contains(document.activeElement))){event.preventDefault();first.focus();}},true);
+  window.U1Launch={start:startup,preview:function(){startup(true);},dismiss:function(){return enter(bootGeneration);},requests:requests,get:get,preferences:function(){return Object.assign({},preferences);},save:function(values){Object.keys(preferences).forEach(function(k){if(values[k]!==undefined)preferences[k]=values[k];});apply();var persisted=true;try{localStorage.setItem(key,JSON.stringify(preferences));}catch(e){persisted=false;}window.dispatchEvent(new Event('u1:preferences'));return persisted;}};
 
   var running=false,frame=0,last=0,engine=null,inView=true,slow=0,adaptiveScale=1;
   function desiredScale(){var cap=preferences.quality==='low'?1:preferences.quality==='balanced'?1.3:2;return Math.min(devicePixelRatio||1,cap)*adaptiveScale;}

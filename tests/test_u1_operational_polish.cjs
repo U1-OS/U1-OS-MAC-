@@ -206,3 +206,80 @@ test('runtime label repair is changed-only, scoped and stops on teardown', () =>
   instance.destroy(); button.removeAttribute('aria-label');
   assert.equal(f.frames.length, 0); assert.ok(f.observers.every(observer => !observer.target));
 });
+
+test('25 player replacements release all detached listeners before the render frame', () => {
+  const f = controlLifecycleFixture(), instance = polish.install(f.win), detached = [];
+  let current = f.player;
+  assert.equal(current.handlers.size, 8);
+  for (let index = 0; index < 25; index++) {
+    const old = current;
+    f.nodes.splice(f.nodes.indexOf(old), 1);
+    old.isConnected = false;
+    current = f.node('u1-local-media', { tagName: 'VIDEO', isConnected: true,
+      currentSrc: 'blob:http://localhost:8000/replacement-' + index, paused: true, readyState: 4, networkState: 1 });
+    detached.push(old);
+    f.mutate(f.doc.body, 'childList');
+    assert.equal(old.handlers.size, 0, 'Replacement must release the old player before requestAnimationFrame');
+    f.flush();
+    assert.equal(current.handlers.size, 8, 'Only the current player receives the eight polish listeners');
+  }
+  assert.equal(detached.reduce((total, player) => total + player.handlers.size, 0), 0);
+  instance.destroy(); assert.equal(current.handlers.size, 0);
+});
+
+test('player detachment without replacement removes listeners immediately on mutation delivery', () => {
+  const f = controlLifecycleFixture(), instance = polish.install(f.win);
+  assert.equal(f.player.handlers.size, 8);
+  f.nodes.splice(f.nodes.indexOf(f.player), 1); f.player.isConnected = false;
+  f.mutate(f.doc.body, 'childList');
+  assert.equal(f.player.handlers.size, 0, 'Cleanup must not wait for module teardown or the next render frame');
+  f.flush(); assert.equal(f.primary.textContent, 'Media / choose music or video');
+  instance.destroy();
+});
+
+test('connected player reparenting preserves listeners and playback without rebinding', () => {
+  const f = controlLifecycleFixture(); let added = 0, removed = 0;
+  const add = f.player.addEventListener, remove = f.player.removeEventListener;
+  f.player.addEventListener = function (event, handler) { added++; add.call(this, event, handler); };
+  f.player.removeEventListener = function (event, handler) { removed++; remove.call(this, event, handler); };
+  const before = { currentSrc: f.player.currentSrc, currentTime: f.player.currentTime, paused: f.player.paused, controls: f.player.controls };
+  const instance = polish.install(f.win); f.player.isConnected = true;
+  f.player.parent = f.node('new-native-media-slot');
+  f.mutate(f.doc.body, 'childList'); f.flush();
+  assert.equal(added, 8); assert.equal(removed, 0); assert.equal(f.player.handlers.size, 8);
+  for (const key of Object.keys(before)) assert.equal(f.player[key], before[key]);
+  instance.destroy(); assert.equal(removed, 8);
+});
+
+// Scrim ownership regressions: retain the existing node/handlers and Safety state.
+{
+  const assertScrim = require('node:assert/strict');
+  const installScrimPolish = require('../static/js/u1-operational-polish.js').install;
+  function scrimFixture(f) {
+    const shell = { style: { zIndex: '1' }, moves: 0, appendChild(node) { this.moves++; node.parentNode = this; } };
+    f.rail.closest = selector => selector === '.shell' ? shell : null;
+    const scrim = f.node('u1-nav-scrim', { parentNode: f.doc.body, style: { zIndex: '58' } });
+    const click = () => {};
+    scrim.addEventListener('click', click);
+    return { shell, scrim, click };
+  }
+  require('node:test')('mobile scrim belongs to rail shell without raising shell or replacing handlers', () => {
+    const f = fixture(); const { shell, scrim, click } = scrimFixture(f);
+    f.doc.documentElement.dataset.u1Safety = 'locked'; f.rail.inert = true; scrim.hidden = false;
+    const api = installScrimPolish(f.win);
+    assertScrim.equal(scrim.parentNode, shell);
+    assertScrim.equal(shell.style.zIndex, '1'); assertScrim.equal(scrim.style.zIndex, '58');
+    assertScrim.equal(scrim.handlers.get('click'), click); assertScrim.equal(scrim.hidden, false);
+    assertScrim.equal(f.rail.inert, true); assertScrim.equal(f.doc.documentElement.dataset.u1Safety, 'locked');
+    api.refresh(); api.refresh(); assertScrim.equal(shell.moves, 1); api.destroy();
+  });
+  require('node:test')('late-created or reparented scrim ownership converges without observer loops', () => {
+    const f = controlLifecycleFixture(); const api = installScrimPolish(f.win);
+    const { shell, scrim } = scrimFixture(f); scrim.hidden = true;
+    f.mutate(f.doc.body, 'childList'); f.flush();
+    assertScrim.equal(scrim.parentNode, shell); assertScrim.equal(scrim.hidden, true);
+    f.mutate(shell, 'childList'); f.flush(); assertScrim.equal(shell.moves, 1);
+    scrim.parentNode = f.doc.body; f.mutate(f.doc.body, 'childList'); f.flush();
+    assertScrim.equal(scrim.parentNode, shell); assertScrim.equal(shell.moves, 2); api.destroy();
+  });
+}

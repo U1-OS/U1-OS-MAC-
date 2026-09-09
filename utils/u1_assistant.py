@@ -281,16 +281,17 @@ class AssistantManager:
                 self.conversations.append(conversation)
             # The user deliberately chose this conversation. Include only completed prior turns.
             history = []
-            size = 0
             completed = {j['id'] for j in self.jobs if j['status'] == 'succeeded'}
             for message in reversed(conversation['messages']):
                 if message['job_id'] not in completed:
                     continue
                 item = dict(role=message['role'], text=message['text'])
-                size += len(_encoded(item))
-                if size > MAX_HISTORY:
-                    break
-                history.insert(0, item)
+                candidate = [item] + history
+                # One accepted output can exceed the history budget. Skip it,
+                # not every earlier short message; count JSON framing as well.
+                if len(_encoded(candidate)) > MAX_HISTORY:
+                    continue
+                history = candidate
             job = dict(id=uuid.uuid4().hex, kind=kind, request_id=request_id, fingerprint=fingerprint,
                        conversation_id=conversation['id'], role=role, title=prompt[:90],
                        status='queued', created_at=now, confirmed_at=now, started_at=None,
@@ -302,7 +303,15 @@ class AssistantManager:
             self._trim_conversation(conversation)
             self.jobs.append(job)
             while len(self.jobs) > MAX_JOBS:
-                self.jobs.remove(next(j for j in self.jobs if j['status'] not in ACTIVE))
+                from utils.u1_image_provider import retained_artifact
+                previous = next((j for j in self.jobs if j['status'] not in ACTIVE
+                                 and not retained_artifact(j)), None)
+                if previous is None:
+                    self.jobs, self.conversations = backup
+                    raise AssistantError('Job storage is full; retained image authorizations were preserved. No request was started.', 409)
+                # A retained PNG remains authorized by its successful job, not
+                # by discovering arbitrary files. Image eviction unpins the job.
+                self.jobs.remove(previous)
             if kind == 'image':
                 packed = _encoded(dict(model='gpt-image-1.5', prompt=prompt, n=1,
                                        size='1024x1024', quality='low', output_format='png'))

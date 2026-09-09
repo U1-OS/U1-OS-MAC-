@@ -6,6 +6,23 @@
   var selected = null, sourceId = null, cap = null, busy = false, currentCase = null, evidenceEdit = null;
   var extensions = /\.(mp4|m4v|mov|m4a|mp3|wav|flac|ogg|oga|ogv|webm|mkv|avi|aac)$/i;
   var registration = false;
+  var ownedSource = '', sourceEpoch = 0, accessEpoch = 0, activeImport = null;
+  function locked() { return !!((document.documentElement && document.documentElement.dataset.u1Safety === 'locked') || (window.U1Safety && window.U1Safety.isLocked && window.U1Safety.isLocked())); }
+  function ownsPlayerSource() { return !!(player && ownedSource && !player.srcObject && player.getAttribute('src') === ownedSource); }
+  function reconcileSource() {
+    if (!ownedSource || ownsPlayerSource()) return;
+    sourceEpoch++; ownedSource = ''; selected = null; sourceId = null;
+    if (activeImport) activeImport.cancelled = true;
+    if (mediaURL) URL.revokeObjectURL(mediaURL); mediaURL = null;
+    clearTrack();
+    if (mediaRoot) {
+      qs(mediaRoot, '[name=rights]').checked = false;
+      qs(mediaRoot, '[data-mr-source]').textContent = 'The persistent player source changed or was cleared. Choose or reload a source and review permission again before exporting. Your editor text has been kept.';
+    }
+  }
+  function sourceChanged() { reconcileSource(); availability(); updateMetadata(); }
+  function managedSource() { reconcileSource(); if (!sourceId || !selected || !ownsPlayerSource()) throw Error('Choose or reload the managed source currently shown in the player.'); return sourceId; }
+  function sameSource(serial) { reconcileSource(); if (serial !== sourceEpoch || locked() || !ownsPlayerSource()) throw Error('The media source or permission changed. The old result was not applied.'); }
 
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function qs(root, selector) { return root.querySelector(selector); }
@@ -14,18 +31,22 @@
   function status(root, value, error) { var el = qs(root, '[data-mr-status]'); if (el) { el.textContent = value; el.dataset.error = String(!!error); } }
 
   async function request(path, body) {
+    if (locked()) throw Error('Unlock U1 OS before using media or research.');
+    var generation = accessEpoch;
     var headers = {}, controller = new AbortController(), timer = setTimeout(function () { controller.abort(); }, 30000);
     try {
       if (body) {
         var tokenResponse = await fetch('/api/integrations', { credentials: 'same-origin', cache: 'no-store', signal: controller.signal });
         if (!tokenResponse.ok) throw Error('The local authorisation service is unavailable.');
         var registry = await tokenResponse.json();
+        if (locked() || generation !== accessEpoch) throw Error('The Safety state changed; the request was not sent.');
         if (!registry.csrf_token) throw Error('Reload the page to obtain local authorisation.');
         headers = { 'Content-Type': 'application/json', 'X-U1-CSRF': registry.csrf_token };
       }
       var response = await fetch(path, { method: body ? 'POST' : 'GET', headers: headers, credentials: 'same-origin',
         cache: 'no-store', body: body ? JSON.stringify(body) : undefined, signal: controller.signal });
       var result = await response.json();
+      if (locked() || generation !== accessEpoch) throw Error('The Safety state changed; this result was not applied.');
       if (!response.ok || result.success === false) throw Error(result.error || 'The local operation did not complete.');
       return result;
     } catch (error) {
@@ -114,6 +135,7 @@
     player.addEventListener('loadedmetadata', updateMetadata);
     player.addEventListener('emptied', updateMetadata);
     player.addEventListener('loadstart', updateMetadata);
+    if (typeof MutationObserver === 'function') new MutationObserver(sourceChanged).observe(player, { attributes: true, attributeFilter: ['src'], childList: true, subtree: true });
     player.addEventListener('error', function () {
       syncPlayerState();
       if (mediaRoot && hasPlayerSource()) status(mediaRoot, 'This browser could not play that file. Try MP4/H.264, MP3 or WAV, or import it for an FFmpeg export.', true);
@@ -142,6 +164,7 @@
 
   function updateMetadata() {
     if (!mediaRoot || !player) return;
+    reconcileSource(); availability();
     syncPlayerState();
     if (!hasPlayerSource()) {
       qs(mediaRoot, '[data-mr-metadata]').textContent = 'No file loaded. Choose local audio or video below to start.';
@@ -158,16 +181,19 @@
 
   function availability() {
     if (!mediaRoot) return;
-    qs(mediaRoot, '[data-mr-export]').disabled = busy || !sourceId || !cap || !cap.ffmpeg_available;
-    qs(mediaRoot, '[data-mr-inspect]').disabled = busy || !sourceId || !cap || !cap.ffmpeg_available;
-    qs(mediaRoot, '[data-mr-import]').disabled = busy || !selected || !!sourceId;
+    reconcileSource();
+    var valid = ownsPlayerSource(), consent = qs(mediaRoot, '[name=rights]').checked;
+    qs(mediaRoot, '[data-mr-export]').disabled = locked() || busy || !valid || !consent || !sourceId || !cap || !cap.ffmpeg_available;
+    qs(mediaRoot, '[data-mr-inspect]').disabled = locked() || busy || !valid || !sourceId || !cap || !cap.ffmpeg_available;
+    qs(mediaRoot, '[data-mr-import]').disabled = locked() || busy || !valid || !consent || !selected || !!sourceId;
   }
 
   function loadFile(file, id) {
     if (!file || !extensions.test(file.name) || file.size <= 0 || file.size > LIMIT) throw Error('Choose a supported audio or video file between 1 byte and 25 MB. Playlists are not supported.');
     ensurePlayer(); player.pause();
     if (mediaURL) URL.revokeObjectURL(mediaURL);
-    selected = file; sourceId = id || null; mediaURL = URL.createObjectURL(file);
+    sourceEpoch++; if (activeImport) activeImport.cancelled = true;
+    selected = file; sourceId = id || null; mediaURL = URL.createObjectURL(file); ownedSource = mediaURL;
     player.src = mediaURL; player.dataset.video = String(!/^audio\//.test(file.type));
     clearTrack(); mini.hidden = false;
     qs(mediaRoot, '[name=rights]').checked = false;
@@ -190,6 +216,7 @@
   }
 
   function rights() {
+    reconcileSource(); if (locked()) throw Error('Unlock U1 OS and review permission before exporting.');
     if (!qs(mediaRoot, '[name=rights]').checked) throw Error('Confirm your permission to use and export this material.');
     return true;
   }
@@ -217,22 +244,37 @@
 
   async function importSelected() {
     rights();
-    if (!selected) throw Error('Choose a local file first.');
+    if (!selected || !ownsPlayerSource()) throw Error('Choose a local file first.');
     var file = selected, progress = qs(mediaRoot, '[data-mr-progress]');
-    var start = await request('/api/workspace/prism/upload-start', { name: file.name, mime: file.type || 'application/octet-stream', size: file.size, folder: 'Media' });
-    progress.hidden = false; progress.max = file.size; progress.value = 0;
-    var finalChunk;
-    for (var offset = 0; offset < file.size; offset += 32768) {
-      var chunk = new Uint8Array(await file.slice(offset, offset + 32768).arrayBuffer()), binary = '';
-      for (var i = 0; i < chunk.length; i++) binary += String.fromCharCode(chunk[i]);
-      finalChunk = await request('/api/workspace/prism/upload-chunk', { id: start.id, offset: offset, content: btoa(binary) });
-      progress.value = finalChunk.received;
-      status(mediaRoot, 'Imported ' + megabytes(finalChunk.received) + ' of ' + megabytes(file.size) + '.');
+    var reservation = { id: null, ready: false, cancelled: false, epoch: sourceEpoch }; activeImport = reservation;
+    function current() { sameSource(reservation.epoch); rights(); if (reservation.cancelled || selected !== file) throw Error('The import was cancelled because its source changed.'); }
+    try {
+      var start = await request('/api/workspace/prism/upload-start', { name: file.name, mime: file.type || 'application/octet-stream', size: file.size, folder: 'Media' });
+      reservation.id = start.id; current();
+      progress.hidden = false; progress.max = file.size; progress.value = 0;
+      var finalChunk;
+      for (var offset = 0; offset < file.size; offset += 32768) {
+        current();
+        var chunk = new Uint8Array(await file.slice(offset, offset + 32768).arrayBuffer()), binary = ''; current();
+        for (var i = 0; i < chunk.length; i++) binary += String.fromCharCode(chunk[i]);
+        finalChunk = await request('/api/workspace/prism/upload-chunk', { id: start.id, offset: offset, content: btoa(binary) });
+        reservation.ready = finalChunk.status === 'ready' && finalChunk.received === file.size;
+        current(); progress.value = finalChunk.received;
+        status(mediaRoot, 'Imported ' + megabytes(finalChunk.received) + ' of ' + megabytes(file.size) + '.');
+      }
+      if (!reservation.ready) throw Error('The managed upload is not complete. Import the file again.');
+      sourceId = start.id;
+      qs(mediaRoot, '[data-mr-source]').textContent = 'Managed source ready for export.';
+      await refreshMedia(); current(); status(mediaRoot, 'Imported into the local Media folder. Your original is unchanged.');
+    } catch (error) {
+      if (reservation.id && !reservation.ready && !locked()) {
+        try { await request('/api/workspace/prism/upload-abort', { id: reservation.id }); }
+        catch (_) { throw Error(error.message + ' The incomplete import could not be released; review it in Files before retrying.'); }
+      }
+      throw error;
+    } finally {
+      if (activeImport === reservation) activeImport = null;
     }
-    if (!finalChunk || finalChunk.status !== 'ready' || finalChunk.received !== file.size) throw Error('The managed upload is not complete. Import the file again.');
-    sourceId = start.id;
-    qs(mediaRoot, '[data-mr-source]').textContent = 'Managed source ready for export.';
-    await refreshMedia(); status(mediaRoot, 'Imported into the local Media folder. Your original is unchanged.');
   }
 
   function createMedia() {
@@ -254,6 +296,7 @@
       '<div class="u1-mr-actions"><button type="button" data-mr-caption-preview>Preview captions</button><button type="button" data-mr-srt>Export SRT</button></div></section>' +
       '<p class="u1-mr-status" data-mr-status role="status" aria-live="polite"></p><footer class="u1-mr-footer">Local files and authorised exports. Spotify and YouTube subscriptions are not connected. No remote media download, DRM removal or watermark removal.</footer></div>';
     bindRoutes(mediaRoot);
+    qs(mediaRoot, '[name=rights]').addEventListener('change', availability);
     qs(mediaRoot, '[data-mr-file]').addEventListener('change', function (event) { try { if (!busy && event.target.files[0]) loadFile(event.target.files[0]); } catch (e) { status(mediaRoot, e.message, true); } });
     mediaRoot.addEventListener('click', function (event) {
       var button = event.target.closest('button'); if (!button || button.hasAttribute('data-mr-route')) return;
@@ -270,14 +313,16 @@
         if (button.dataset.mrMark) { if (!player.getAttribute('src')) throw Error('Load a file first.'); qs(mediaRoot, '[name=' + button.dataset.mrMark + ']').value = player.currentTime.toFixed(3); }
         if (button.hasAttribute('data-mr-preview')) { var range = clipValues(); player.currentTime = range.clip_in; await player.play(); status(mediaRoot, 'Playing the selected clip range.'); }
         if (button.hasAttribute('data-mr-inspect')) {
+          var inspectId = managedSource(), inspectEpoch = sourceEpoch;
           status(mediaRoot, 'Inspecting with the installed FFmpeg...');
-          var info = await request(API, { action: 'inspect', source_id: sourceId });
+          var info = await request(API, { action: 'inspect', source_id: inspectId }); sameSource(inspectEpoch);
           status(mediaRoot, 'FFmpeg: ' + info.duration_seconds.toFixed(2) + ' seconds / ' + (info.video ? 'video' : '') + (info.audio ? ' audio' : '') + '.');
         }
         if (button.hasAttribute('data-mr-export')) {
-          var payload = Object.assign({ action: 'clip_export', source_id: sourceId, rights_confirmed: rights(), format: qs(mediaRoot, '[name=export_format]').value }, clipValues());
+          var exportId = managedSource(), exportEpoch = sourceEpoch;
+          var payload = Object.assign({ action: 'clip_export', source_id: exportId, rights_confirmed: rights(), format: qs(mediaRoot, '[name=export_format]').value }, clipValues());
           status(mediaRoot, 'FFmpeg is rendering. Progress is not measured; the render stops after 12 seconds if unfinished.');
-          saveDownload(await request(API, payload)); status(mediaRoot, 'FFmpeg completed the clip. Download requested; export SRT separately for captions.');
+          var exported = await request(API, payload); sameSource(exportEpoch); rights(); saveDownload(exported); status(mediaRoot, 'FFmpeg completed the clip. Download requested; export SRT separately for captions.');
         }
         if (button.hasAttribute('data-mr-srt')) { saveDownload(await captionResult(qs(mediaRoot, '[name=trim_captions]').checked)); status(mediaRoot, 'SRT created. Download requested.'); }
         if (button.hasAttribute('data-mr-caption-preview')) {
@@ -398,7 +443,7 @@
   function register() {
     if (registration) return true;
     if (!window.U1CoreViews) return false;
-    window.U1CoreViews.register('media', mountMedia); window.U1CoreViews.register('osint', mountResearch); registration = true;
+    window.U1CoreViews.register('media', mountMedia, { activate: mountMedia, deactivate: unmountMedia }); window.U1CoreViews.register('osint', mountResearch); registration = true;
     document.dispatchEvent(new CustomEvent('u1:native-views-ready', { detail: { ids: ['media', 'osint'] } }));
     return true;
   }
@@ -408,6 +453,7 @@
   // earlier DOMContentLoaded router listener chooses or caches a fallback view.
   register();
   document.addEventListener('u1:core-views-ready', register);
+  document.addEventListener('u1:safety-change', function (event) { if (event.detail && event.detail.locked) { accessEpoch++; sourceEpoch++; if (activeImport) activeImport.cancelled = true; if (mediaRoot) { qs(mediaRoot, '[name=rights]').checked = false; availability(); } } });
   function init() {
     register();
     new MutationObserver(function () {

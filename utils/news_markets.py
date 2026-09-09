@@ -2,6 +2,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import email.utils
 import hashlib
+import ipaddress
 import json
 import math
 import re
@@ -24,40 +25,140 @@ SOURCES = {
 DEFAULT_SYMBOLS = ['BHP.AX', 'CBA.AX', 'AAPL', 'MSFT', 'NVDA', 'SPY']
 
 
+MAX_CACHE_KEYS = 256
+FAILURE_SECONDS = 60
+MAX_FEED_BYTES = 2_000_000
+KEY_USERS = {}
+KEY_TOUCHED = {}
+FETCH_HOSTS = frozenset({
+    'feeds.bbci.co.uk', 'www.theguardian.com', 'query1.finance.yahoo.com',
+    'wttr.in', 'news.ycombinator.com',
+})
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ValueError('Provider redirects require a reviewed endpoint change')
+
+
+def safe_story_url(value, hosts=()):
+    if not isinstance(value, str) or len(value) > 2000 or any(ord(c) < 32 for c in value):
+        return None
+    try:
+        parsed = urllib.parse.urlsplit(value)
+        host = (parsed.hostname or '').lower()
+        if (parsed.scheme not in {'http', 'https'} or not host
+                or parsed.username is not None or parsed.password is not None
+                or parsed.port not in {None, 80, 443}):
+            return None
+        if hosts and not any(host == item or host.endswith('.' + item) for item in hosts):
+            return None
+        if host == 'localhost' or host.endswith(('.localhost', '.local')) or '.' not in host and ':' not in host:
+            return None
+        try:
+            if not ipaddress.ip_address(host).is_global:
+                return None
+        except ValueError:
+            pass
+        return value
+    except ValueError:
+        return None
+
+
+def published_time(value):
+    try:
+        date = email.utils.parsedate_to_datetime(value or '')
+        result = date.timestamp() if date.tzinfo is not None else None
+        return result if result is not None and math.isfinite(result) else None
+    except (ValueError, TypeError, AttributeError, OverflowError):
+        return None
+
+
+def rss_channel(content):
+    if not isinstance(content, (bytes, bytearray)) or len(content) > MAX_FEED_BYTES:
+        raise ValueError('Provider response exceeds the size limit or is not bytes')
+    # Decode before checking declarations. UTF-16/32 cannot hide markers behind NULs.
+    text = content.decode('utf-8-sig', errors='strict')
+    if '\x00' in text or '<!DOCTYPE' in text.upper() or '<!ENTITY' in text.upper():
+        raise ValueError('Unsupported feed declaration or encoding')
+    root = ET.fromstring(text)
+    channel = root.find('channel')
+    if root.tag != 'rss' or channel is None:
+        raise ValueError('The provider did not return an RSS feed')
+    return channel
+
+
 def fetch(url):
+    parsed = urllib.parse.urlsplit(url)
+    if (parsed.scheme != 'https' or parsed.hostname not in FETCH_HOSTS
+            or parsed.username is not None or parsed.password is not None
+            or parsed.port not in {None, 443}):
+        raise ValueError('Only fixed public provider endpoints are supported')
     request = urllib.request.Request(url, headers={
         'User-Agent': 'Mozilla/5.0 (compatible; U1OS/2.0; personal local dashboard)',
         'Accept': 'application/json, application/rss+xml, application/xml, text/xml',
+        'Accept-Encoding': 'identity',
     })
-    with urllib.request.urlopen(request, timeout=8) as response:
-        content = response.read(2_000_001)
-    if len(content) > 2_000_000:
-        raise ValueError('Provider response exceeds the size limit')
-    return content
+    deadline = time.monotonic() + 12
+    with urllib.request.build_opener(NoRedirect()).open(request, timeout=8) as response:
+        if response.geturl() != url or response.headers.get('Content-Encoding', 'identity').lower() != 'identity':
+            raise ValueError('Unexpected provider destination or content encoding')
+        read = getattr(response, 'read1', response.read)
+        chunks, size = [], 0
+        while True:
+            if time.monotonic() >= deadline:
+                raise ValueError('Provider read deadline exceeded')
+            chunk = read(min(65536, MAX_FEED_BYTES + 1 - size))
+            if not chunk:
+                return b''.join(chunks)
+            size += len(chunk)
+            if size > MAX_FEED_BYTES:
+                raise ValueError('Provider response exceeds the size limit')
+            chunks.append(chunk)
 
 
 def snapshot(key, seconds, loader):
     with LOCK:
-        # Keep user-selected symbol caches bounded without removing in-flight locks.
-        if len(KEY_LOCKS) >= 256 and key not in KEY_LOCKS:
-            return dict(success=False, stale=False, error='Too many distinct feed requests. Restart the app to clear the feed cache.')
-        guard = KEY_LOCKS.setdefault(key, threading.Lock())
-    with guard:
+        if key not in KEY_LOCKS:
+            if len(KEY_LOCKS) >= MAX_CACHE_KEYS:
+                unused = [item for item, lock in KEY_LOCKS.items()
+                          if KEY_USERS.get(item, 0) == 0 and not lock.locked()]
+                if not unused:
+                    return dict(success=False, stale=False, refresh_seconds=1,
+                                error='Feed cache is busy. Retry after the current requests finish.')
+                victim = min(unused, key=lambda item: KEY_TOUCHED.get(item, 0))
+                for mapping in (CACHE, KEY_LOCKS, KEY_USERS, KEY_TOUCHED):
+                    mapping.pop(victim, None)
+            KEY_LOCKS[key] = threading.Lock()
+        guard = KEY_LOCKS[key]
+        # Reserve before waiting on the per-key lock: queued callers prevent eviction too.
+        KEY_USERS[key] = KEY_USERS.get(key, 0) + 1
+        KEY_TOUCHED[key] = time.monotonic()
+    try:
+        with guard:
+            with LOCK:
+                previous = CACHE.get(key)
+                ttl = min(seconds, FAILURE_SECONDS) if previous and previous.get('success') is False else seconds
+                if previous and time.time() - previous['attempted_at'] < ttl:
+                    return dict(previous)
+            try:
+                result = loader()
+                if not isinstance(result, dict) or result.get('success') is False:
+                    raise ValueError('The provider did not supply a successful snapshot')
+                result.update(success=True, stale=False, fetched_at=time.time(), error=None)
+            except Exception:
+                result = dict(previous or {})
+                result.update(success=False, stale=bool(previous and previous.get('fetched_at')),
+                              error='Provider unavailable or access restricted. Any retained data is stale.')
+            result.update(attempted_at=time.time(),
+                          refresh_seconds=seconds if result['success'] else min(seconds, FAILURE_SECONDS))
+            with LOCK:
+                CACHE[key] = result
+            return dict(result)
+    finally:
         with LOCK:
-            previous = CACHE.get(key)
-            if previous and time.time() - previous['attempted_at'] < seconds:
-                return dict(previous)
-        try:
-            result = loader()
-            result.update(success=True, stale=False, fetched_at=time.time(), error=None)
-        except Exception:
-            result = dict(previous or {})
-            result.update(success=False, stale=bool(previous and previous.get('fetched_at')),
-                          error='Provider unavailable or access restricted. Any retained data is stale.')
-        result.update(attempted_at=time.time(), refresh_seconds=seconds)
-        with LOCK:
-            CACHE[key] = result
-        return dict(result)
+            KEY_USERS[key] -= 1
+            KEY_TOUCHED[key] = time.monotonic()
 
 
 def news(category):
@@ -66,25 +167,17 @@ def news(category):
     name, endpoint, source_url = SOURCES[category]
 
     def load():
-        content = fetch(endpoint)
-        if b'<!DOCTYPE' in content.upper() or b'<!ENTITY' in content.upper():
-            raise ValueError('Unsupported feed declaration')
-        root = ET.fromstring(content)
-        channel = root.find('channel')
-        if root.tag != 'rss' or channel is None:
-            raise ValueError('The provider did not return an RSS feed')
-        items = []
+        channel = rss_channel(fetch(endpoint))
+        items, seen = [], set()
         for row in channel.findall('item')[:40]:
             title = (row.findtext('title') or '').strip()[:400]
             link = (row.findtext('link') or '').strip()
-            parsed = urllib.parse.urlsplit(link)
             allowed = ('theguardian.com',) if category == 'australia' else ('bbc.com', 'bbc.co.uk')
-            if not title or parsed.scheme not in {'http', 'https'} or not any(parsed.hostname == host or (parsed.hostname or '').endswith('.' + host) for host in allowed):
+            link = safe_story_url(link, allowed)
+            if not title or not link or link in seen:
                 continue
-            try:
-                published = email.utils.parsedate_to_datetime(row.findtext('pubDate') or '').timestamp()
-            except (ValueError, TypeError, AttributeError):
-                published = None
+            seen.add(link)
+            published = published_time(row.findtext('pubDate'))
             items.append(dict(id=hashlib.sha256(link.encode()).hexdigest()[:24], title=title,
                               url=link, published_at=published, source=name))
         items.sort(key=lambda item: item['published_at'] or 0, reverse=True)

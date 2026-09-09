@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 enum NavigationPolicy {
     static let base = URL(string: "http://127.0.0.1:8788/")!
@@ -25,5 +26,18 @@ enum NavigationPolicy {
         guard let path = value as? String, path.hasPrefix("/"), !root.isEmpty else { return false }
         return URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
             == URL(fileURLWithPath: root).standardizedFileURL.resolvingSymlinksInPath()
+    }
+
+    static func installationID(root: String) -> String {
+        guard root.hasPrefix("/") else { return "" }
+        let path = URL(fileURLWithPath: root).standardizedFileURL.resolvingSymlinksInPath().path
+        return SHA256.hash(data: Data(path.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    static func matchesHealthIdentity(_ value: [String: Any], root: String) -> Bool {
+        let expected = installationID(root: root)
+        return !expected.isEmpty && value["service"] as? String == "u1-os"
+            && value["protocol"] as? Int == 1 && value["locked"] is Bool
+            && value["installation_id"] as? String == expected
     }
 }

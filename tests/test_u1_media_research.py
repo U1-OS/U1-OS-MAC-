@@ -1,4 +1,4 @@
-"""Isolated local fixtures only. No real user files, accounts, subprocesses or network."""
+"""Isolated fixtures only; real FFmpeg tests are opt-in and entirely synthetic."""
 import base64
 import io
 import json
@@ -11,6 +11,12 @@ import wave
 from unittest.mock import Mock, patch
 
 from utils import u1_media_research as mr
+
+
+def decoded_audio(seconds=2):
+    samples = round(seconds * 44100)
+    return ('#tb 0: 1/44100\n#media_type 0: audio\n#codec_id 0: pcm_s16le\n'
+            '#sample_rate 0: 44100\n0, 0, 0, %d, %d, 1234abcd\n' % (samples, samples * 2))
 
 
 class ResearchTests(unittest.TestCase):
@@ -176,10 +182,12 @@ class ResearchTests(unittest.TestCase):
         source_id = self.upload()
         calls = []
 
-        def runner(args, timeout):
+        def runner(args, timeout, *, stdout_line=None):
             calls.append((args, timeout))
-            if len(calls) == 1:
-                return 1, b'Duration: 00:00:10.00\n Stream #0:0: Audio: pcm_s16le\n'
+            if stdout_line:
+                for line in decoded_audio(10 if len(calls) == 1 else 2).splitlines(True):
+                    stdout_line(line)
+                return 0, b'Duration: 00:10:00.00\n Stream #0:0: Video: spoofed metadata\n'
             Path(args[-1]).write_bytes(b'RIFF-rendered-fixture')
             return 0, b''
 
@@ -187,6 +195,8 @@ class ResearchTests(unittest.TestCase):
             result = mr.action(dict(action='clip_export', source_id=source_id, clip_in=1, clip_out=3, format='wav', rights_confirmed=True))
         self.assertEqual(base64.b64decode(result['content']), b'RIFF-rendered-fixture')
         self.assertEqual(result['engine'], 'FFmpeg')
+        self.assertEqual(result['validation']['audio_samples'], 88200)
+        self.assertEqual(result['validation']['video_frames'], 0)
         self.assertIn('-fs', calls[1][0])
         self.assertIn('-map_metadata', calls[1][0])
         self.assertIn('wav', calls[1][0])
@@ -195,9 +205,38 @@ class ResearchTests(unittest.TestCase):
 
     def test_no_success_on_failed_output_and_source_range_overrun(self):
         source_id = self.upload()
-        for end, log in [(3, b'failed'), (12, b'failed')]:
-            with patch.object(mr, 'ffmpeg_binary', return_value=('/trusted/ffmpeg', 'mock')), patch.object(mr, 'run_bounded', side_effect=[(1, b'Duration: 00:00:10.00\nStream #0:0: Audio: pcm\n'), (1, log)]), self.assertRaises(ValueError):
+        for end in (3, 12):
+            def runner(args, timeout, *, stdout_line=None):
+                if stdout_line:
+                    for line in decoded_audio(10).splitlines(True):
+                        stdout_line(line)
+                    return 0, b''
+                return 1, b'failed'
+            with patch.object(mr, 'ffmpeg_binary', return_value=('/trusted/ffmpeg', 'mock')), patch.object(mr, 'run_bounded', side_effect=runner), self.assertRaises(ValueError):
                 mr.action(dict(action='clip_export', source_id=source_id, clip_in=0, clip_out=end, format='wav', rights_confirmed=True))
+
+    def test_empty_or_truncated_successful_render_is_rejected(self):
+        source_id = self.upload()
+        for validation in ('', decoded_audio(0.1)):
+            calls = []
+            def runner(args, timeout, *, stdout_line=None):
+                calls.append(args)
+                if stdout_line:
+                    for line in (decoded_audio(10) if len(calls) == 1 else validation).splitlines(True):
+                        stdout_line(line)
+                else:
+                    Path(args[-1]).write_bytes(b'RIFF-header-without-requested-samples')
+                return 0, b''
+            with self.subTest(validation=validation), patch.object(mr, 'ffmpeg_binary', return_value=('/trusted/ffmpeg', 'mock')), patch.object(mr, 'run_bounded', side_effect=runner), self.assertRaises(ValueError):
+                mr.action(dict(action='clip_export', source_id=source_id, clip_in=1, clip_out=3, format='wav', rights_confirmed=True))
+
+    def test_operation_deadline_prevents_render_after_expired_probe_budget(self):
+        source_id = self.upload()
+        info = dict(duration_seconds=10, audio=True, video=False)
+        with patch.object(mr, 'ffmpeg_binary', return_value=('/trusted/ffmpeg', 'mock')), patch.object(mr, 'probe', return_value=info), patch.object(mr.time, 'monotonic', side_effect=[0, 0, mr.MEDIA_TIMEOUT + 1]), patch.object(mr, 'run_bounded') as render:
+            with self.assertRaisesRegex(ValueError, 'total time limit'):
+                mr.action(dict(action='clip_export', source_id=source_id, clip_in=1, clip_out=3, format='wav', rights_confirmed=True))
+        render.assert_not_called()
 
     def test_media_lock_rejects_concurrent_work(self):
         mr.MEDIA_LOCK.acquire()
@@ -222,6 +261,21 @@ class CaptionTests(unittest.TestCase):
                       self.SRT.replace('First line', '<script>x</script>'), self.SRT.replace('1\n', '7\n', 1), 'x' * 48001]:
             with self.subTest(value=value[:40]), self.assertRaises(ValueError):
                 mr.captions_export(dict(captions=value, rights_confirmed=True))
+
+    def test_sub_millisecond_clips_reject_instead_of_exporting_zero_length_cues(self):
+        cue = '1\n00:00:00,000 --> 00:00:01,000\nSynthetic cue\n'
+        for start, end in ((0.0006, 0.0007), (0.00049, 0.00051), (0, 0.0009)):
+            with self.subTest(start=start, end=end), self.assertRaisesRegex(ValueError, 'millisecond'):
+                mr.captions_export(dict(captions=cue, rights_confirmed=True, trim_to_clip=True, clip_in=start, clip_out=end))
+
+    def test_millisecond_edge_exports_roundtrip_through_strict_srt_parser(self):
+        cue = '1\n00:00:00,000 --> 00:00:02,000\nSynthetic cue\n'
+        for start, end in ((0.0006, 0.0016), (1, 1.001), (0.4996, 0.501), (0, 0.001)):
+            with self.subTest(start=start, end=end):
+                result = mr.captions_export(dict(captions=cue, rights_confirmed=True, trim_to_clip=True, clip_in=start, clip_out=end))
+                cues = mr.parse_srt(base64.b64decode(result['content']).decode())
+                self.assertEqual(len(cues), 1)
+                self.assertLess(cues[0][0], cues[0][1])
 
     def test_time_bounds_and_rights(self):
         for start, end in [(True, 1), (0, float('nan')), (0, float('inf')), (-1, 1), (2, 2), (3, 2), (0, 121), (86400, 86401), ('0', 2), (None, 2)]:
@@ -262,6 +316,57 @@ class ProcessTests(unittest.TestCase):
             mr.run_bounded(['/trusted/ffmpeg'], 1)
         process.kill.assert_called_once()
         self.assertTrue(process.stdout.closed)
+
+    def test_structured_stdout_excludes_spoofed_stderr_metadata(self):
+        process = self.process(decoded_audio(1).encode())
+        process.stderr = io.BytesIO(b'Duration: 00:10:00.00\nStream #0:0: Video: spoofed\n')
+        with patch.object(mr.subprocess, 'Popen', return_value=process) as popen:
+            result = mr.probe('/trusted/ffmpeg', {'name': 'test.wav'}, Path('/synthetic/test.wav'))
+        self.assertEqual(result['duration_seconds'], 1)
+        self.assertFalse(result['video'])
+        self.assertEqual(result['streams'][0]['audio_samples'], 44100)
+        self.assertEqual(popen.call_args.kwargs['stderr'], subprocess.PIPE)
+        self.assertTrue(process.stdout.closed)
+        self.assertTrue(process.stderr.closed)
+
+    def test_structured_probe_overflow_and_malformed_output_kill_and_reap(self):
+        for data in (b'x' * 1025, b'not structured\n', decoded_audio().encode()):
+            process = self.process(data)
+            process.stderr = io.BytesIO(b'')
+            with self.subTest(data=data[:20]), patch.object(mr, 'MAX_PROBE_BYTES', 100), patch.object(mr.subprocess, 'Popen', return_value=process), self.assertRaises(ValueError):
+                mr.probe('/trusted/ffmpeg', {'name': 'test.wav'}, Path('/synthetic/test.wav'))
+            process.kill.assert_called()
+            process.wait.assert_called()
+
+    def test_structured_probe_timeout_closes_both_pipes(self):
+        process = self.process(decoded_audio().encode())
+        process.stderr = io.BytesIO(b'')
+        process.wait.side_effect = [subprocess.TimeoutExpired('ffmpeg', 1), 0]
+        with patch.object(mr.subprocess, 'Popen', return_value=process), self.assertRaisesRegex(ValueError, 'time limit'):
+            mr.probe('/trusted/ffmpeg', {'name': 'test.wav'}, Path('/synthetic/test.wav'))
+        self.assertTrue(process.stdout.closed)
+        self.assertTrue(process.stderr.closed)
+
+    def test_empty_invalid_timing_and_packet_limit_cannot_claim_decoded_samples(self):
+        for raw in ('', decoded_audio().replace('88200, 176400', '0, 176400'),
+                    decoded_audio().replace('1/44100', '1/0'), decoded_audio().replace('pcm_s16le', 'fake_codec'),
+                    decoded_audio().replace('88200, 176400', '88200, 1')):
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                decoded = mr.DecodedStreams()
+                for line in raw.splitlines(True):
+                    decoded.line(line)
+                decoded.result()
+        with patch.object(mr, 'MAX_PROBE_PACKETS', 0), self.assertRaises(ValueError):
+            decoded = mr.DecodedStreams()
+            for line in decoded_audio().splitlines(True):
+                decoded.line(line)
+
+    def test_failed_decoder_does_not_accept_valid_partial_records(self):
+        process = self.process(decoded_audio().encode())
+        process.stderr = io.BytesIO(b'decode failed')
+        process.returncode = 1
+        with patch.object(mr.subprocess, 'Popen', return_value=process), self.assertRaisesRegex(ValueError, 'fully decode'):
+            mr.probe('/trusted/ffmpeg', {'name': 'test.wav'}, Path('/synthetic/test.wav'))
 
     def test_imageio_installed_binary_and_unavailable_detection(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -348,6 +453,7 @@ class SyntheticFFmpegTests(unittest.TestCase):
                 '-f', 'lavfi', '-i', 'color=c=teal:s=64x64:r=10:d=1',
                 '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1',
                 '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac',
+                '-metadata', 'comment=Duration: 00:10:00.00\nStream #0:0: Audio: injected metadata',
                 '-threads', '1', '-shortest', str(source),
             ], 8)
             self.assertEqual(code, 0, log.decode(errors='replace'))
@@ -361,6 +467,11 @@ class SyntheticFFmpegTests(unittest.TestCase):
                 inspected = mr.action(dict(action='inspect', source_id=uploaded['id']))
                 self.assertTrue(inspected['audio'])
                 self.assertTrue(inspected['video'])
+                self.assertAlmostEqual(inspected['duration_seconds'], 1, delta=0.05)
+                for output_format in ('mp4', 'wav'):
+                    with self.subTest(spoofed_range_format=output_format), self.assertRaisesRegex(ValueError, 'beyond'):
+                        mr.action(dict(action='clip_export', source_id=uploaded['id'], clip_in=2, clip_out=3,
+                                       format=output_format, rights_confirmed=True))
                 for output_format in ['mp4', 'wav']:
                     with self.subTest(format=output_format):
                         exported = mr.action(dict(action='clip_export', source_id=uploaded['id'],
@@ -369,6 +480,9 @@ class SyntheticFFmpegTests(unittest.TestCase):
                         output.write_bytes(base64.b64decode(exported['content']))
                         self.assertEqual(exported['engine'], 'FFmpeg')
                         self.assertGreater(exported['size'], 100)
+                        self.assertGreater(exported['validation']['audio_samples'], 0)
+                        if output_format == 'mp4':
+                            self.assertGreater(exported['validation']['video_frames'], 0)
                         if output_format == 'wav':
                             with wave.open(str(output), 'rb') as audio:
                                 self.assertEqual(audio.getframerate(), 44100)
@@ -377,6 +491,48 @@ class SyntheticFFmpegTests(unittest.TestCase):
                         code, log = mr.run_bounded([binary, '-hide_banner', '-nostdin', '-loglevel', 'error',
                                                    '-i', str(output), '-f', 'null', '-'], 4)
                         self.assertEqual(code, 0, log.decode(errors='replace'))
+
+    def test_real_empty_outputs_are_rejected_even_when_ffmpeg_returns_zero(self):
+        binary, _ = mr.ffmpeg_binary()
+        self.assertIsNotNone(binary)
+        with tempfile.TemporaryDirectory(prefix='u1-mr-empty-synthetic-') as directory:
+            root = Path(directory)
+            source = root / 'synthetic.wav'
+            with wave.open(str(source), 'wb') as stream:
+                stream.setnchannels(1)
+                stream.setsampwidth(2)
+                stream.setframerate(8000)
+                stream.writeframes(b'\x00\x00' * 8000)
+            wav = root / 'empty.wav'
+            code, _ = mr.run_bounded([binary, '-hide_banner', '-nostdin', '-loglevel', 'error', '-y',
+                                      '-i', str(source), '-ss', '2', '-t', '1', str(wav)], 4)
+            self.assertEqual(code, 0)
+            self.assertGreater(wav.stat().st_size, 0)
+            with wave.open(str(wav), 'rb') as stream:
+                self.assertEqual(stream.getnframes(), 0)
+            with self.assertRaises(ValueError):
+                mr.validate_output(binary, wav, 'wav', 1, {'audio': True}, 4)
+            mp4 = root / 'empty.mp4'
+            code, _ = mr.run_bounded([binary, '-hide_banner', '-nostdin', '-loglevel', 'error', '-y',
+                                      '-f', 'lavfi', '-i', 'color=c=black:s=64x64:r=10:d=1',
+                                      '-ss', '2', '-t', '1', '-c:v', 'libx264', '-threads', '1', str(mp4)], 4)
+            self.assertEqual(code, 0)
+            self.assertGreater(mp4.stat().st_size, 0)
+            with self.assertRaises(ValueError):
+                mr.validate_output(binary, mp4, 'mp4', 1, {'audio': False}, 4)
+
+    def test_real_short_audio_cannot_pass_a_longer_export_contract(self):
+        binary, _ = mr.ffmpeg_binary()
+        self.assertIsNotNone(binary)
+        with tempfile.TemporaryDirectory(prefix='u1-mr-short-synthetic-') as directory:
+            source = Path(directory) / 'short.wav'
+            with wave.open(str(source), 'wb') as stream:
+                stream.setnchannels(1)
+                stream.setsampwidth(2)
+                stream.setframerate(8000)
+                stream.writeframes(b'\x00\x00' * 800)
+            with self.assertRaisesRegex(ValueError, 'duration'):
+                mr.validate_output(binary, source, 'wav', 1, {'audio': True}, 4)
 
 
 if __name__ == '__main__':

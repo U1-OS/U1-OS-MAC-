@@ -311,6 +311,17 @@ class SpotifyManager:
             if blocked or epoch != self.epoch:
                 raise SpotifyError('safety_blocked')
 
+    def _check_epoch(self, epoch):
+        """Caller holds self.lock. Never consult Safety while holding it."""
+        if epoch != self.epoch:
+            raise SpotifyError('safety_blocked')
+
+    def _keychain_checked(self, epoch, action, value=None):
+        self._allowed(epoch)
+        with self.lock:
+            self._check_epoch(epoch)
+            return self._keychain(action, value) if value is not None else self._keychain(action)
+
     def cancel(self):
         with self.lock:
             self.epoch += 1
@@ -338,9 +349,14 @@ class SpotifyManager:
             raise SpotifyError('invalid_client_id')
         if self.config.get('credentials_saved') and self.config.get('client_id') != client_id:
             raise SpotifyError('disconnect_before_reconfigure')
-        self._ensure_helper()  # Explicit setup only; does not read or test a Keychain item.
-        self.cancel()
         with self.lock:
+            epoch = self.epoch
+        self._allowed(epoch)
+        self._ensure_helper()  # Explicit setup only; does not read or test a Keychain item.
+        self._allowed(epoch)
+        with self.lock:
+            self._check_epoch(epoch)
+            self.cancel()
             self.config = {'client_id': client_id, 'credentials_saved': self.config.get('credentials_saved', False)}
             self.status = 'auth_required'
             self._save()
@@ -350,7 +366,9 @@ class SpotifyManager:
         if not self.config:
             raise SpotifyError('setup_needed')
         _private_file(self.helper)
-        self.cancel()
+        with self.lock:
+            self.cancel()
+            epoch = self.epoch
         owner = self
 
         class Callback(BaseHTTPRequestHandler):
@@ -385,7 +403,7 @@ class SpotifyManager:
         challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode('ascii')).digest()).rstrip(b'=').decode('ascii')
         pending = {'state': secrets.token_urlsafe(32), 'verifier': verifier, 'deadline': time.monotonic() + 600,
                    'redirect': 'http://127.0.0.1:' + str(server.server_port) + CALLBACK_PATH,
-                   'stop': threading.Event(), 'epoch': self.epoch}
+                   'stop': threading.Event(), 'epoch': epoch}
         try:
             self._allowed(pending['epoch'])
             with self.lock:
@@ -406,6 +424,12 @@ class SpotifyManager:
                             self.pending = None
                             self.status = 'auth_required'
             threading.Thread(target=listen, name='u1-spotify-oauth', daemon=True).start()
+            self._allowed(epoch)
+            with self.lock:
+                self._check_epoch(epoch)
+                result = dict(self.snapshot(), authorization_url='https://accounts.spotify.com/authorize?' + urllib.parse.urlencode({
+                    'client_id': self.config['client_id'], 'response_type': 'code', 'redirect_uri': pending['redirect'],
+                    'scope': SCOPE, 'state': pending['state'], 'code_challenge_method': 'S256', 'code_challenge': challenge}))
         except Exception:
             pending['stop'].set()
             with self.lock:
@@ -414,9 +438,7 @@ class SpotifyManager:
                     self.status = 'auth_required' if self.config else 'setup_needed'
             server.server_close()
             raise
-        return dict(self.snapshot(), authorization_url='https://accounts.spotify.com/authorize?' + urllib.parse.urlencode({
-            'client_id': self.config['client_id'], 'response_type': 'code', 'redirect_uri': pending['redirect'],
-            'scope': SCOPE, 'state': pending['state'], 'code_challenge_method': 'S256', 'code_challenge': challenge}))
+        return result
 
     def callback(self, path, host):
         parsed = urllib.parse.urlsplit(path)
@@ -445,10 +467,10 @@ class SpotifyManager:
             if status_code != 200:
                 raise SpotifyError('auth_required')
             tokens = _tokens(payload)
-            self._allowed(pending['epoch'])
-            self._keychain('set', tokens)
+            self._keychain_checked(pending['epoch'], 'set', tokens)
             self._allowed(pending['epoch'])
             with self.lock:
+                self._check_epoch(pending['epoch'])
                 self.config['credentials_saved'] = True
                 self._save()
                 self.connected = True
@@ -456,7 +478,8 @@ class SpotifyManager:
             return True
         except Exception:
             with self.lock:
-                self.status = 'auth_required'
+                if pending['epoch'] == self.epoch:
+                    self.status = 'auth_required'
             return False
         finally:
             self.operation.release()
@@ -471,7 +494,7 @@ class SpotifyManager:
         if not self.config.get('credentials_saved'):
             raise SpotifyError('auth_required')
         try:
-            tokens = self._keychain('get')
+            tokens = self._keychain_checked(epoch, 'get')
             def renew():
                 self._allowed(epoch)
                 status_code, payload, _ = _http('token', form={'grant_type': 'refresh_token',
@@ -479,8 +502,7 @@ class SpotifyManager:
                 if status_code != 200:
                     raise SpotifyError('auth_required')
                 renewed = _tokens(payload, tokens)
-                self._allowed(epoch)
-                self._keychain('set', renewed)
+                self._keychain_checked(epoch, 'set', renewed)
                 return renewed
             renewed = False
             if tokens['expires_at'] <= time.time() + 30:
@@ -494,6 +516,7 @@ class SpotifyManager:
                 status_code, payload, retry = _http('player', token=tokens['access_token'])
             self._allowed(epoch)
             with self.lock:
+                self._check_epoch(epoch)
                 if status_code in (200, 204):
                     self.status, self.item = ('nothing_playing', None) if status_code == 204 else _playback(payload)
                     self.connected = True
@@ -507,22 +530,27 @@ class SpotifyManager:
                     self.status = 'unavailable'
         except SpotifyError as error:
             with self.lock:
-                self.status = str(error) if str(error) in ('auth_required', 'keychain_unavailable', 'safety_blocked') else 'unavailable'
-                if self.status == 'auth_required':
-                    self.connected, self.item = False, None
+                if epoch == self.epoch:
+                    self.status = str(error) if str(error) in ('auth_required', 'keychain_unavailable', 'safety_blocked') else 'unavailable'
+                    if self.status == 'auth_required':
+                        self.connected, self.item = False, None
         except Exception:
             with self.lock:
-                self.status = 'stale' if self.observed_at else 'unavailable'
+                if epoch == self.epoch:
+                    self.status = 'stale' if self.observed_at else 'unavailable'
         return self.snapshot()
 
     def disconnect(self):
-        self.cancel()
         with self.lock:
+            self.cancel()
+            epoch = self.epoch
+        self._allowed(epoch)
+        with self.lock:
+            self._check_epoch(epoch)
             self.connected, self.item, self.observed_at = False, None, None
             self.status = 'auth_required' if self.config else 'setup_needed'
-        if self.config:
-            self._keychain('delete')  # Local removal only. Spotify dashboard revocation is separate.
-            with self.lock:
+            if self.config:
+                self._keychain('delete')  # Local removal only. Spotify dashboard revocation is separate.
                 self.config['credentials_saved'] = False
                 self._save()
         return self.snapshot()
